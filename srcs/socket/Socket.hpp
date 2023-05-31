@@ -9,23 +9,25 @@ class Socket {
 
 	public:
 
+		Socket();
 		Socket(int port, int backlog);
+		Socket(Socket const &rhs);
 		~Socket();
+
+		Socket&	operator=(Socket const &rhs);
 
 		int		acceptConnection(void);
 		void	initialize(void);
 	
 	private:
 
-		struct sockaddr		*_socketaddr;
 		int					_serverfd;
-		long				_valread;
-		struct sockaddr_in	_address;
 		int					_addrlen;
-		std::string			_response;
 		int					_port;
 		int					_backlog;
 		socklen_t			*_socketAddrlen;
+		struct sockaddr		*_socketaddr;
+		struct sockaddr_in	_address;
 
 		int		_listen(int backlog);
 		int		_bindSocket(void);
