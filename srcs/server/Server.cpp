@@ -5,42 +5,27 @@
 #include "HttpAns.hpp"
 #include <string.h>
 
-Server::Server() {
+Server::Server() : Socket() {
+	memset(this->_request, 0, sizeof(this->_request));
 }
 
-Server::Server(int port) {
-	this->_socket = new Socket(port, 10);
-	bzero(this->_request, sizeof(this->_request));
+Server::Server(int port) : Socket(port, 10) {
+	memset(this->_request, 0, sizeof(this->_request));
 }
 
 Server::~Server() {
-	delete this->_socket;
 }
 
-void	Server::initialize(void) {
-	try {
-		_socket->initialize();
-	} catch (std::exception &e) {
-		throw std::runtime_error("In socket initialization");
-	}
-	while (1) {
-		std::cout << "Waiting for connection" << std::endl;
-		try {
-			_requestfd = _socket->acceptConnection();
+Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
+	*this = rhs;
+}
 
-		} catch (std::exception &e) {
-			std::cout << "Error: " << e.what() << std::endl;
-		}
-		read(_requestfd, _request, 10000);
-		std::cout << _request << std::endl;
-		// aqui vai um parser da resposta lida, para responder adequadamente
-		_response += HttpAns::GET_HTML;
-		_getHtmlIndex();
-		write(_requestfd, _response.c_str(), _response.length());
-		_response.erase(0, std::string::npos);
-		std::cout << "Response sent" << std::endl;
-		close(_requestfd);
-	}
+Server&	Server::operator=(Server const &rhs) {
+	if (this == &rhs)
+		return (*this);
+	Socket::operator=(rhs);
+	this->_response = rhs._response;
+	return (*this);
 }
 
 void	Server::_getHtmlIndex(void) {
@@ -54,4 +39,18 @@ void	Server::_getHtmlIndex(void) {
 	}
 	_response += buffer;
 	index.close();
+}
+
+void	Server::handleRequest(int requestfd) {
+	// this->_requestfds.push_back(fd);
+	std::cout << "Request accepted!\n" << std::endl;
+	read(requestfd, _request, 10000);
+	std::cout << _request << std::endl;
+	// aqui vai um parser da resposta lida, para responder adequadamente
+	_response += HttpAns::GET_HTML;
+	_getHtmlIndex();
+	write(requestfd, _response.c_str(), _response.length());
+	_response.erase(0, std::string::npos);
+	std::cout << "Response sent\n" << std::endl;
+	close(requestfd);
 }

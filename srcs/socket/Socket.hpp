@@ -18,10 +18,12 @@ class Socket {
 
 		int		acceptConnection(void);
 		void	initialize(void);
+		void	closeSocket(void) const;
+		int		getSocketFd(void) const;
 	
-	private:
+	protected:
 
-		int					_serverfd;
+		int					_socketfd;
 		int					_addrlen;
 		int					_port;
 		int					_backlog;

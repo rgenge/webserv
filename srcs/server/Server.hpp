@@ -2,28 +2,31 @@
 # define SERVER_HPP
 
 # include "Socket.hpp"
+# include <vector>
 
-class Server {
-	/* A classe server tbm pode se chamar Webserv, acredito que ela vai ser
-	o principal objeto do projeto, criando o socket, fazendo o parser, etc.*/
+class Server : public Socket {
+
 	public:
 
 		Server();
-		Server(int port); 
+		Server(int port);
 		/* a ideia é que o construtor do server receba futuramente
-			apenas o caminho do arquivo de configuração, realize o parser
-			e então sete as configurações do servidor em outras structs
-			ou classes privadas */
+			apenas uma struct (ou uma classe), após o parser das informações
+			do arquivo de configuração */
+		Server(Server const &rhs);
 		~Server();
 
-		void	initialize();
+		Server&	operator=(Server const &rhs);
+
+		void	handleRequest(int fd);
 
 	private:
 
-		Socket		*_socket;
-		int			_requestfd;
-		char		_request[10000];
-		std::string	_response;
+		// Socket		_socket;
+		// int			_requestfd;
+		// std::vector<int>	_requestfds;
+		char				_request[10000];
+		std::string			_response;
 
 		void	_getHtmlIndex(void);
 
