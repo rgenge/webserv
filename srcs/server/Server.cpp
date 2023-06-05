@@ -6,11 +6,9 @@
 #include <string.h>
 
 Server::Server() : Socket() {
-	memset(this->_request, 0, sizeof(this->_request));
 }
 
 Server::Server(int port) : Socket(port, 10) {
-	memset(this->_request, 0, sizeof(this->_request));
 }
 
 Server::~Server() {
@@ -24,11 +22,10 @@ Server&	Server::operator=(Server const &rhs) {
 	if (this == &rhs)
 		return (*this);
 	Socket::operator=(rhs);
-	this->_response = rhs._response;
 	return (*this);
 }
 
-void	Server::_getHtmlIndex(void) {
+std::string	Server::_getHtmlIndex(void) {
 	std::ifstream	index;
 	std::string		buffer;
 	std::string		line;
@@ -37,20 +34,54 @@ void	Server::_getHtmlIndex(void) {
 	while (std::getline(index, line)) {
 		buffer += line + "\n";
 	}
-	_response += buffer;
 	index.close();
+	return (buffer);
 }
 
-void	Server::handleRequest(int requestfd) {
-	// this->_requestfds.push_back(fd);
-	std::cout << "Request accepted!\n" << std::endl;
-	read(requestfd, _request, 10000);
-	std::cout << _request << std::endl;
-	// aqui vai um parser da resposta lida, para responder adequadamente
-	_response += HttpAns::GET_HTML;
-	_getHtmlIndex();
-	write(requestfd, _response.c_str(), _response.length());
-	_response.erase(0, std::string::npos);
+void	Server::addRequestfd(int requestfd, std::string requestMessage) {
+	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
+}
+
+int	Server::getRequest(int requestfd) {
+	int	bytesRead;
+	char	_request[10000] = {0};
+
+	bytesRead = read(requestfd, _request, 8000);
+	if (bytesRead < 0)
+		throw std::runtime_error("Fail to read client request");
+	if (bytesRead == 0) {
+		_requestfds.erase(requestfd);
+		// close(requestfd);
+	}
+	else {
+		std::cout << "Request { " << _request << " }" << std::endl;
+		this->_requestfds[requestfd] = _request;
+		// addRequestfd(requestfd, _request);
+	}
+	return (bytesRead);
+}
+
+void	Server::respondRequest(int requestfd) {
+	std::string	response;
+
+	/* Nesta parte do código, a partir do requestfd, que é uma key value do map
+	de response, será chamado uma função de parser para parsear e responder
+	o request (que está salvo no map) de acordo com o pedido e as configurações
+	registradas do servidor nesta mesma classe.
+	Por enquanto, estou apenas devolvendo uma página padrão para saber
+	que tudo está funcionando de acordo */
+	std::cout << "Request to be responded FD: " << requestfd << std::endl;
+	std::cout << "Request to be responded { " << this->_requestfds[requestfd] << " }" << std::endl; // debug
+	response += HttpAns::GET_HTML;
+	response += _getHtmlIndex();
+	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
+	_requestfds.erase(requestfd);
 	close(requestfd);
+}
+
+bool	Server::hasRequestFd(int requestfd) {
+	if (this->_requestfds.find(requestfd) != this->_requestfds.end())
+		return (true);
+	return (false);
 }

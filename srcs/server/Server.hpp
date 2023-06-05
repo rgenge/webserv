@@ -2,7 +2,7 @@
 # define SERVER_HPP
 
 # include "Socket.hpp"
-# include <vector>
+# include <map>
 
 class Server : public Socket {
 
@@ -18,18 +18,20 @@ class Server : public Socket {
 
 		Server&	operator=(Server const &rhs);
 
-		void	handleRequest(int fd);
+		int		getRequest(int fd);
+		void	respondRequest(int fd);
+		bool	hasRequestFd(int i);
+		void	addRequestfd(int requestfd, std::string requestMessage);
 
 	private:
 
 		// Socket		_socket;
-		// int			_requestfd;
-		// std::vector<int>	_requestfds;
-		char				_request[10000];
-		std::string			_response;
+		std::map<int, std::string>	_requestfds;
+		// char						_request[10000];
+		// std::string					_response;
+		// int					_requestfd;
 
-		void	_getHtmlIndex(void);
-
+		std::string	_getHtmlIndex(void);
 };
 
 #endif /* SERVER_HPP */

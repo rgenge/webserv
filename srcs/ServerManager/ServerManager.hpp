@@ -20,15 +20,20 @@ class ServerManager {
 
 		std::vector<Server>			_servers;
 		std::vector<struct pollfd>	_pollFdsMaster;
-		std::vector<int>			_requestfds;
+		// std::vector<int>			_requestfds;
 		struct pollfd				*_pollfds;
+		size_t						_numberOfPollFds;
 
-		void	_addFdToPoll(int fd);
+		void	_addFdToPoll(int fd, short flag);
 		void	_createPollFds(void);
 		// void	_removeFdFromPoll(struct pollfd	pollfd);
 		void	_makeServers();
-		Server	&_getServerByFd(int fd);
-
+		Server	&_getServerBySocketFd(int fd);
+		Server	&_getServerByRequestFd(int fd);
+		bool	_acceptConnecitons(void);
+		void	_getServersRequests(void);
+		bool	_IsFdNotReadable(struct pollfd pollfd);
+		void	_respondServerRequests(void);
 };
 
 #endif /* SERVERMANAGER_HPP */

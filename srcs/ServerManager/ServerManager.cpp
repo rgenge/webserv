@@ -23,35 +23,82 @@ void	ServerManager::_makeServers(void) {
 	}
 }
 
-void	ServerManager::initialize(void) {
-	int		requestfd;
-	Server	requestingServer;
-	_makeServers();
-	for (size_t i = 0; i < this->_servers.size(); i++) {
-		_addFdToPoll(_servers[i].getSocketFd());
-	}
-	_createPollFds();
-	while (1) {
-		std::cout << "Waiting for connection" << std::endl;
-		if (poll(this->_pollfds, _pollFdsMaster.size(), 10000) < 0)
-			throw std::runtime_error("Failed to poll");
-		for (size_t i = 0; i < _pollFdsMaster.size(); i++) {
-			if (_pollfds[i].revents == POLLIN) {
-				requestingServer = _getServerByFd(_pollfds[i].fd);
-				requestfd = requestingServer.acceptConnection();
-				requestingServer.handleRequest(requestfd);
-				_pollfds[i].revents = 0;
-			}
-		}
-	}
-	delete [] _pollfds;
+bool	ServerManager::_IsFdNotReadable(struct pollfd pollfd) {
+	if ((pollfd.revents & POLLIN)
+		&& pollfd.events == (POLLIN | POLLOUT))
+		return (false);
+	return (true);
 }
 
-void	ServerManager::_addFdToPoll(int fd) {
+void	ServerManager::_getServersRequests(void) {
+	for (size_t i = 0; i < _numberOfPollFds; i++) {
+		if (_IsFdNotReadable(this->_pollfds[i])) {
+			continue ;
+		}
+		if (_getServerByRequestFd(this->_pollfds[i].fd).getRequest(this->_pollfds[i].fd) == 0)
+			_pollFdsMaster.erase(_pollFdsMaster.begin() + i);
+		this->_pollfds[i].revents = 0;
+	}
+}
+
+void	ServerManager::_respondServerRequests(void) {
+	for (size_t i = 0; i < _numberOfPollFds; i++) {
+		if (this->_pollfds[i].revents & POLLOUT){
+			_getServerByRequestFd(this->_pollfds[i].fd).respondRequest(this->_pollfds[i].fd);
+			_pollFdsMaster.erase(_pollFdsMaster.begin() + i);
+			this->_pollfds[i].revents = 0;
+		}
+	}
+}
+
+bool	ServerManager::_acceptConnecitons(void) {
+	int		requestfd;
+	bool	_hasAcceptedConnections = false;
+
+	requestfd = -1;
+	for (size_t i = 0; i < this->_numberOfPollFds; i++) {
+		if ((_pollfds[i].revents == POLLIN) && (_pollfds[i].events == POLLIN)) {
+			requestfd = _getServerBySocketFd(_pollfds[i].fd).acceptConnection();
+			if (requestfd < 0)
+				throw std::runtime_error("In accepting connection");
+			std::cout << "Request accepted: " << requestfd << "\n" << std::endl;
+			_addFdToPoll(requestfd, POLLIN | POLLOUT);
+			_pollfds[i].revents = 0;
+			_getServerBySocketFd(_pollfds[i].fd).addRequestfd(requestfd, "");
+			_hasAcceptedConnections = true;
+		}
+	}
+	return (_hasAcceptedConnections);
+}
+
+void	ServerManager::initialize(void) {
+	_makeServers();
+	for (size_t i = 0; i < this->_servers.size(); i++) {
+		_addFdToPoll(_servers[i].getSocketFd(), POLLIN);
+	}
+	while (1) {
+		_createPollFds();
+		_numberOfPollFds = this->_pollFdsMaster.size();
+		std::cout << "NUMBER OF POLLS: " << _numberOfPollFds << std::endl;
+		std::cout << "Waiting for connection" << std::endl;
+		if (poll(this->_pollfds, _numberOfPollFds, -1) < 0)
+			throw std::runtime_error("Failed to poll");
+		if (_acceptConnecitons()) {
+			delete [] this->_pollfds;
+			continue ;
+		}
+		_getServersRequests();
+		_respondServerRequests();
+		delete [] this->_pollfds;
+	}
+}
+
+void	ServerManager::_addFdToPoll(int fd, short flag) {
 	struct pollfd	poll;
 
 	poll.fd = fd;
-	poll.events = POLLIN;
+	poll.events = flag;
+	poll.revents = 0;
 	this->_pollFdsMaster.push_back(poll);
 }
 
@@ -62,7 +109,7 @@ void	ServerManager::_createPollFds(void) {
 	}
 }
 
-Server&	ServerManager::_getServerByFd(int fd) {
+Server&	ServerManager::_getServerBySocketFd(int fd) {
 	/* Essa função não é ideal. Apesar de ela nunca falhar, pois sempre vai ser chamada com
 	um FD válido e retornar um Server válido. O problema da função é que ela sempre espera
 	o retorno de um Server, sendo necessário um retorno fora do loop (que não faz sentido)*/
@@ -70,5 +117,15 @@ Server&	ServerManager::_getServerByFd(int fd) {
 		if ((*it).getSocketFd() == fd)
 			return (*it);
 	}
+	std::cout << "ERROR SOCKET FD!" << std::endl;
+	return (*_servers.begin()); // esse retorno não faz sentido, é apenas para a flag de -Wextra
+}
+
+Server&	ServerManager::_getServerByRequestFd(int fd) {
+	for (std::vector<Server>::iterator it = _servers.begin(); it < _servers.end(); it++) {
+		if ((*it).hasRequestFd(fd))
+			return (*it);
+	}
+	std::cout << "ERROR REQUEST FD!" << std::endl;
 	return (*_servers.begin()); // esse retorno não faz sentido, é apenas para a flag de -Wextra
 }
