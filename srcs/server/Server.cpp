@@ -35,6 +35,7 @@ std::string	Server::_getHtmlIndex(void) {
 		buffer += line + "\n";
 	}
 	index.close();
+	std::cout << "buffer size: " << buffer.size() << std::endl;
 	return (buffer);
 }
 
@@ -47,16 +48,15 @@ int	Server::getRequest(int requestfd) {
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	if (bytesRead < 0)
+	if (bytesRead < 0) 
 		throw std::runtime_error("Fail to read client request");
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
-		// close(requestfd);
+		close(requestfd);
 	}
 	else {
 		std::cout << "Request { " << _request << " }" << std::endl;
 		this->_requestfds[requestfd] = _request;
-		// addRequestfd(requestfd, _request);
 	}
 	return (bytesRead);
 }
@@ -70,8 +70,6 @@ void	Server::respondRequest(int requestfd) {
 	registradas do servidor nesta mesma classe.
 	Por enquanto, estou apenas devolvendo uma página padrão para saber
 	que tudo está funcionando de acordo */
-	std::cout << "Request to be responded FD: " << requestfd << std::endl;
-	std::cout << "Request to be responded { " << this->_requestfds[requestfd] << " }" << std::endl; // debug
 	response += HttpAns::GET_HTML;
 	response += _getHtmlIndex();
 	write(requestfd, response.c_str(), response.length());
