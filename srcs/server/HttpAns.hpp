@@ -18,6 +18,6 @@ class HttpAns {
 
 };
 
-const std::string HttpAns::GET_HTML = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 1024\nCache-Control: no-cache\n\n";
+const std::string HttpAns::GET_HTML = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 548\nCache-Control: no-cache\n\n";
 
 #endif /* HTTPANS_HPP */
