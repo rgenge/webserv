@@ -25,11 +25,7 @@ class Server : public Socket {
 
 	private:
 
-		// Socket		_socket;
 		std::map<int, std::string>	_requestfds;
-		// char						_request[10000];
-		// std::string					_response;
-		// int					_requestfd;
 
 		std::string	_getHtmlIndex(void);
 };

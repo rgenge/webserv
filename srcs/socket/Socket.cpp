@@ -41,8 +41,6 @@ Socket&	Socket::operator=(Socket const &rhs) {
 	this->_addrlen = rhs._addrlen;
 	*this->_socketAddrlen = *rhs._socketAddrlen;
 	*this->_socketaddr = *rhs._socketaddr;
-	// memcpy(this->_socketAddrlen, rhs._socketAddrlen, sizeof(*_socketAddrlen));
-	// memcpy(this->_socketaddr, rhs._socketaddr, sizeof(*_socketaddr));
 	this->_backlog = rhs._backlog;
 	this->_port = rhs._port;
 	this->_socketfd = rhs._socketfd;
