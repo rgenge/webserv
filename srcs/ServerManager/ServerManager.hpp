@@ -31,6 +31,7 @@ class ServerManager {
 		void	_getServersRequests(void);
 		bool	_IsFdNotReadable(struct pollfd pollfd);
 		void	_respondServerRequests(void);
+		void	_cleanPollfds(void);
 };
 
 #endif /* SERVERMANAGER_HPP */

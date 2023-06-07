@@ -48,8 +48,11 @@ int	Server::getRequest(int requestfd) {
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	if (bytesRead < 0) 
+	if (bytesRead < 0)
+	{
+		close(requestfd);
 		throw std::runtime_error("Fail to read client request");
+	}
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		close(requestfd);

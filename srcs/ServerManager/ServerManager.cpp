@@ -1,6 +1,7 @@
 #include "ServerManager.hpp"
 #include <iostream>
 #include <cstring>
+#include <unistd.h>
 
 ServerManager::ServerManager() {
 	
@@ -24,6 +25,8 @@ void	ServerManager::_makeServers(void) {
 }
 
 bool	ServerManager::_IsFdNotReadable(struct pollfd fd) {
+	if (fd.fd == -1)
+		return (true);
 	if ((fd.revents & POLLIN) && fd.events == (POLLIN | POLLOUT))
 		return (false);
 	return (true);
@@ -33,18 +36,18 @@ void	ServerManager::_getServersRequests(void) {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
 		if (_IsFdNotReadable(*it))
 			continue ;
-		if (_getServerByRequestFd((*it).fd).getRequest((*it).fd) == 0) 
-			_pollFdsMaster.erase(it);
+		if (_getServerByRequestFd((*it).fd).getRequest((*it).fd) == 0)
+			(*it).fd = -1;
 	}
 }
 
 void	ServerManager::_respondServerRequests(void) {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
-		if ((*it).revents & POLLOUT){
+		if (((*it).revents & POLLOUT) && (*it).fd != -1) {
 			_getServerByRequestFd((*it).fd).respondRequest((*it).fd);
-			_pollFdsMaster.erase(it);
+			(*it).fd = -1;
+			(*it).revents = 0;
 		}
-		(*it).revents = 0;
 	}
 }
 
@@ -54,7 +57,7 @@ bool	ServerManager::_acceptConnecitons(void) {
 
 	requestfd = -1;
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
-		if (((*it).revents == POLLIN) && ((*it).events == POLLIN)) {
+		if (((*it).revents == POLLIN) && ((*it).events == POLLIN) && (*it).fd != -1) {
 			requestfd = _getServerBySocketFd((*it).fd).acceptConnection();
 			if (requestfd < 0)
 				throw std::runtime_error("In accepting connection");
@@ -82,6 +85,7 @@ void	ServerManager::initialize(void) {
 			continue ;
 		_getServersRequests();
 		_respondServerRequests();
+		_cleanPollfds();
 	}
 }
 
@@ -92,6 +96,15 @@ void	ServerManager::_addFdToPoll(int fd, short flag) {
 	poll.events = flag;
 	poll.revents = 0;
 	this->_pollFdsMaster.push_back(poll);
+}
+
+void	ServerManager::_cleanPollfds(void) {
+	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
+		if ((*it).fd == -1) {
+			_pollFdsMaster.erase(it);
+			it = _pollFdsMaster.begin();
+		}
+	}
 }
 
 Server&	ServerManager::_getServerBySocketFd(int fd) {
