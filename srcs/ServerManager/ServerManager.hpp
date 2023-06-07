@@ -3,6 +3,7 @@
 
 #include "Server.hpp"
 #include <vector>
+#include <set>
 #include <poll.h>
 
 class ServerManager {
@@ -20,7 +21,8 @@ class ServerManager {
 
 		std::vector<Server>			_servers;
 		std::vector<struct pollfd>	_pollFdsMaster;
-		// std::vector<int>			_requestfds;
+		std::set<int>				_requestFds;
+		std::set<int>				_respondFds;
 
 		void	_addFdToPoll(int fd, short flag);
 		// void	_removeFdFromPoll(struct pollfd	pollfd);

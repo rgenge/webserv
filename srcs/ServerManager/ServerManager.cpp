@@ -27,6 +27,8 @@ void	ServerManager::_makeServers(void) {
 bool	ServerManager::_IsFdNotReadable(struct pollfd fd) {
 	if (fd.fd == -1)
 		return (true);
+	if (_requestFds.find(fd.fd) == _requestFds.end())
+		return (true);
 	if ((fd.revents & POLLIN) && fd.events == (POLLIN | POLLOUT))
 		return (false);
 	return (true);
@@ -34,17 +36,24 @@ bool	ServerManager::_IsFdNotReadable(struct pollfd fd) {
 
 void	ServerManager::_getServersRequests(void) {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
-		if (_IsFdNotReadable(*it))
+		if (_IsFdNotReadable(*it)) {
+			(*it).revents = 0;
 			continue ;
+		}
 		if (_getServerByRequestFd((*it).fd).getRequest((*it).fd) == 0)
 			(*it).fd = -1;
+		else {
+			_requestFds.erase((*it).fd);
+			_respondFds.insert((*it).fd);
+		}
 	}
 }
 
 void	ServerManager::_respondServerRequests(void) {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
-		if (((*it).revents & POLLOUT) && (*it).fd != -1) {
+		if (((*it).revents & POLLOUT) && (*it).fd != -1 && _respondFds.find((*it).fd) != _respondFds.end()) {
 			_getServerByRequestFd((*it).fd).respondRequest((*it).fd);
+			_respondFds.erase((*it).fd);
 			(*it).fd = -1;
 			(*it).revents = 0;
 		}
@@ -65,6 +74,7 @@ bool	ServerManager::_acceptConnecitons(void) {
 			(*it).revents = 0;
 			_getServerBySocketFd((*it).fd).addRequestfd(requestfd, "");
 			_addFdToPoll(requestfd, POLLIN | POLLOUT);
+			_requestFds.insert(requestfd);
 			it = _pollFdsMaster.begin();
 			_hasAcceptedConnections = true;
 		}
@@ -77,8 +87,8 @@ void	ServerManager::initialize(void) {
 	for (size_t i = 0; i < this->_servers.size(); i++) {
 		_addFdToPoll(_servers[i].getSocketFd(), POLLIN);
 	}
+	std::cout << "Waiting for connection" << std::endl;
 	while (1) {
-		std::cout << "Waiting for connection" << std::endl;
 		if (poll(_pollFdsMaster.data(), _pollFdsMaster.size(), -1) < 0)
 			throw std::runtime_error("Failed to poll");
 		if (_acceptConnecitons())
