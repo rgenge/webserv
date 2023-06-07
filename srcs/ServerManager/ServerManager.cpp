@@ -132,15 +132,11 @@ void	ServerManager::_cleanPollfds(void) {
 }
 
 Server&	ServerManager::_getServerBySocketFd(int fd) {
-	/* Essa função não é ideal. Apesar de ela nunca falhar, pois sempre vai ser chamada com
-	um FD válido e retornar um Server válido. O problema da função é que ela sempre espera
-	o retorno de um Server, sendo necessário um retorno fora do loop (que não faz sentido)*/
 	for (std::vector<Server>::iterator it = _servers.begin(); it < _servers.end(); it++) {
 		if ((*it).getSocketFd() == fd)
 			return (*it);
 	}
-	std::cout << "ERROR SOCKET FD!" << std::endl;
-	return (*_servers.begin()); // esse retorno não faz sentido, é apenas para a flag de -Wextra
+	throw std::runtime_error("Couldn't find server");
 }
 
 Server&	ServerManager::_getServerByRequestFd(int fd) {
@@ -148,6 +144,5 @@ Server&	ServerManager::_getServerByRequestFd(int fd) {
 		if ((*it).hasRequestFd(fd))
 			return (*it);
 	}
-	std::cout << "ERROR REQUEST FD!" << std::endl;
-	return (*_servers.begin()); // esse retorno não faz sentido, é apenas para a flag de -Wextra
+	throw std::runtime_error("Couldn't find server");
 }
