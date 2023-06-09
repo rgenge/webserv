@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 ServerManager::ServerManager() {
-	
+
 }
 
 ServerManager::~ServerManager() {

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fstream>
 #include "HttpAns.hpp"
+#include "Request.hpp"
 #include <string.h>
 
 Server::Server() : Socket() {
@@ -30,7 +31,7 @@ std::string	Server::_getHtmlIndex(void) {
 	std::string		buffer;
 	std::string		line;
 
-	index.open("/home/pedro/Desktop/42/projects/webserv/index/index.html", std::ifstream::in);
+	index.open("./index/index.html", std::ifstream::in);
 	while (std::getline(index, line)) {
 		buffer += line + "\n";
 	}
@@ -48,6 +49,10 @@ int	Server::getRequest(int requestfd) {
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
+	/*Parseamento do request e salva um map comtudo e o body do request*/
+	Request _req(_request);
+	_req_parsed = _req.getmap();
+	_req_body = _req.getbody();
 	if (bytesRead < 0)
 	{
 		close(requestfd);
