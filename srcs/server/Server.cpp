@@ -49,10 +49,6 @@ int	Server::getRequest(int requestfd) {
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	/*Parseamento do request e salva um map comtudo e o body do request*/
-	Request _req(_request);
-	_req_parsed = _req.getmap();
-	_req_body = _req.getbody();
 	if (bytesRead < 0)
 	{
 		close(requestfd);
@@ -78,6 +74,11 @@ void	Server::respondRequest(int requestfd) {
 	registradas do servidor nesta mesma classe.
 	Por enquanto, estou apenas devolvendo uma página padrão para saber
 	que tudo está funcionando de acordo */
+	
+	/*Parseamento do request e salva um map comtudo e o body do request*/
+	Request _req(_requestfds[requestfd]);
+	_req_parsed = _req.getmap();
+	_req_body = _req.getbody();
 	response += HttpAns::GET_HTML;
 	response += _getHtmlIndex();
 	write(requestfd, response.c_str(), response.length());

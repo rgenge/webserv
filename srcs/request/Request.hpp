@@ -10,11 +10,11 @@
 # include <iostream>
 # include <fstream>
 # include <map>
-# include <sys/ioctl.h>
+//# include <sys/ioctl.h>
 #include <unistd.h>
-# include <sys/socket.h>
+//# include <sys/socket.h>
 #include <sstream>
-# include <netinet/in.h>
+//# include <netinet/in.h>
 
 class Request
 {
