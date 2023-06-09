@@ -1,10 +1,10 @@
 #ifndef SERVERMANAGER_HPP
 # define SERVERMANAGER_HPP
 
-#include "Server.hpp"
-#include <vector>
-#include <set>
-#include <poll.h>
+# include "Server.hpp"
+# include <vector>
+# include <set>
+# include <poll.h>
 
 class ServerManager {
 
@@ -17,6 +17,8 @@ class ServerManager {
 		void	addServer(Server server);
 		Server	&getServer(int index);
 		
+		static int	active;
+
 	private:
 
 		std::vector<Server>			_servers;
@@ -28,7 +30,7 @@ class ServerManager {
 		Server	&_getServerByRequestFd(int fd);
 
 		void	_addFdToPoll(int fd, short flag);
-		void	_makeServers();
+		void	_initializeServers();
 		void	_acceptConnecitons(void);
 		void	_getServersRequests(void);
 		void	_respondServerRequests(void);
@@ -37,6 +39,8 @@ class ServerManager {
 		bool	_isFdNotReadable(struct pollfd pollfd);
 		bool	_isFdNotWritable(struct pollfd pollfd);
 		bool	_hasNotReceivedConnection(struct pollfd pollfd);
+
+		void	_shutdownServers(void);
 };
 
 #endif /* SERVERMANAGER_HPP */
