@@ -30,7 +30,7 @@ std::string	Server::_getHtmlIndex(void) {
 	std::string		buffer;
 	std::string		line;
 
-	index.open("/home/pedro/Desktop/42/projects/webserv/index/index.html", std::ifstream::in);
+	index.open("/home/willian/webserv/index/index.html", std::ifstream::in);
 	while (std::getline(index, line)) {
 		buffer += line + "\n";
 	}

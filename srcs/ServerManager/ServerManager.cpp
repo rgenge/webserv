@@ -61,6 +61,8 @@ void	ServerManager::_respondServerRequests(void) {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
 		if (_isFdNotWritable((*it)))
 			continue ;
+		CgiHandler	cgiHandler;
+		cgiHandler.cgiHandler();
 		_getServerByRequestFd((*it).fd).respondRequest((*it).fd);
 		_respondFds.erase((*it).fd);
 		(*it).fd = -1;

@@ -2,6 +2,7 @@
 # define SERVERMANAGER_HPP
 
 #include "Server.hpp"
+#include "CgiHandler.hpp"
 #include <vector>
 #include <set>
 #include <poll.h>
