@@ -1,15 +1,17 @@
-SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp Request.cpp
+SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp Request.cpp\
+	Response.cpp
 NAME = webserv
 SRCS_PATH = srcs
 OBJS_PATH = objs
 SRCS = ${addprefix ${SRCS_PATH}/ ${SOURCES}}
 OBJS = ${addprefix ${OBJS_PATH}/, ${notdir ${SOURCES:.cpp=.o}}}
 
-VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager ${SRCS_PATH}/request
+VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager ${SRCS_PATH}/request ${SRCS_PATH}/response
 
 CC = c++
 FLAGS = -Werror -Wall -Wextra -std=c++98 -g
-INCLUDE = -I srcs/socket -I srcs/server -I srcs/ServerManager -I srcs/request
+INCLUDE = -I srcs/socket -I srcs/server -I srcs/ServerManager -I srcs/request \
+-I srcs/response
 
 # Colors
 GREEN = \33[1;32m

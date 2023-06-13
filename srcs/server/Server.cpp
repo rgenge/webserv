@@ -2,8 +2,9 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
-#include "HttpAns.hpp"
+//#include "HttpAns.hpp"
 #include "Request.hpp"
+#include "Response.hpp"
 #include <string.h>
 
 Server::Server() : Socket() {
@@ -36,7 +37,6 @@ std::string	Server::_getHtmlIndex(void) {
 		buffer += line + "\n";
 	}
 	index.close();
-	std::cout << "buffer size: " << buffer.size() << std::endl;
 	return (buffer);
 }
 
@@ -74,13 +74,23 @@ void	Server::respondRequest(int requestfd) {
 	registradas do servidor nesta mesma classe.
 	Por enquanto, estou apenas devolvendo uma página padrão para saber
 	que tudo está funcionando de acordo */
-	
+
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getmap();
 	_req_body = _req.getbody();
-	response += HttpAns::GET_HTML;
-	response += _getHtmlIndex();
+	Response res_struct;
+	//Inserindo dados do server manualmente pra teste
+	_server_conf.insert(std::pair<std::string,std::string>("Root","./index"));
+	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
+	_server_conf.insert(std::pair<std::string,std::string>("Index","index.html") );
+	/*Iniciando o response*/
+	res_struct.init(_req_parsed, _server_conf);
+	/*response recebe o header da resposta*/
+	response = res_struct.getResponse();
+	/*response recebe o body da resposta*/
+	response += res_struct.get_body();
+	/*Imprimi o site na tela*/
 	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
 	_requestfds.erase(requestfd);
