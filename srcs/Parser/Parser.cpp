@@ -2,11 +2,12 @@
 #include <iostream>
 #include <cstring>
 #include <sstream>
+#include <cstdlib>
 
 Parser::Parser() {
 }
 
-Parser::Parser(std::string configFilePath) : _configFilePath(configFilePath) {
+Parser::Parser(std::string configFilePath) : _configFilePath(configFilePath), _status(SERVER) {
 }
 
 Parser::~Parser() {
@@ -17,12 +18,262 @@ Parser::~Parser() {
 std::stack<t_serverConfig>	Parser::parseConfig(void) {
 	this->_openConfigFile();
 	this->_readConfigFile();
-	this->_tokenizeConfigFile();
+	// this->_tokenizeConfigFile();
 
-	for (std::vector<std::string>::iterator it = _configTokens.begin(); it != _configTokens.end(); ++it) {
-		std::cout << *it << std::endl;
+	for (t_tokensIterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
+		// if ((*it).find_first_not_of("\n ") == std::string::npos)
+		// 	continue ;
+		// else if ((*it).empty())
+		// 	continue ;
+		if (_status == SERVER)
+			_parseConfig(it);
+		else if (_status == CONFIG)
+			_parseServerConfig(it);
 	}
 	return (this->_serverConfigs);
+}
+
+void	Parser::_parseConfig(t_tokensIterator &it) {
+	std::string			serverBuffer;
+	std::string			token;
+	std::istringstream	lineStream;
+
+	while ((*it)[0] == '#')
+		++it;
+	lineStream.str(*it);
+	lineStream >> token;
+	if (token != "server")
+		throw std::invalid_argument("failed to find server configuration");
+	++it;
+	while ((*it)[0] == '#')
+		++it;
+	if (*it != "{")
+		throw std::invalid_argument("failed to find server configuration");
+	_status = CONFIG;
+}
+
+void	Parser::_parseServerConfig(t_tokensIterator &it) {
+	t_serverConfig		serverConfig;
+	std::istringstream	lineStream;
+	std::string			token;
+
+	while (*it != "}") {
+		lineStream.str(*it);
+		lineStream >> token;
+		std::cout << *it << std::endl;
+		if (token[0] == '#')
+			;
+		else if (token == "port")
+			_parsePort(lineStream, serverConfig);
+		else if (token == "server_name")
+			_parseServerName(lineStream, serverConfig);
+		else if (token == "root")
+			_parseOneStringParams(lineStream, serverConfig.root);
+		else if (token == "index")
+			_parseOneStringParams(lineStream, serverConfig.index);
+		else if (token == "error_page")
+			_parseErrorPages(lineStream, serverConfig);
+		else if (token == "body_size_limit")
+			_parseLimit(lineStream, serverConfig);
+		else if (token == "url")
+			_parseUrl(lineStream, serverConfig, it);
+		else if ((*it).find_first_not_of("\n ") == std::string::npos)
+			;
+		else
+			throw std::invalid_argument("invalid server config input");
+		++it;
+		lineStream.clear();
+		token.clear();
+	}
+	_status = SERVER;
+	std::cout << serverConfig.port << std::endl;
+	std::cout << *serverConfig.serverNames.find("localhost") << std::endl;
+	std::cout << *serverConfig.serverNames.find("test") << std::endl;
+	std::cout << serverConfig.root << std::endl;
+	std::cout << serverConfig.index << std::endl;
+	std::cout << serverConfig.errorPages[404] << std::endl;
+	std::cout << serverConfig.errorPages[502] << std::endl;
+	std::cout << serverConfig.bodySizeLimit << std::endl;
+	std::cout << serverConfig.routes["/static"].root << std::endl;
+	std::cout << *serverConfig.routes["/static"].httpMethods.find("POST") << std::endl;
+}
+
+void	Parser::_parsePort(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing port number");
+	for (size_t i = 0; i < token.size(); i++) {
+		if (std::isdigit(token[i]) == false )
+			throw std::invalid_argument("port should be a number");
+	}
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("Port accepts only one argument");
+	serverConfig.port = std::atoi(token.c_str());
+}
+
+void	Parser::_parseOneStringParams(std::istringstream &lineStream, std::string &param) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing argument");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("invalid argument");
+	param = token;
+}
+
+void	Parser::_parseServerName(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing server_name argument");
+	while (lineStream) {
+		serverConfig.serverNames.insert(token);
+		lineStream >> token;
+	}
+}
+
+void	Parser::_parseRoot(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing root argument");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("root accepts only one argument");
+	serverConfig.root = token;
+}
+
+void	Parser::_parseIndex(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing index argument");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("index accepts only one argument");
+	serverConfig.index = token;
+}
+
+void	Parser::_parseErrorPages(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+	int			error;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing error_page code");
+	for (size_t i = 0; i < token.size(); i++) {
+		if (std::isdigit(token[i]) == false )
+			throw std::invalid_argument("error code should be a number");
+	}
+	error = std::atoi(token.c_str());
+	lineStream >> token;
+	if (!lineStream)
+		throw std::invalid_argument("missing error_page file");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("error_page accepts only 2 arguments");
+	serverConfig.errorPages.insert(std::pair<int, std::string>(error, token));
+}
+
+void	Parser::_parseLimit(std::istringstream &lineStream, t_serverConfig &serverConfig) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing body_size_limit argument");
+	for (size_t i = 0; i < token.size(); i++) {
+		if (std::isdigit(token[i]) == false )
+			throw std::invalid_argument("body_size_limit should be a number");
+	}
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("body_size_limit accepts only one argument");
+	serverConfig.bodySizeLimit = std::atoi(token.c_str());
+}
+
+void	Parser::_parseUrl(std::istringstream &lineStream, t_serverConfig &serverConfig, t_tokensIterator &it) {
+	std::string	token;
+	t_route		route;
+	std::string	routeName;
+
+	route.dirList = false;
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing url path argument");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("too many url arguments");
+	routeName = token;
+	it++;
+	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
+		++it;
+	if (*it != "{")
+		throw std::invalid_argument("missing url");
+	it++;
+	while (*it != "}") {
+		// std::cout << *it << std::endl;
+		lineStream.clear();
+		lineStream.str(*it);
+		lineStream >> token; 
+		if (token[0] == '#')
+			;
+		else if (token == "methods")
+			_parseMethods(lineStream, route);
+		else if (token == "root")
+			_parseOneStringParams(lineStream, route.root);
+		else if (token == "index")
+			_parseOneStringParams(lineStream, route.index);
+		else if (token == "dir_list")
+			_parseDirList(lineStream, route);
+		else if (token == "cgi")
+			_parseOneStringParams(lineStream, route.cgi);
+		else if (token == "location")
+			_parseOneStringParams(lineStream, route.location);
+		else if (token == "upload")
+			_parseOneStringParams(lineStream, route.uploadPath);
+		++it;
+		token.clear();
+	}
+	serverConfig.routes.insert(std::pair<std::string, t_route>(routeName, route));
+}
+
+void	Parser::_parseMethods(std::istringstream &lineStream, t_route &route) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing methods argument");
+	while (lineStream) {
+		if (token == "GET" || token == "POST" || token == "DELETE")
+			route.httpMethods.insert(token);
+		else
+			throw std::invalid_argument("invalid http method");
+		lineStream >> token;
+	}
+}
+
+
+void	Parser::_parseDirList(std::istringstream &lineStream, t_route &route) {
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw std::invalid_argument("missing dir_list argument");
+	lineStream >> token;
+	if (lineStream)
+		throw std::invalid_argument("index accepts only one argument");
+	if (token == "on")
+		route.dirList = true;
+	else if (token == "off")
+		route.dirList = false;
 }
 
 void	Parser::_readConfigFile(void) {
@@ -48,22 +299,22 @@ void	Parser::_readConfigFile(void) {
 	}
 }
 
-void	Parser::_tokenizeConfigFile(void) {
-	std::string			token;
-	std::istringstream	lineStream;
+// void	Parser::_tokenizeConfigFile(void) {
+// 	std::string			token;
+// 	std::istringstream	lineStream;
 
-	for (std::vector<std::string>::iterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
-		lineStream.clear();
-		lineStream.str(*it);
-		lineStream >> token;
-		while (lineStream) {
-			if (token[0] == '#')
-				break ;
-			_configTokens.push_back(token);
-			lineStream >> token;
-		}
-	}
-}
+// 	for (std::vector<std::string>::iterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
+// 		lineStream.clear();
+// 		lineStream.str(*it);
+// 		lineStream >> token;
+// 		while (lineStream) {
+// 			if (token[0] == '#')
+// 				break ;
+// 			_configTokens.push_back(token);
+// 			lineStream >> token;
+// 		}
+// 	}
+// }
 
 void	Parser::_validateConfigFileName(void) {
 	size_t	index;

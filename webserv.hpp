@@ -12,6 +12,7 @@ typedef struct s_route
 	std::set<std::string>	httpMethods;
 	std::string				location;
 	std::string				index;
+	std::string				root;
 	bool					dirList;
 	std::string				cgi;
 	std::string				uploadPath;
@@ -21,10 +22,9 @@ typedef struct s_route
 typedef struct s_serverConfig
 {
 	int									port;
-	std::string							host;
 	std::string							root;
 	std::string							index;
-	std::string							serverName;
+	std::set<std::string>				serverNames;
 	std::map<int, std::string>			errorPages;
 	int									bodySizeLimit;
 	std::map<std::string, t_route>		routes;
