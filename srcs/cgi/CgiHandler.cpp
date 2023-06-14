@@ -2,6 +2,11 @@
 
 CgiHandler::CgiHandler(void)
 {
+	_envp = NULL;
+    _pipeFd[0] = 0;
+    _pipeFd[1] = 0;
+    _pid = 0;
+	this->_cgiResult = "";
 	return ;
 }
 
@@ -20,7 +25,11 @@ CgiHandler	&CgiHandler::operator=(CgiHandler const &rhs)
 {
 	if (this != &rhs)
 	{
-		;
+		this->_envp = rhs._envp;
+		this->_pipeFd[0] = rhs._pipeFd[0];
+		this->_pipeFd[1] = rhs._pipeFd[1];
+		this->_pid = rhs._pid;
+		this->_cgiResult = rhs._cgiResult;
 	}
 	return (*this);
 }
@@ -35,17 +44,6 @@ void	CgiHandler::_clearEnvp(void)
 		this->_envp = NULL;
 	}
 	return ;
-}
-
-std::string	CgiHandler::_generateFileName(void)
-{
-	static int	sequenceNumber = 0;
-	std::time_t	currentTime;
-	std::stringstream	fileName;
-
-	currentTime = std::time(0);
-	fileName << "file_" << currentTime << sequenceNumber++;
-	return (fileName.str());
 }
 
 void	CgiHandler::_getEnv(void)
@@ -63,18 +61,6 @@ void	CgiHandler::_getEnv(void)
 	return ;
 }
 
-void	CgiHandler::_stringCopy(char *dst, const char *src)
-{
-	size_t	i = 0;
-	while(src[i])
-	{
-		dst[i] = src[i];
-		i++;
-	}
-	dst[i] = '\0';
-	return ;
-}
-
 void	CgiHandler::_convertEnvFormat(void)
 {
 	// aqui vou converter o map em um char** para que o execve possa usar no 3º argumento
@@ -88,12 +74,9 @@ void	CgiHandler::_convertEnvFormat(void)
 		std::string arg = it->first + "=" + it->second;
 		size = arg.size() + 1;
 		this->_envp[i] = new char[size];
-		_stringCopy(this->_envp[i++], arg.c_str());
+		strcpy(this->_envp[i++], arg.c_str());
 	}
-	this->_envp[i] = 0;
-
-	// for (int i = 0; this->_envp[i]; i++)
-	// 	std::cout << this->_envp[i] << std::endl;
+	this->_envp[i] = NULL;
 
 	return ;
 }
@@ -113,12 +96,11 @@ void	CgiHandler::_child(void)
 	close(this->_pipeFd[0]);
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
-	// this->_path = "usr/bin/php";
-	const char* path = "/usr/bin/php";
-	const char* scriptPath = "./cgi_bin/script.php";
-	char* execArgs[] = {
-		const_cast<char*>(path),
-		const_cast<char*>(scriptPath),
+	const char	*path = "/usr/bin/php";
+	const char	*scriptPath = "./cgi_bin/script.php";
+	char		*execArgs[] = {
+		const_cast<char *>(path),
+		const_cast<char *>(scriptPath),
 		NULL
 	};
 
@@ -149,23 +131,14 @@ void	CgiHandler::_child(void)
 void	CgiHandler::_parent(void)
 {
 	close(this->_pipeFd[1]);
-	std::ofstream file;
-	file.open(_generateFileName().c_str(), std::ios::out);
-	if (!file.is_open())
-	{
-		_clearEnvp();
-		throw std::runtime_error("ofstream");
-	}
-
 	char	buffer[4096];
 	ssize_t	bytesRead;
 	while ((bytesRead = read(this->_pipeFd[0], buffer, sizeof(buffer))) > 0)
-		file << buffer;
-
-	int status;
+		this->_cgiResult += buffer;
 	close(this->_pipeFd[0]);
+	int status;
 	waitpid(this->_pid, &status, 0);
-	file.close();
+	std::cout << this->_cgiResult << std::endl;
 	return ;
 }
 

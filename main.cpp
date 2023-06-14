@@ -7,8 +7,8 @@ int main(int argc, char *argv[]) {
 	ServerManager	serverManager;
 
 	serverManager.addServer(Server(8080));
-	// serverManager.addServer(Server(8081));
-	// serverManager.addServer(Server(9000));
+	serverManager.addServer(Server(8081));
+	serverManager.addServer(Server(9000));
 	try {
 		serverManager.initialize();
 	}	catch (std::exception &e) {
