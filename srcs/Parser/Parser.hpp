@@ -3,7 +3,7 @@
 
 # include <string>
 # include <vector>
-# include <stack>
+# include <queue>
 # include <fstream>
 # include "webserv.hpp"
 
@@ -22,14 +22,14 @@ class Parser {
 		Parser(std::string configFilePath);
 		~Parser();
 
-		std::stack<t_serverConfig>	parseConfig(void);
+		std::queue<t_serverConfig>	parseConfig(void);
 
 	private:
 
 		Parser();
 
 		std::string					_configFilePath;
-		std::stack<t_serverConfig>	_serverConfigs;
+		std::queue<t_serverConfig>	_serverConfigs;
 		std::ifstream				_configFileStream;
 		std::vector<std::string>	_configFileLines;
 		std::vector<std::string>	_configTokens;

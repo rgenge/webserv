@@ -15,16 +15,16 @@ Parser::~Parser() {
 		this->_configFileStream.close();
 }
 
-std::stack<t_serverConfig>	Parser::parseConfig(void) {
+std::queue<t_serverConfig>	Parser::parseConfig(void) {
 	this->_openConfigFile();
 	this->_readConfigFile();
 	// this->_tokenizeConfigFile();
 
 	for (t_tokensIterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
-		// if ((*it).find_first_not_of("\n ") == std::string::npos)
-		// 	continue ;
-		// else if ((*it).empty())
-		// 	continue ;
+		if ((*it).find_first_not_of("\n ") == std::string::npos)
+			continue ;
+		else if ((*it).empty())
+			continue ;
 		if (_status == SERVER)
 			_parseConfig(it);
 		else if (_status == CONFIG)
@@ -38,14 +38,14 @@ void	Parser::_parseConfig(t_tokensIterator &it) {
 	std::string			token;
 	std::istringstream	lineStream;
 
-	while ((*it)[0] == '#')
+	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
 		++it;
 	lineStream.str(*it);
 	lineStream >> token;
 	if (token != "server")
 		throw std::invalid_argument("failed to find server configuration");
 	++it;
-	while ((*it)[0] == '#')
+	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
 		++it;
 	if (*it != "{")
 		throw std::invalid_argument("failed to find server configuration");
@@ -60,7 +60,6 @@ void	Parser::_parseServerConfig(t_tokensIterator &it) {
 	while (*it != "}") {
 		lineStream.str(*it);
 		lineStream >> token;
-		std::cout << *it << std::endl;
 		if (token[0] == '#')
 			;
 		else if (token == "port")
@@ -86,16 +85,7 @@ void	Parser::_parseServerConfig(t_tokensIterator &it) {
 		token.clear();
 	}
 	_status = SERVER;
-	std::cout << serverConfig.port << std::endl;
-	std::cout << *serverConfig.serverNames.find("localhost") << std::endl;
-	std::cout << *serverConfig.serverNames.find("test") << std::endl;
-	std::cout << serverConfig.root << std::endl;
-	std::cout << serverConfig.index << std::endl;
-	std::cout << serverConfig.errorPages[404] << std::endl;
-	std::cout << serverConfig.errorPages[502] << std::endl;
-	std::cout << serverConfig.bodySizeLimit << std::endl;
-	std::cout << serverConfig.routes["/static"].root << std::endl;
-	std::cout << *serverConfig.routes["/static"].httpMethods.find("POST") << std::endl;
+	_serverConfigs.push(serverConfig);
 }
 
 void	Parser::_parsePort(std::istringstream &lineStream, t_serverConfig &serverConfig) {
