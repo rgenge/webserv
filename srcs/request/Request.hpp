@@ -10,16 +10,13 @@
 # include <iostream>
 # include <fstream>
 # include <map>
-//# include <sys/ioctl.h>
 #include <unistd.h>
-//# include <sys/socket.h>
 #include <sstream>
-//# include <netinet/in.h>
 
 class Request
 {
 	private:
-		std::string		_request;
+		std::string	_request;
 		std::map <std::string, std::string>	_req_map;
 		std::string		_body;
 		std::string 	_error_type;

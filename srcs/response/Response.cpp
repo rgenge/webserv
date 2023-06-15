@@ -77,6 +77,7 @@ void Response::auto_index(std::map <std::string, std::string> map_input, std::ma
 				_body += (std::string)(contents->d_name) + (contents->d_type == DT_DIR ? "/" : "") + "</a><br>";
 			}
 			closedir(dh);
+			std::cout << map_input["Path"];
 			_body += "</div></body></html>";
 	}
 }
@@ -86,7 +87,7 @@ void Response::method_get(std::map <std::string, std::string> map_input, std::ma
 	if (map_input["Path"] == "/")
 	{
 		_full_path = server_conf["Root"] + map_input["Path"] + server_conf["Index"];
-		_dir_path = server_conf["Root"] + map_input["Path"]/* + server_conf["Index"]*/;
+		_dir_path = server_conf["Root"] + map_input["Path"];
 	}
 	else
 	{
@@ -106,7 +107,8 @@ void Response::method_get(std::map <std::string, std::string> map_input, std::ma
 		while (std::getline(page, line)) {
 			buffer += line + "\n";
 		}
-//		_body = buffer;
+		if (server_conf["AutoIndex"] == "off")
+			_body = buffer;
 		if (server_conf["AutoIndex"] == "on")
 			auto_index(map_input, server_conf);
 		/*Converte o Content-length de size_t pra string e adiciona no map*/
