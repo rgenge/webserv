@@ -27,24 +27,21 @@ void Response::print_header(std::string status_code, std::string ok_ko)
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
 std::string Response::get_type()
 {
-	std::string	type_str;
-	const char		*type;
+	std::string		type;
 	std::size_t last_dot = _full_path.find_last_of(".");
-	type_str = _full_path.substr(last_dot, _full_path.size() - last_dot);
-	type = type_str.c_str();
-	if (strcmp(type, ".css") == 0) return "text/css";
-	if (strcmp(type, ".csv") == 0) return "text/csv";
-	if (strcmp(type, ".html") == 0) return "text/html";
-	if (strcmp(type, ".htm") == 0) return "text/html";
-	if (strcmp(type, ".shtml") == 0) return "text/html";
-	if (strcmp(type, ".js") == 0) return "application/javascript";
-	if (strcmp(type, ".json") == 0) return "application/json";
-	if (strcmp(type, ".gif") == 0) return "image/gif";
-	if (strcmp(type, ".jpeg") == 0) return "image/jpeg";
-	if (strcmp(type, ".jpg") == 0) return "image/jpeg";
-	if (strcmp(type, ".png") == 0) return "image/png";
-	if (strcmp(type, ".svg") == 0) return "image/svg+xml";
-	if (strcmp(type, ".ico") == 0) return "image/x-icon|";
+	type = _full_path.substr(last_dot, _full_path.size() - last_dot);
+	if ((type==".css")) return "text/css";
+	if (type==".csv") return "text/csv";
+	if (type ==".htm") return "text/html";
+	if (type ==".shtml") return "text/html";
+	if (type ==".js") return "application/javascript";
+	if (type ==".json") return "application/json";
+	if (type ==".gif") return "image/gif";
+	if (type ==".jpeg") return "image/jpeg";
+	if (type ==".jpg") return "image/jpg";
+	if (type ==".png") return "image/png";
+	if (type ==".svg") return "image/svg+xml";
+	if (type ==".ico") return "image/x-icon|";
 	return ("text/html");
 }
 
@@ -62,7 +59,8 @@ void Response::auto_index(std::map <std::string, std::string> map_input, std::ma
 	else
 	{
 		_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
-		"<title>webserv</title></head><body><h1>Index of " + server_conf["Root"] + "</h1>\n");
+			"<title>webserv</title></head><body><h1>Index of " + server_conf
+			["Root"] + "</h1>\n");
 			while ((contents = readdir(dh)) != NULL)
 			{
 				if (strcmp(contents->d_name, ".") || strcmp(contents->d_name,
@@ -73,8 +71,10 @@ void Response::auto_index(std::map <std::string, std::string> map_input, std::ma
 					_body += "<a href=\"" + std::string(contents->d_name);
 				else
 					_body += "<a href=\"" + std::string(contents->d_name);
-				_body += (contents->d_type == DT_DIR ? "/" : "") + (std::string)"\">";
-				_body += (std::string)(contents->d_name) + (contents->d_type == DT_DIR ? "/" : "") + "</a><br>";
+				_body += (contents->d_type == DT_DIR ? "/" : "") + (std::string)
+					"\">";
+				_body += (std::string)(contents->d_name) + (contents->d_type ==
+					DT_DIR ? "/" : "") + "</a><br>";
 			}
 			closedir(dh);
 			std::cout << map_input["Path"];
@@ -82,11 +82,13 @@ void Response::auto_index(std::map <std::string, std::string> map_input, std::ma
 	}
 }
 
-void Response::method_get(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf)
+void Response::method_get(std::map <std::string, std::string> map_input,
+	std::map <std::string, std::string> server_conf)
 {
 	if (map_input["Path"] == "/")
 	{
-		_full_path = server_conf["Root"] + map_input["Path"] + server_conf["Index"];
+		_full_path = server_conf["Root"] + map_input["Path"] + server_conf
+			["Index"];
 		_dir_path = server_conf["Root"] + map_input["Path"];
 	}
 	else
@@ -116,13 +118,15 @@ void Response::method_get(std::map <std::string, std::string> map_input, std::ma
 		sizet_len <<  buffer.size();
 		std::string string_len = sizet_len.str();
 		if (server_conf["AutoIndex"] == "off")
-			_res_map.insert(std::pair<std::string,std::string>("Content-Length", string_len));
+			_res_map.insert(std::pair<std::string,std::string>
+			("Content-Length", string_len));
 		else if (server_conf["AutoIndex"] == "on")
 		{
 			std::stringstream sizet_len;
 			sizet_len <<  _body.size();
 			std::string string_len = sizet_len.str();
-			_res_map.insert(std::pair<std::string,std::string>("Content-Length", string_len));
+			_res_map.insert(std::pair<std::string,std::string>
+			("Content-Length", string_len));
 		}
 		/*Verifica o Content-type do arquivo*/
 		_res_map["Content-type"] = get_type();
@@ -130,7 +134,8 @@ void Response::method_get(std::map <std::string, std::string> map_input, std::ma
 		page.close();
 	}
 }
-void Response::init(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf)
+void Response::init(std::map <std::string, std::string> map_input, std::map
+	<std::string, std::string> server_conf)
 {
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
