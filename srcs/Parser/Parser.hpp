@@ -19,6 +19,19 @@ class Parser {
 
 	public:
 
+		class ParserException : public std::exception {
+
+			public:
+				
+				ParserException(std::string const &errorMessage);
+				virtual ~ParserException() throw();
+				virtual const char *what() const throw();
+
+			private:
+
+				char *_errorMessage;
+		};
+
 		Parser(std::string configFilePath);
 		~Parser();
 
@@ -36,14 +49,15 @@ class Parser {
 		int							_status;
 
 		// file handle functions 
-		void	_validateConfigFileName();
+		void	_validateConfigFileName(void);
 		void	_openConfigFile(void);
 		void	_readConfigFile(void);
+		void	_validateConfigFileBraces(void);
 		// void	_tokenizeConfigFile(void);
 		
 		// Parse server configuration functions
 		void	_parseConfig(t_linesIterator &it);
-		void	_parseServerConfig(t_linesIterator &it);
+		void	_parseServerConfig(t_linesIterator &it, t_linesIterator end);
 		void	_parsePort(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseServerName(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseErrorPages(std::istringstream &lineStream, t_serverConfig &serverConfig);

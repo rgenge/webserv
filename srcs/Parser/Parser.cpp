@@ -26,7 +26,7 @@ std::queue<t_serverConfig>	Parser::parseConfig(void) {
 		if (_status == SERVER)
 			_parseConfig(it);
 		else if (_status == CONFIG)
-			_parseServerConfig(it);
+			_parseServerConfig(it, _configFileLines.end());
 	}
 	return (this->_serverConfigs);
 }
@@ -40,20 +40,20 @@ void	Parser::_parseConfig(t_linesIterator &it) {
 	lineStream.str(*it);
 	lineStream >> token;
 	if (token != "server")
-		throw std::invalid_argument("failed to find server configuration");
+		throw Parser::ParserException("failed to find server configuration");
 	++it;
 	_jumpInvalidLines(it);
 	if (*it != "{")
-		throw std::invalid_argument("failed to find server configuration");
+		throw Parser::ParserException("failed to find server configuration");
 	_status = CONFIG;
 }
 
-void	Parser::_parseServerConfig(t_linesIterator &it) {
+void	Parser::_parseServerConfig(t_linesIterator &it, t_linesIterator end) {
 	t_serverConfig		serverConfig;
 	std::istringstream	lineStream;
 	std::string			token;
 
-	while (*it != "}") {
+	while (*it != "}" && it != end) {
 		lineStream.str(*it);
 		lineStream >> token;
 		if (token[0] == '#')
@@ -75,11 +75,13 @@ void	Parser::_parseServerConfig(t_linesIterator &it) {
 		else if ((*it).find_first_not_of("\n ") == std::string::npos)
 			;
 		else
-			throw std::invalid_argument("invalid server config input");
+			throw Parser::ParserException("invalid server config input");
 		++it;
 		lineStream.clear();
 		token.clear();
 	}
+	if (it == end)
+		throw Parser::ParserException("Invalid config file: ");
 	_status = SERVER;
 	_serverConfigs.push(serverConfig);
 }
@@ -89,14 +91,14 @@ void	Parser::_parsePort(std::istringstream &lineStream, t_serverConfig &serverCo
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing port number");
+		throw Parser::ParserException("missing port number");
 	for (size_t i = 0; i < token.size(); i++) {
 		if (std::isdigit(token[i]) == false )
-			throw std::invalid_argument("port should be a number");
+			throw Parser::ParserException("port should be a number");
 	}
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("Port accepts only one argument");
+		throw Parser::ParserException("Port accepts only one argument");
 	serverConfig.port = std::atoi(token.c_str());
 }
 
@@ -105,10 +107,10 @@ void	Parser::_parseOneStringParams(std::istringstream &lineStream, std::string &
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing argument");
+		throw Parser::ParserException("missing argument");
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("invalid argument");
+		throw Parser::ParserException("invalid argument");
 	param = token;
 }
 
@@ -117,7 +119,7 @@ void	Parser::_parseServerName(std::istringstream &lineStream, t_serverConfig &se
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing server_name argument");
+		throw Parser::ParserException("missing server_name argument");
 	while (lineStream) {
 		serverConfig.serverNames.insert(token);
 		lineStream >> token;
@@ -130,18 +132,18 @@ void	Parser::_parseErrorPages(std::istringstream &lineStream, t_serverConfig &se
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing error_page code");
+		throw Parser::ParserException("missing error_page code");
 	for (size_t i = 0; i < token.size(); i++) {
 		if (std::isdigit(token[i]) == false )
-			throw std::invalid_argument("error code should be a number");
+			throw Parser::ParserException("error code should be a number");
 	}
 	error = std::atoi(token.c_str());
 	lineStream >> token;
 	if (!lineStream)
-		throw std::invalid_argument("missing error_page file");
+		throw Parser::ParserException("missing error_page file");
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("error_page accepts only 2 arguments");
+		throw Parser::ParserException("error_page accepts only 2 arguments");
 	serverConfig.errorPages.insert(std::pair<int, std::string>(error, token));
 }
 
@@ -150,14 +152,14 @@ void	Parser::_parseLimit(std::istringstream &lineStream, t_serverConfig &serverC
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing body_size_limit argument");
+		throw Parser::ParserException("missing body_size_limit argument");
 	for (size_t i = 0; i < token.size(); i++) {
 		if (std::isdigit(token[i]) == false )
-			throw std::invalid_argument("body_size_limit should be a number");
+			throw Parser::ParserException("body_size_limit should be a number");
 	}
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("body_size_limit accepts only one argument");
+		throw Parser::ParserException("body_size_limit accepts only one argument");
 	serverConfig.bodySizeLimit = std::atoi(token.c_str());
 }
 
@@ -169,15 +171,15 @@ void	Parser::_parseUrl(std::istringstream &lineStream, t_serverConfig &serverCon
 	route.dirList = false;
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing url path argument");
+		throw Parser::ParserException("missing url path argument");
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("too many url arguments");
+		throw Parser::ParserException("too many url arguments");
 	routeName = token;
 	it++;
 	_jumpInvalidLines(it);
 	if (*it != "{")
-		throw std::invalid_argument("missing url");
+		throw Parser::ParserException("missing url");
 	it++;
 	while (*it != "}") {
 		// std::cout << *it << std::endl;
@@ -211,12 +213,12 @@ void	Parser::_parseMethods(std::istringstream &lineStream, t_route &route) {
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing methods argument");
+		throw Parser::ParserException("missing methods argument");
 	while (lineStream) {
 		if (token == "GET" || token == "POST" || token == "DELETE")
 			route.httpMethods.insert(token);
 		else
-			throw std::invalid_argument("invalid http method");
+			throw Parser::ParserException("invalid http method");
 		lineStream >> token;
 	}
 }
@@ -226,10 +228,10 @@ void	Parser::_parseDirList(std::istringstream &lineStream, t_route &route) {
 
 	lineStream >> token;
 	if (token.empty())
-		throw std::invalid_argument("missing dir_list argument");
+		throw Parser::ParserException("missing dir_list argument");
 	lineStream >> token;
 	if (lineStream)
-		throw std::invalid_argument("index accepts only one argument");
+		throw Parser::ParserException("index accepts only one argument");
 	if (token == "on")
 		route.dirList = true;
 	else if (token == "off")
@@ -259,19 +261,34 @@ void	Parser::_readConfigFile(void) {
 	}
 }
 
+void	Parser::_validateConfigFileBraces(void) {
+	int	braces = 0;
+
+	for (t_linesIterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
+		if (braces < 0)
+			break ;
+		else if (*it == "{")
+			braces++;
+		else if (*it == "}")
+			braces--;
+	}
+	if (braces != 0)
+		throw Parser::ParserException("invalid config file");
+}
+
 void	Parser::_validateConfigFileName(void) {
 	size_t	index;
 	
 	index = _configFilePath.find_first_of(".conf");
 	if (index != (_configFilePath.size() - 5))
-		throw std::runtime_error("webserv only accepts '.conf' file");
+		throw Parser::ParserException("webserv only accepts '.conf' file");
 }
 
 void	Parser::_openConfigFile(void) {
 	this->_validateConfigFileName();
 	this->_configFileStream.open(_configFilePath.c_str(), std::ios::in);
 	if (this->_configFileStream.fail())
-		throw std::runtime_error("In openning '" + _configFilePath + "'");
+		throw Parser::ParserException("In openning '" + _configFilePath + "'");
 }
 
 bool	Parser::_isLineInvalid(std::string const &line) {
@@ -288,4 +305,20 @@ void	Parser::_jumpInvalidLines(t_linesIterator &it) {
 	while (_isLineInvalid(*it)) {
 		it++;
 	}
+}
+
+// ParserException
+
+Parser::ParserException::ParserException(std::string const &errorMessage) {
+	_errorMessage = new char[errorMessage.size() + 1];
+	errorMessage.copy(_errorMessage, errorMessage.size());
+	_errorMessage[errorMessage.size()] = 0;
+}
+
+Parser::ParserException::~ParserException() throw() {
+	delete [] _errorMessage;
+}
+
+const char *Parser::ParserException::what() const throw() {
+	return (_errorMessage);
 }
