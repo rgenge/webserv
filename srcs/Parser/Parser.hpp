@@ -46,8 +46,6 @@ class Parser {
 		void	_parseServerConfig(t_linesIterator &it);
 		void	_parsePort(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseServerName(std::istringstream &lineStream, t_serverConfig &serverConfig);
-		void	_parseRoot(std::istringstream &lineStream, t_serverConfig &serverConfig);
-		void	_parseIndex(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseErrorPages(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseLimit(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseOneStringParams(std::istringstream &lineStream, std::string &param);
@@ -56,7 +54,6 @@ class Parser {
 		void	_parseUrl(std::istringstream &lineStream, t_serverConfig &serverConfig, t_linesIterator &it);
 		void	_parseMethods(std::istringstream &lineStream, t_route &route);
 		void	_parseDirList(std::istringstream &lineStream, t_route &route);
-		void	_parseUpload(std::istringstream &lineStream, t_route &route);
 
 		// Parse util functions
 

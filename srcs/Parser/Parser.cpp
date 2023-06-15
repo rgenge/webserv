@@ -124,30 +124,6 @@ void	Parser::_parseServerName(std::istringstream &lineStream, t_serverConfig &se
 	}
 }
 
-void	Parser::_parseRoot(std::istringstream &lineStream, t_serverConfig &serverConfig) {
-	std::string	token;
-
-	lineStream >> token;
-	if (token.empty())
-		throw std::invalid_argument("missing root argument");
-	lineStream >> token;
-	if (lineStream)
-		throw std::invalid_argument("root accepts only one argument");
-	serverConfig.root = token;
-}
-
-void	Parser::_parseIndex(std::istringstream &lineStream, t_serverConfig &serverConfig) {
-	std::string	token;
-
-	lineStream >> token;
-	if (token.empty())
-		throw std::invalid_argument("missing index argument");
-	lineStream >> token;
-	if (lineStream)
-		throw std::invalid_argument("index accepts only one argument");
-	serverConfig.index = token;
-}
-
 void	Parser::_parseErrorPages(std::istringstream &lineStream, t_serverConfig &serverConfig) {
 	std::string	token;
 	int			error;
@@ -245,7 +221,6 @@ void	Parser::_parseMethods(std::istringstream &lineStream, t_route &route) {
 	}
 }
 
-
 void	Parser::_parseDirList(std::istringstream &lineStream, t_route &route) {
 	std::string	token;
 
@@ -283,23 +258,6 @@ void	Parser::_readConfigFile(void) {
 			_configFileLines.push_back(line);
 	}
 }
-
-// void	Parser::_tokenizeConfigFile(void) {
-// 	std::string			token;
-// 	std::istringstream	lineStream;
-
-// 	for (std::vector<std::string>::iterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
-// 		lineStream.clear();
-// 		lineStream.str(*it);
-// 		lineStream >> token;
-// 		while (lineStream) {
-// 			if (token[0] == '#')
-// 				break ;
-// 			_configTokens.push_back(token);
-// 			lineStream >> token;
-// 		}
-// 	}
-// }
 
 void	Parser::_validateConfigFileName(void) {
 	size_t	index;
