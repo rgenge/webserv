@@ -1,5 +1,6 @@
 #include "Response.hpp"
-#include "HttpAns.hpp"
+#include <dirent.h>
+
 Response::Response()
 {
 }
@@ -44,15 +45,57 @@ std::string Response::get_type()
 	if (strcmp(type, ".png") == 0) return "image/png";
 	if (strcmp(type, ".svg") == 0) return "image/svg+xml";
 	if (strcmp(type, ".ico") == 0) return "image/x-icon|";
-	return ("");
+	return ("text/html");
 }
+
+void Response::auto_index(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf)
+{
+	DIR *dh;
+    struct dirent *contents;
+    std::string directory = _dir_path;
+    std::fstream f;
+    std::string _content;
+	if (!(dh = opendir(directory.c_str())))
+	{
+		std::cout << "error message e saiu" << std::endl;
+	}
+	else
+	{
+		_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
+		"<title>webserv</title></head><body><h1>Index of " + server_conf["Root"] + "</h1>\n");
+			while ((contents = readdir(dh)) != NULL)
+			{
+				if (strcmp(contents->d_name, ".") || strcmp(contents->d_name,
+					".."))
+					_body += "<a href=\"" + std::string(contents->d_name);
+				else if (_dir_path[_dir_path.length() - 1] ==
+					'/')
+					_body += "<a href=\"" + std::string(contents->d_name);
+				else
+					_body += "<a href=\"" + std::string(contents->d_name);
+				_body += (contents->d_type == DT_DIR ? "/" : "") + (std::string)"\">";
+				_body += (std::string)(contents->d_name) + (contents->d_type == DT_DIR ? "/" : "") + "</a><br>";
+			}
+			closedir(dh);
+			_body += "</div></body></html>";
+	}
+}
+
 void Response::method_get(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf)
 {
 	if (map_input["Path"] == "/")
+	{
 		_full_path = server_conf["Root"] + map_input["Path"] + server_conf["Index"];
+		_dir_path = server_conf["Root"] + map_input["Path"]/* + server_conf["Index"]*/;
+	}
 	else
+	{
 		_full_path = server_conf["Root"] + map_input["Path"];
+		_dir_path = server_conf["Root"] + map_input["Path"];
+
+	}
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
+		std::cout <<"DIR \t:" << _full_path <<std::endl;
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
 	{
 		std::ifstream	page;
@@ -63,30 +106,34 @@ void Response::method_get(std::map <std::string, std::string> map_input, std::ma
 		while (std::getline(page, line)) {
 			buffer += line + "\n";
 		}
-//		_response += buffer;
-		_body = buffer;
+//		_body = buffer;
+		if (server_conf["AutoIndex"] == "on")
+			auto_index(map_input, server_conf);
 		/*Converte o Content-length de size_t pra string e adiciona no map*/
 		std::stringstream sizet_len;
 		sizet_len <<  buffer.size();
 		std::string string_len = sizet_len.str();
-		_res_map.insert(std::pair<std::string,std::string>("Content-Length", string_len));
-		std::cout <<"teste" << _res_map["Content-Length"] << "\n\n";
+		if (server_conf["AutoIndex"] == "off")
+			_res_map.insert(std::pair<std::string,std::string>("Content-Length", string_len));
+		else if (server_conf["AutoIndex"] == "on")
+		{
+			std::stringstream sizet_len;
+			sizet_len <<  _body.size();
+			std::string string_len = sizet_len.str();
+			_res_map.insert(std::pair<std::string,std::string>("Content-Length", string_len));
+		}
 		/*Verifica o Content-type do arquivo*/
 		_res_map["Content-type"] = get_type();
 		print_header ("200", "OK");
 		page.close();
 	}
-
-
 }
 void Response::init(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf)
 {
-//	_response += HttpAns::GET_HTML;
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
 
 }
-
 
 Response::~Response()
 {

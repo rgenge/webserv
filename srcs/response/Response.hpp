@@ -11,6 +11,7 @@
 # include <map>
 # include <unistd.h>
 # include <sstream>
+#include <sys/dir.h>
 
 class Response
 {
@@ -19,6 +20,7 @@ class Response
 		std::string		_body;
 		std::map <std::string, std::string>	_res_map;
 		std::string		_full_path;
+		std::string		_dir_path;
 
 
 	public:
@@ -32,6 +34,7 @@ class Response
 		void print_header(std::string status_code, std::string ok_ko);
 		std::string get_type();
 		std::string get_body();
+		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 
 };
 

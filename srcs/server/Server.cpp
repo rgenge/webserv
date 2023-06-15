@@ -2,7 +2,6 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
-//#include "HttpAns.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
 #include <string.h>
@@ -27,18 +26,6 @@ Server&	Server::operator=(Server const &rhs) {
 	return (*this);
 }
 
-std::string	Server::_getHtmlIndex(void) {
-	std::ifstream	index;
-	std::string		buffer;
-	std::string		line;
-
-	index.open("./index/index.html", std::ifstream::in);
-	while (std::getline(index, line)) {
-		buffer += line + "\n";
-	}
-	index.close();
-	return (buffer);
-}
 
 void	Server::addRequestfd(int requestfd, std::string requestMessage) {
 	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
@@ -59,7 +46,7 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-		std::cout << "Request { " << _request << " }" << std::endl;
+//		std::cout << "Request { " << _request << " }" << std::endl;
 		this->_requestfds[requestfd] = _request;
 	}
 	return (bytesRead);
@@ -84,6 +71,7 @@ void	Server::respondRequest(int requestfd) {
 	_server_conf.insert(std::pair<std::string,std::string>("Root","./index"));
 	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
 	_server_conf.insert(std::pair<std::string,std::string>("Index","index.html") );
+	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","on") );
 	/*Iniciando o response*/
 	res_struct.init(_req_parsed, _server_conf);
 	/*response recebe o header da resposta*/
@@ -91,6 +79,7 @@ void	Server::respondRequest(int requestfd) {
 	/*response recebe o body da resposta*/
 	response += res_struct.get_body();
 	/*Imprimi o site na tela*/
+	std::cout << response ;
 	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
 	_requestfds.erase(requestfd);
