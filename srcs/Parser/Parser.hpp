@@ -48,30 +48,34 @@ class Parser {
 		std::vector<std::string>	_configTokens;
 		int							_status;
 
-		// file handle functions 
+		// === file handle functions ===
+
 		void	_validateConfigFileName(void);
 		void	_openConfigFile(void);
 		void	_readConfigFile(void);
 		void	_validateConfigFileBraces(void);
 		// void	_tokenizeConfigFile(void);
 		
-		// Parse server configuration functions
+		// === Parse server configuration functions ===
+
 		void	_parseConfig(t_linesIterator &it);
-		void	_parseServerConfig(t_linesIterator &it, t_linesIterator end);
+		void	_parseServerConfig(t_linesIterator &it);
 		void	_parsePort(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseServerName(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseErrorPages(std::istringstream &lineStream, t_serverConfig &serverConfig);
 		void	_parseLimit(std::istringstream &lineStream, t_serverConfig &serverConfig);
-		void	_parseOneStringParams(std::istringstream &lineStream, std::string &param);
+		void	_parseSimpleParams(std::istringstream &lineStream, std::string &param);
 
-		// Parse server URL configuration functins
-		void	_parseUrl(std::istringstream &lineStream, t_serverConfig &serverConfig, t_linesIterator &it);
+		// === Parse server URL configuration functions ===
+
+		void	_parseUrl(t_serverConfig &serverConfig, t_linesIterator &it);
+		t_route	_parseUrlConfigs(t_linesIterator &it);
+		std::string	_getRouteName(t_linesIterator &it) const;
 		void	_parseMethods(std::istringstream &lineStream, t_route &route);
 		void	_parseDirList(std::istringstream &lineStream, t_route &route);
 
-		// Parse util functions
+		// === Parse util functions ===
 
-		// Verify if a given line is a comment or empty (contains only spaces)
 		bool	_isLineInvalid(std::string const &line);
 		void	_jumpInvalidLines(t_linesIterator &it);
 };
