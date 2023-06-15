@@ -20,10 +20,8 @@ std::queue<t_serverConfig>	Parser::parseConfig(void) {
 	this->_readConfigFile();
 	// this->_tokenizeConfigFile();
 
-	for (t_tokensIterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
-		if ((*it).find_first_not_of("\n ") == std::string::npos)
-			continue ;
-		else if ((*it).empty())
+	for (t_linesIterator it = _configFileLines.begin(); it != _configFileLines.end(); ++it) {
+		if (_isLineInvalid(*it))
 			continue ;
 		if (_status == SERVER)
 			_parseConfig(it);
@@ -33,26 +31,24 @@ std::queue<t_serverConfig>	Parser::parseConfig(void) {
 	return (this->_serverConfigs);
 }
 
-void	Parser::_parseConfig(t_tokensIterator &it) {
+void	Parser::_parseConfig(t_linesIterator &it) {
 	std::string			serverBuffer;
 	std::string			token;
 	std::istringstream	lineStream;
 
-	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
-		++it;
+	_jumpInvalidLines(it);
 	lineStream.str(*it);
 	lineStream >> token;
 	if (token != "server")
 		throw std::invalid_argument("failed to find server configuration");
 	++it;
-	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
-		++it;
+	_jumpInvalidLines(it);
 	if (*it != "{")
 		throw std::invalid_argument("failed to find server configuration");
 	_status = CONFIG;
 }
 
-void	Parser::_parseServerConfig(t_tokensIterator &it) {
+void	Parser::_parseServerConfig(t_linesIterator &it) {
 	t_serverConfig		serverConfig;
 	std::istringstream	lineStream;
 	std::string			token;
@@ -189,7 +185,7 @@ void	Parser::_parseLimit(std::istringstream &lineStream, t_serverConfig &serverC
 	serverConfig.bodySizeLimit = std::atoi(token.c_str());
 }
 
-void	Parser::_parseUrl(std::istringstream &lineStream, t_serverConfig &serverConfig, t_tokensIterator &it) {
+void	Parser::_parseUrl(std::istringstream &lineStream, t_serverConfig &serverConfig, t_linesIterator &it) {
 	std::string	token;
 	t_route		route;
 	std::string	routeName;
@@ -203,8 +199,7 @@ void	Parser::_parseUrl(std::istringstream &lineStream, t_serverConfig &serverCon
 		throw std::invalid_argument("too many url arguments");
 	routeName = token;
 	it++;
-	while ((*it)[0] == '#' || (*it).find_first_not_of("\n ") == std::string::npos)
-		++it;
+	_jumpInvalidLines(it);
 	if (*it != "{")
 		throw std::invalid_argument("missing url");
 	it++;
@@ -319,4 +314,20 @@ void	Parser::_openConfigFile(void) {
 	this->_configFileStream.open(_configFilePath.c_str(), std::ios::in);
 	if (this->_configFileStream.fail())
 		throw std::runtime_error("In openning '" + _configFilePath + "'");
+}
+
+bool	Parser::_isLineInvalid(std::string const &line) {
+	if (line.find_first_not_of("\n ") == std::string::npos)
+		return (true);
+	if (line.empty())
+		return (true);
+	if (line[0] == '#')
+		return (true);
+	return (false);
+}
+
+void	Parser::_jumpInvalidLines(t_linesIterator &it) {
+	while (_isLineInvalid(*it)) {
+		it++;
+	}
 }
