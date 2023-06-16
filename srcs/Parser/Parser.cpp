@@ -4,10 +4,7 @@
 #include <sstream>
 #include <cstdlib>
 
-Parser::Parser() {
-}
-
-Parser::Parser(std::string configFilePath) : _configFilePath(configFilePath), _status(SERVER) {
+Parser::Parser() : _status(SERVER) {
 }
 
 Parser::~Parser() {
@@ -15,8 +12,8 @@ Parser::~Parser() {
 		this->_configFileStream.close();
 }
 
-std::queue<t_serverConfig>	Parser::parseConfig() {
-	this->_openConfigFile();
+std::queue<t_serverConfig>	Parser::parseConfig(std::string const &configFilePath) {
+	this->_openConfigFile(configFilePath);
 	this->_readConfigFile();
 	this->_validateConfigFileBraces();
 
@@ -297,19 +294,19 @@ void	Parser::_validateConfigFileBraces(void) {
 		throw Parser::ParserException("invalid config file");
 }
 
-void	Parser::_validateConfigFileName(void) {
+void	Parser::_validateConfigFileName(std::string const &configFilePath) {
 	size_t	index;
 	
-	index = _configFilePath.find_first_of(".conf");
-	if (index != (_configFilePath.size() - 5))
+	index = configFilePath.find_first_of(".conf");
+	if (index != (configFilePath.size() - 5))
 		throw Parser::ParserException("webserv only accepts '.conf' file");
 }
 
-void	Parser::_openConfigFile(void) {
-	this->_validateConfigFileName();
-	this->_configFileStream.open(_configFilePath.c_str(), std::ios::in);
+void	Parser::_openConfigFile(std::string const &configFilePath) {
+	this->_validateConfigFileName(configFilePath);
+	this->_configFileStream.open(configFilePath.c_str(), std::ios::in);
 	if (this->_configFileStream.fail())
-		throw Parser::ParserException("In openning '" + _configFilePath + "'");
+		throw Parser::ParserException("In openning '" + configFilePath + "'");
 }
 
 bool	Parser::_isLineInvalid(std::string const &line) {

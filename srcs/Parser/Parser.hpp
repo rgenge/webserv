@@ -31,17 +31,13 @@ class Parser {
 
 				char *_errorMessage;
 		};
-
-		Parser(std::string configFilePath);
+		Parser();
 		~Parser();
 
-		std::queue<t_serverConfig>	parseConfig(void);
+		std::queue<t_serverConfig>	parseConfig(std::string const &configFilePath);
 
 	private:
 
-		Parser();
-
-		std::string					_configFilePath;
 		std::queue<t_serverConfig>	_serverConfigs;
 		std::ifstream				_configFileStream;
 		std::vector<std::string>	_configFileLines;
@@ -50,8 +46,8 @@ class Parser {
 
 		// === file handle functions ===
 
-		void	_validateConfigFileName(void);
-		void	_openConfigFile(void);
+		void	_validateConfigFileName(std::string const &configFilePath);
+		void	_openConfigFile(std::string const &configFilePath);
 		void	_readConfigFile(void);
 		void	_validateConfigFileBraces(void);
 		// void	_tokenizeConfigFile(void);

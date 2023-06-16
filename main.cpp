@@ -6,11 +6,11 @@ int main(int argc, char *argv[]) {
 	(void)argc;
 	(void)argv;
 	ServerManager	serverManager;
-	Parser			parserConfig(argv[1]);
+	Parser			parserConfig;
 	std::queue<t_serverConfig>	serverConfigs;
 
 	try {
-		serverConfigs = parserConfig.parseConfig();
+		serverConfigs = parserConfig.parseConfig(argv[1]);
 		serverManager.createServers(serverConfigs);
 		serverManager.initialize();
 	}	catch (std::exception &e) {
