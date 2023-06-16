@@ -53,8 +53,6 @@ Socket::~Socket(void) {
 void	Socket::initialize(void) {
 	if ((this->_socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // Estes parametros serão provavelmente variáveis
 		throw std::runtime_error("When creating socket");
-	if (fcntl(this->_socketfd, F_SETFL, O_NONBLOCK) < 0)
-		throw std::runtime_error("When handling file descriptor with fcntl()");
 	if (this->_bindSocket() < 0)
 		throw std::runtime_error("When binding socket");
 	if (_listen(this->_backlog) < 0)

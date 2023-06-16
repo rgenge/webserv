@@ -2,13 +2,14 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
-#include "HttpAns.hpp"
+#include "Request.hpp"
+#include "Response.hpp"
 #include <string.h>
 
 Server::Server() : Socket() {
 }
 
-Server::Server(int port) : Socket(port, 10) {
+Server::Server(t_serverConfig config) : Socket(config.port, 10), _serverConfig(config) {
 }
 
 Server::~Server() {
@@ -23,20 +24,6 @@ Server&	Server::operator=(Server const &rhs) {
 		return (*this);
 	Socket::operator=(rhs);
 	return (*this);
-}
-
-std::string	Server::_getHtmlIndex(void) {
-	std::ifstream	index;
-	std::string		buffer;
-	std::string		line;
-
-	index.open("/home/willian/webserv/index/index.html", std::ifstream::in);
-	while (std::getline(index, line)) {
-		buffer += line + "\n";
-	}
-	index.close();
-	std::cout << "buffer size: " << buffer.size() << std::endl;
-	return (buffer);
 }
 
 void	Server::addRequestfd(int requestfd, std::string requestMessage) {
@@ -58,7 +45,7 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-		std::cout << "Request { " << _request << " }" << std::endl;
+//		std::cout << "Request { " << _request << " }" << std::endl;
 		this->_requestfds[requestfd] = _request;
 	}
 	return (bytesRead);
@@ -73,8 +60,25 @@ void	Server::respondRequest(int requestfd) {
 	registradas do servidor nesta mesma classe.
 	Por enquanto, estou apenas devolvendo uma página padrão para saber
 	que tudo está funcionando de acordo */
-	response += HttpAns::GET_HTML;
-	response += _getHtmlIndex();
+
+	/*Parseamento do request e salva um map comtudo e o body do request*/
+	Request _req(_requestfds[requestfd]);
+	_req_parsed = _req.getmap();
+	_req_body = _req.getbody();
+	Response res_struct;
+	//Inserindo dados do server manualmente pra teste
+	_server_conf.insert(std::pair<std::string,std::string>("Root","./index"));
+	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
+	_server_conf.insert(std::pair<std::string,std::string>("Index","index.html") );
+	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","on") );
+	/*Iniciando o response*/
+	res_struct.init(_req_parsed, _server_conf);
+	/*response recebe o header da resposta*/
+	response = res_struct.getResponse();
+	/*response recebe o body da resposta*/
+	response += res_struct.get_body();
+	/*Imprimi o site na tela*/
+	std::cout << response ;
 	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
 	_requestfds.erase(requestfd);
