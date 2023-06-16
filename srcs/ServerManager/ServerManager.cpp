@@ -27,7 +27,7 @@ void	ServerManager::_shutdownServers(void) {
 		close((*it).fd);
 }
 
-void	ServerManager::addServer(Server server) {
+void	ServerManager::_addServer(Server server) {
 	this->_servers.push_back(server);
 }
 
@@ -168,4 +168,13 @@ Server&	ServerManager::_getServerByRequestFd(int fd) {
 			return (*it);
 	}
 	throw std::runtime_error("Couldn't find server");
+}
+
+void	ServerManager::createServers(std::queue<t_serverConfig> &serverConfigs) {
+	t_serverConfig	config;
+
+	while (serverConfigs.size() != 0) {
+		_addServer(Server(serverConfigs.front()));
+		serverConfigs.pop();
+	}
 }

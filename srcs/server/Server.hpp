@@ -2,6 +2,7 @@
 # define SERVER_HPP
 
 # include "Socket.hpp"
+# include "webserv.hpp"
 # include <map>
 
 class Server : public Socket {
@@ -9,7 +10,7 @@ class Server : public Socket {
 	public:
 
 		Server();
-		Server(int port);
+		Server(t_serverConfig config);
 		/* a ideia é que o construtor do server receba futuramente
 			apenas uma struct (ou uma classe), após o parser das informações
 			do arquivo de configuração */
@@ -28,6 +29,8 @@ class Server : public Socket {
 		std::map<int, std::string>			_requestfds;
 		std::map <std::string, std::string>	_req_parsed;
 		std::string							_req_body;
+		t_serverConfig						_serverConfig;
+
 };
 
 #endif /* SERVER_HPP */

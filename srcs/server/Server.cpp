@@ -9,7 +9,7 @@
 Server::Server() : Socket() {
 }
 
-Server::Server(int port) : Socket(port, 10) {
+Server::Server(t_serverConfig config) : Socket(config.port, 10), _serverConfig(config) {
 }
 
 Server::~Server() {

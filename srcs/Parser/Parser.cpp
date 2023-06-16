@@ -15,7 +15,7 @@ Parser::~Parser() {
 		this->_configFileStream.close();
 }
 
-std::queue<t_serverConfig>	Parser::parseConfig(void) {
+std::queue<t_serverConfig>	Parser::parseConfig() {
 	this->_openConfigFile();
 	this->_readConfigFile();
 	this->_validateConfigFileBraces();

@@ -4,6 +4,7 @@
 # include "Server.hpp"
 # include <vector>
 # include <set>
+# include <queue>
 # include <poll.h>
 
 class ServerManager {
@@ -14,7 +15,7 @@ class ServerManager {
 		~ServerManager();
 
 		void	initialize(void);
-		void	addServer(Server server);
+		void	createServers(std::queue<t_serverConfig> &serverConfigs);
 		Server	&getServer(int index);
 		
 		static int	active;
@@ -40,6 +41,7 @@ class ServerManager {
 		bool	_isFdNotWritable(struct pollfd pollfd);
 		bool	_hasNotReceivedConnection(struct pollfd pollfd);
 
+		void	_addServer(Server server);
 		void	_shutdownServers(void);
 };
 
