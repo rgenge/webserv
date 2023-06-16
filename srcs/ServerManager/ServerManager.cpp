@@ -2,12 +2,29 @@
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
+#include <csignal>
+#include <cerrno>
+
+int ServerManager::active = 1;
+void	signalHandler(int sig);
 
 ServerManager::ServerManager() {
-	
+	signal(SIGINT, signalHandler);
+	signal(SIGQUIT, signalHandler);
 }
 
 ServerManager::~ServerManager() {
+	this->_shutdownServers();
+}
+
+void	signalHandler(int sig) {
+	if (sig == SIGINT)
+		ServerManager::active = 0;
+}
+
+void	ServerManager::_shutdownServers(void) {
+	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it != _pollFdsMaster.end(); it++)
+		close((*it).fd);
 }
 
 void	ServerManager::addServer(Server server) {
@@ -18,7 +35,7 @@ Server&	ServerManager::getServer(int index) {
 	return (_servers[index]);
 }
 
-void	ServerManager::_makeServers(void) {
+void	ServerManager::_initializeServers(void) {
 	for (size_t i = 0; i < this->_servers.size(); i++) {
 		this->_servers[i].initialize();
 	}
@@ -97,14 +114,20 @@ void	ServerManager::_acceptConnecitons(void) {
 }
 
 void	ServerManager::initialize(void) {
-	_makeServers();
+	_initializeServers();
 	for (size_t i = 0; i < this->_servers.size(); i++) {
 		_addFdToPoll(_servers[i].getSocketFd(), POLLIN);
 	}
 	std::cout << "Waiting for connection" << std::endl;
 	while (1) {
+		if (active == 0)
+			break ;
 		if (poll(_pollFdsMaster.data(), _pollFdsMaster.size(), -1) < 0)
+		{
+			if (errno == EINTR)
+				break ;
 			throw std::runtime_error("Failed to poll");
+		}
 		_acceptConnecitons();
 		_getServersRequests();
 		_respondServerRequests();
