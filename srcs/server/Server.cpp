@@ -26,7 +26,6 @@ Server&	Server::operator=(Server const &rhs) {
 	return (*this);
 }
 
-
 void	Server::addRequestfd(int requestfd, std::string requestMessage) {
 	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
 }

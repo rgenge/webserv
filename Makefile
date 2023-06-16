@@ -1,4 +1,4 @@
-SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp Request.cpp\
+SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp CgiHandler.cpp Request.cpp\
 	Response.cpp Parser.cpp
 NAME = webserv
 SRCS_PATH = ./srcs
@@ -6,11 +6,12 @@ OBJS_PATH = ./objs
 SRCS = ${addprefix ${SRCS_PATH}/ ${SOURCES}}
 OBJS = ${addprefix ${OBJS_PATH}/, ${notdir ${SOURCES:.cpp=.o}}}
 
-VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager ${SRCS_PATH}/Parser ${SRCS_PATH}/request ${SRCS_PATH}/response
+VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager \ 
+		${SRCS_PATH}/cgi ${SRCS_PATH}/Parser ${SRCS_PATH}/request ${SRCS_PATH}/response
 
 CC = c++
 FLAGS = -Werror -Wall -Wextra -std=c++98 -g
-INCLUDE = -I srcs/socket -I srcs/server -I srcs/ServerManager -I srcs/Parser -I . -I srcs/request \
+INCLUDE = -I srcs/socket -I srcs/server -I srcs/ServerManager -I srcs/cgi -I srcs/Parser -I . -I srcs/request \
 -I srcs/response
 
 # Colors
@@ -43,7 +44,7 @@ fclean:	clean
 re:	fclean all
 
 val:	${NAME}
-		@ valgrind --leak-check=full --show-leak-kinds=all ./minishell
+		@ valgrind --leak-check=full --show-leak-kinds=all ./webserv
 
 
 # TESTS
