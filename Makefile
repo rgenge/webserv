@@ -6,8 +6,8 @@ OBJS_PATH = ./objs
 SRCS = ${addprefix ${SRCS_PATH}/ ${SOURCES}}
 OBJS = ${addprefix ${OBJS_PATH}/, ${notdir ${SOURCES:.cpp=.o}}}
 
-VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager \ 
-		${SRCS_PATH}/cgi ${SRCS_PATH}/Parser ${SRCS_PATH}/request ${SRCS_PATH}/response
+VPATH := ${SRCS_PATH} ${SRCS_PATH}/server ${SRCS_PATH}/socket ${SRCS_PATH}/ServerManager \
+		 ${SRCS_PATH}/cgi ${SRCS_PATH}/Parser ${SRCS_PATH}/request ${SRCS_PATH}/response
 
 CC = c++
 FLAGS = -Werror -Wall -Wextra -std=c++98 -g
