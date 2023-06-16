@@ -10,7 +10,6 @@
 typedef struct s_route
 {
 	std::set<std::string>	httpMethods;
-	std::string				location;
 	std::string				index;
 	std::string				root;
 	bool					dirList;

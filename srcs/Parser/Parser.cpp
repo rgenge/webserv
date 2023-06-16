@@ -179,8 +179,6 @@ t_route	Parser::_parseUrlConfigs(t_linesIterator &it) {
 			_parseDirList(lineStream, route);
 		else if (token == "cgi")
 			_parseSimpleParams(lineStream, route.cgi);
-		else if (token == "location")
-			_parseSimpleParams(lineStream, route.location);
 		else if (token == "upload")
 			_parseSimpleParams(lineStream, route.uploadPath);
 		else
