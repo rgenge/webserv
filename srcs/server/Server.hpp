@@ -25,10 +25,9 @@ class Server : public Socket {
 
 	private:
 		std::map <std::string, std::string>	_server_conf;
-		std::map<int, std::string>	_requestfds;
-		std::string	_getHtmlIndex(void);
+		std::map<int, std::string>			_requestfds;
 		std::map <std::string, std::string>	_req_parsed;
-		std::string	_req_body;
+		std::string							_req_body;
 };
 
 #endif /* SERVER_HPP */
