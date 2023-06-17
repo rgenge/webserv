@@ -6,7 +6,6 @@
 # include <map>
 # include <set>
 
-
 typedef struct s_route
 {
 	std::set<std::string>	httpMethods;
@@ -15,7 +14,6 @@ typedef struct s_route
 	bool					dirList;
 	std::string				cgi;
 	std::string				uploadPath;
-
 }			t_route;
 
 typedef struct s_serverConfig
@@ -27,7 +25,6 @@ typedef struct s_serverConfig
 	std::map<int, std::string>			errorPages;
 	int									bodySizeLimit;
 	std::map<std::string, t_route>		routes;
-
 }			t_serverConfig;
 
 #endif /* WEBSERV_HPP*/

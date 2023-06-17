@@ -9,8 +9,7 @@ class Server : public Socket {
 
 	public:
 
-		Server();
-		Server(t_serverConfig config);
+		Server(t_serverConfig const &config);
 		/* a ideia é que o construtor do server receba futuramente
 			apenas uma struct (ou uma classe), após o parser das informações
 			do arquivo de configuração */
@@ -25,6 +24,8 @@ class Server : public Socket {
 		void	addRequestfd(int requestfd, std::string requestMessage);
 
 	private:
+
+		Server();
 		std::map <std::string, std::string>	_server_conf;
 		std::map<int, std::string>			_requestfds;
 		std::map <std::string, std::string>	_req_parsed;

@@ -6,10 +6,7 @@
 #include "Response.hpp"
 #include <string.h>
 
-Server::Server() : Socket() {
-}
-
-Server::Server(t_serverConfig config) : Socket(config.port, 10), _serverConfig(config) {
+Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
 }
 
 Server::~Server() {
@@ -23,6 +20,10 @@ Server&	Server::operator=(Server const &rhs) {
 	if (this == &rhs)
 		return (*this);
 	Socket::operator=(rhs);
+	this->_requestfds = rhs._requestfds;
+	this->_req_parsed = rhs._req_parsed;
+	this->_req_body = rhs._req_body;
+	this->_serverConfig = rhs._serverConfig;
 	return (*this);
 }
 
