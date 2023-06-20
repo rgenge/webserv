@@ -134,12 +134,73 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 		page.close();
 	}
 }
+
+void Response::removeBreakLines(std::string &params)
+{
+	int	pos = 0;
+	while (true)
+	{
+		size_t	breakLinePos = params.find('\n', pos);
+		if (breakLinePos == std::string::npos)
+            break ;
+		else
+			params.erase(breakLinePos, 1);
+	}
+	return ;
+}
+
+void Response::parseUrlEncodedParams(std::string params)
+{
+	size_t separatorPos = params.find('=');
+	if (separatorPos == std::string::npos)
+		throw std::runtime_error("invalid application/x-www-form-urlencoded format");
+	removeBreakLines (params);
+	size_t pos = 0;
+	while (true)
+	{
+		separatorPos = params.find('=', pos);
+		if (separatorPos == std::string::npos)
+            break ;
+		std::string	key = params.substr(pos, separatorPos - pos);
+		params.erase(pos, separatorPos + 1);
+
+		size_t ampersandPos = params.find('&', pos);
+		if (ampersandPos == std::string::npos && params.size() == 0)
+            break ;
+		else if (ampersandPos == std::string::npos)
+			ampersandPos = params.size();
+		std::string	value = params.substr(pos, ampersandPos - pos);
+		params.erase(pos, ampersandPos + 1);
+
+		this->_decodedParams[key] = value;
+	}
+	std::map<std::string, std::string>::iterator it;
+	for(it = this->_decodedParams.begin(); it != this->_decodedParams.end(); it++)
+		std::cout << it->first << "=" << it->second << std::endl;
+	return ;
+}
+
+void Response::methodPost(std::map <std::string, std::string> map_input,
+	std::map <std::string, std::string> server_conf)
+{
+	(void)server_conf;
+	if (map_input["Content-Type"] == "application/x-www-form-urlencoded")
+		parseUrlEncodedParams(map_input["ChunkBody"]);
+	// std::cout << "POST" << std::endl;
+	// std::map<std::string, std::string>::iterator itr;
+	// for(itr=map_input.begin();itr!=map_input.end();itr++)
+	// 	std::cout << itr->first << ": " << itr->second << std::endl;
+	// std::cout << "FIM DO POST" << std::endl;
+	return ;
+}
+
 void Response::init(std::map <std::string, std::string> map_input, std::map
 	<std::string, std::string> server_conf)
 {
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
-
+	else if (map_input["Method"] == "POST")
+		methodPost(map_input, server_conf);
 }
 
 Response::~Response()
