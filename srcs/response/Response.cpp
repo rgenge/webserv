@@ -140,6 +140,8 @@ void Response::init(std::map <std::string, std::string> map_input, std::map
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
 
+//	_full_path.clear();
+//	_dir_path.clear();
 }
 
 Response::~Response()

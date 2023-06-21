@@ -4,6 +4,8 @@
 # include "Socket.hpp"
 # include "webserv.hpp"
 # include <map>
+# include <sys/stat.h>
+# include <sys/types.h>
 
 class Server : public Socket {
 
@@ -22,6 +24,7 @@ class Server : public Socket {
 		void	respondRequest(int fd);
 		bool	hasRequestFd(int i);
 		void	addRequestfd(int requestfd, std::string requestMessage);
+		void	locationCheck();
 
 	private:
 
