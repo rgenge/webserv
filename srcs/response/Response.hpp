@@ -36,6 +36,7 @@ class Response
 		void methodPost(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 		void parseUrlEncodedParams(std::string params);
 		void removeBreakLines(std::string &params);
+		void convertHexToAscii(std::string &params);
 		std::string getResponse();
 		std::string get_type();
 		std::string get_body();

@@ -149,12 +149,41 @@ void Response::removeBreakLines(std::string &params)
 	return ;
 }
 
+void Response::convertHexToAscii(std::string &params)
+{
+	int	pos = 0;
+	while (true)
+	{
+		size_t	percentPos = params.find('%', pos);
+		if (percentPos == std::string::npos)
+            break ;
+		else
+		{
+			if ((params.size() - percentPos) > 2)
+			{
+				std::string	asciiChar, hexStr;
+				hexStr = params.substr(percentPos + 1, 2);
+
+				int	value;
+				std::istringstream	iss(hexStr);
+				iss >> std::hex >> value;
+				asciiChar.push_back(static_cast<char>(value));
+				params.replace(percentPos, 3, asciiChar);
+			}
+			else
+				throw std::runtime_error("invalid parameters format");
+		}
+	}
+	return ;
+}
+
 void Response::parseUrlEncodedParams(std::string params)
 {
 	size_t separatorPos = params.find('=');
 	if (separatorPos == std::string::npos)
 		throw std::runtime_error("invalid application/x-www-form-urlencoded format");
 	removeBreakLines (params);
+	convertHexToAscii(params);
 	size_t pos = 0;
 	while (true)
 	{
