@@ -46,9 +46,14 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-//		std::cout << "Request { " << _request << " }" << std::endl;
+		std::cout << "bytes lidos: " << bytesRead << std::endl;
+		std::cout << "\n\nRequest no formato original:\n";
+		for (int i = 0; i < bytesRead; i++)
+			std::cout << _request[i];
+		std::cout << "FIMMMMMMMMMMMMM\n";
 		this->_requestfds[requestfd] = _request;
 	}
+
 	return (bytesRead);
 }
 

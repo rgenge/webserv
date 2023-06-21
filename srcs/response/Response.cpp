@@ -135,7 +135,7 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 	}
 }
 
-void Response::removeBreakLines(std::string &str)
+void Response::removeBreakLinesAndCR(std::string &str)
 {
 	std::string	temp;
 	for (int i = 0; str[i]; i++)
@@ -184,7 +184,7 @@ void Response::parseUrlEncodedParams(std::string params)
 	size_t separatorPos = params.find('=');
 	if (separatorPos == std::string::npos)
 		throw std::runtime_error("invalid application/x-www-form-urlencoded format");
-	removeBreakLines (params);
+	removeBreakLinesAndCR (params);
 	replaceHexPercentWithAscii(params);
 	size_t pos = 0;
 	while (true)
@@ -205,22 +205,34 @@ void Response::parseUrlEncodedParams(std::string params)
 
 		this->_decodedParams[key] = value;
 	}
-	std::map<std::string, std::string>::iterator it;
-	for(it = this->_decodedParams.begin(); it != this->_decodedParams.end(); it++)
-		std::cout << it->first << "=" << it->second << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for(it = this->_decodedParams.begin(); it != this->_decodedParams.end(); it++)
+	// 	std::cout << it->first << "=" << it->second << std::endl;
 	return ;
 }
 
 void	Response::parseTextPlain(std::string &textPlain)
 {
-	removeBreakLines(textPlain);
+	removeBreakLinesAndCR(textPlain);
 	this->_textPlain = textPlain;
 	return ;
 }
 
-void	Response::parseMultipartFormData(std::string &multipart)
+void	Response::setBoundary(std::string &contentType)
 {
-	std::cout << "MultipartFormData: " << multipart << std::endl;
+	size_t boundaryPos;
+	if ((boundaryPos = contentType.find("---")) != std::string::npos)
+		this->_boundary = contentType.substr(boundaryPos, contentType.size() - boundaryPos);
+	else
+		throw std::runtime_error("boundary not found");
+	return ;
+}
+
+void	Response::parseMultipartFormData(std::string &contentType, std::string &multipart)
+{
+	setBoundary(contentType);
+
+	std::cout << "\n\nMultipartFormData:" << multipart << std::endl;
 	return ;
 }
 
@@ -232,8 +244,11 @@ void	Response::methodPost(std::map <std::string, std::string> map_input,
 		parseUrlEncodedParams(map_input["ChunkBody"]);
 	else if (map_input["Content-Type"] == "text/plain")
 		parseTextPlain(map_input["ChunkBody"]);
-	else if (map_input["Content-Type"] == "multipart/form-data")
-		parseMultipartFormData(map_input["ChunkBody"]);
+	else if (map_input["Content-Type"].find("multipart/form-data") != std::string::npos)
+		parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"]);
+	else
+		std::cout << map_input["Content-Type"] << std::endl;
+	
 	// std::cout << "POST" << std::endl;
 	// std::map<std::string, std::string>::iterator itr;
 	// for(itr=map_input.begin();itr!=map_input.end();itr++)

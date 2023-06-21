@@ -22,6 +22,7 @@ class Response
 		std::string							_full_path;
 		std::string							_dir_path;
 		std::string							_textPlain;
+		std::string 						_boundary;
 		std::map <std::string, std::string>	_decodedParams;
 
 
@@ -36,10 +37,11 @@ class Response
 		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 		void methodPost(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 		void parseUrlEncodedParams(std::string params);
-		void removeBreakLines(std::string &str);
+		void removeBreakLinesAndCR(std::string &str);
 		void replaceHexPercentWithAscii(std::string &params);
-		void parseMultipartFormData(std::string &multipart);
+		void parseMultipartFormData(std::string &contentType, std::string &multipart);
 		void parseTextPlain(std::string &textPlain);
+		void setBoundary(std::string &contentType);
 		std::string getResponse();
 		std::string get_type();
 		std::string get_body();
