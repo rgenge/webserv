@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <fstream>
+#include <sstream>
 #include "Request.hpp"
 #include "Response.hpp"
 #include <string.h>
@@ -14,6 +15,13 @@ Server::~Server() {
 
 Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
 	*this = rhs;
+}
+
+std::string intToString (int num)
+{
+	std::stringstream temp;
+	temp<<num;
+	return temp.str();
 }
 
 Server&	Server::operator=(Server const &rhs) {
@@ -117,8 +125,9 @@ void	Server::respondRequest(int requestfd) {
 	_req_body = _req.getbody();
 	Response res_struct;
 	//Inserindo dados do server manualmente pra teste
-	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
+//	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
 	_server_conf.insert(std::pair<std::string,std::string>("Index",_serverConfig.index) );
+	_server_conf.insert(std::pair<std::string,std::string>("bodySizeLimit",intToString(_serverConfig.bodySizeLimit)) );
 	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","") );
 	/*Iniciando o response*/
 	locationCheck();

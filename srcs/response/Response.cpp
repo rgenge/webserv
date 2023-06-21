@@ -130,9 +130,13 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 		}
 		/*Verifica o Content-type do arquivo*/
 		_res_map["Content-type"] = get_type();
+		if(_res_map["Content-Length"] > server_conf["bodySizeLimit"])
+			std::cout << "error 414 bodySize Limite excedido";
 		print_header ("200", "OK");
 		page.close();
 	}
+	else
+		std::cout << "Some error ";
 }
 
 void Response::method_delete(std::map <std::string, std::string> map_input,

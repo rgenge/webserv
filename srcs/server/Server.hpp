@@ -12,9 +12,6 @@ class Server : public Socket {
 	public:
 
 		Server(t_serverConfig const &config);
-		/* a ideia é que o construtor do server receba futuramente
-			apenas uma struct (ou uma classe), após o parser das informações
-			do arquivo de configuração */
 		Server(Server const &rhs);
 		~Server();
 
