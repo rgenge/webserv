@@ -36,6 +36,9 @@ class Response
 		std::string get_body();
 		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 
+		void method_delete(std::map <std::string, std::string> map_input,
+			std::map <std::string, std::string> server_conf);
+
 };
 
 #endif

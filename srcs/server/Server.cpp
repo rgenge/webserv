@@ -69,7 +69,9 @@ void	Server::locationCheck()
 		}
 
 		if (itr->first == _req_parsed["Path"])
-		{
+		{	/*checa se o método solicitado está incluso no location*/
+			if (!(itr->second.httpMethods.find(_req_parsed["Method"]) != itr->second.httpMethods.end()))
+				std::cout << "ERROR INVALID METHOD" << std::endl;
 			_serverConfig.root  = itr->second.root;
 			if (itr->second.dirList)
 				_server_conf["AutoIndex" ] ="on";
@@ -83,6 +85,7 @@ void	Server::locationCheck()
 //			std::cout <<" path z: "<< _req_parsed["Path"] <<std::endl;
 			break;
 		}
+		/*Checa sé não é diretório para ligar autoindex*/
 		struct stat buf;
 		std::string dir = ("." + _serverConfig.root + _req_parsed["Path"]);
 		lstat(dir.c_str(), &buf);
@@ -126,11 +129,9 @@ void	Server::respondRequest(int requestfd) {
 	/*response recebe o body da resposta*/
 	response += res_struct.get_body();
 	/*Imprimi o site na tela*/
-//	std::cout << response ;
 	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
 	_server_conf.clear();
-//	_req_parsed.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }

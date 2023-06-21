@@ -134,14 +134,41 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 		page.close();
 	}
 }
+
+void Response::method_delete(std::map <std::string, std::string> map_input,
+	std::map <std::string, std::string> server_conf)
+{
+	if (map_input["Path"] == "/")
+	{
+		_full_path = server_conf["Root"] + map_input["Path"] + server_conf
+			["Index"];
+		_dir_path = server_conf["Root"] + map_input["Path"];
+	}
+	else
+	{
+		_full_path = server_conf["Root"] + map_input["Path"];
+		_dir_path = server_conf["Root"] + map_input["Path"];
+
+	}
+	FILE *file = fopen(_full_path.c_str(), "r");
+	if(!file)
+	{
+			std::cout << "Error 404";
+	}
+	else
+	{
+		std::remove (_full_path.c_str());
+		print_header ("200", "OK");
+	}
+
+}
 void Response::init(std::map <std::string, std::string> map_input, std::map
 	<std::string, std::string> server_conf)
 {
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
-
-//	_full_path.clear();
-//	_dir_path.clear();
+	if (map_input["Method"] == "DELETE")
+		method_delete(map_input, server_conf);
 }
 
 Response::~Response()
