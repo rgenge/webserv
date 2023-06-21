@@ -114,14 +114,12 @@ void	Server::respondRequest(int requestfd) {
 	_req_body = _req.getbody();
 	Response res_struct;
 	//Inserindo dados do server manualmente pra teste
-//	_server_conf.insert(std::pair<std::string,std::string>("Root",("." + _serverConfig.root)));
 	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
 	_server_conf.insert(std::pair<std::string,std::string>("Index",_serverConfig.index) );
 	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","") );
 	/*Iniciando o response*/
 	locationCheck();
 	_server_conf.insert(std::pair<std::string,std::string>("Root",("." + _serverConfig.root)));
-//	std::cout << _serverConfig.routes["/teste"].root;
 	res_struct.init(_req_parsed, _server_conf);
 	/*response recebe o header da resposta*/
 	response = res_struct.getResponse();
