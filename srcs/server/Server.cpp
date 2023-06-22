@@ -1,11 +1,4 @@
 #include "Server.hpp"
-#include <iostream>
-#include <unistd.h>
-#include <fstream>
-#include <sstream>
-#include "Request.hpp"
-#include "Response.hpp"
-#include <string.h>
 
 Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
 }
@@ -15,13 +8,6 @@ Server::~Server() {
 
 Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
 	*this = rhs;
-}
-
-std::string intToString (int num)
-{
-	std::stringstream temp;
-	temp<<num;
-	return temp.str();
 }
 
 Server&	Server::operator=(Server const &rhs) {
@@ -54,68 +40,11 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-//		std::cout << "Request { " << _request << " }" << std::endl;
 		this->_requestfds[requestfd] = _request;
 	}
 	return (bytesRead);
 }
 
-void	Server::locationCheck()
-{
-	std::map<std::string, t_route>::iterator itr;
-	for(itr=_serverConfig.routes.begin();itr!=_serverConfig.routes.end();itr++)
-	{
-//		std::cout << "root1" << _serverConfig.root << std::endl;
-//		std::cout << "root2" << itr->second.root << std::endl;
-//		std::cout << "root3" << itr->first << std::endl;
-//		std::cout <<" root4 "<< _req_parsed["Path"];
-		_res_param["AutoIndex"] = "";
-		_res_param["AutoIndex" ] ="on";
-		if ("/" == _req_parsed["Path"])
-		{
-			_serverConfig.root = "/index";
-		}
-
-		if (itr->first == _req_parsed["Path"])
-		{	/*checa se o método solicitado está incluso no location*/
-			if (!(itr->second.httpMethods.find(_req_parsed["Method"]) != itr->second.httpMethods.end()))
-				std::cout << "ERROR INVALID METHOD" << std::endl;
-			_serverConfig.root  = itr->second.root;
-			if (itr->second.dirList)
-				_res_param["AutoIndex" ] ="on";
-			else
-				_res_param["AutoIndex" ] ="off";
-		}
-		if (_serverConfig.root != _req_parsed["Path"] && itr->second.root != _req_parsed["Path"] && itr->first == _req_parsed["Path"])
-		{
-//			std::cout <<" path z antes: "<< _req_parsed["Path"];
-			_req_parsed["Path"] ="";
-//			std::cout <<" path z: "<< _req_parsed["Path"] <<std::endl;
-			break;
-		}
-		/*Checa sé não é diretório para ligar autoindex*/
-		struct stat buf;
-		std::string dir = ("." + _serverConfig.root + _req_parsed["Path"]);
-		lstat(dir.c_str(), &buf);
-		std::cout << "dir : " << dir << std::endl;
-		FILE *check_fp = fopen(dir.c_str(), "rb");
-		if (!check_fp)
-			std::cout << "Error 404" << std::endl;
-		else
-		{
-			fclose(check_fp);
-			if (S_ISDIR(buf.st_mode) && dir != "./index/")
-			{
-				_res_param["AutoIndex" ] ="on";
-				std::cout << "diretório \n";
-			}
-			else
-				_res_param["AutoIndex" ] ="off";
-		}
-		if (itr->first == _req_parsed["Path"])
-			break;
-	}
-}
 void	Server::respondRequest(int requestfd) {
 	std::string	response;
 
@@ -123,22 +52,13 @@ void	Server::respondRequest(int requestfd) {
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getmap();
 	_req_body = _req.getbody();
-	Response res_struct;
-	//Inserindo dados do server manualmente pra teste
-	_res_param.insert(std::pair<std::string,std::string>("Index",_serverConfig.index) );
-	_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",intToString(_serverConfig.bodySizeLimit)) );
-	_res_param.insert(std::pair<std::string,std::string>("AutoIndex","") );
 	/*Iniciando o response*/
-	locationCheck();
-	_res_param.insert(std::pair<std::string,std::string>("Root",("." + _serverConfig.root)));
-	res_struct.init(_req_parsed, _res_param);
-	/*response recebe o header da resposta*/
+	Response res_struct(_res_param, _req_parsed, _serverConfig);
+	res_struct.init();
+	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
-	/*response recebe o body da resposta*/
 	response += res_struct.get_body();
-	/*Imprimi o site na tela*/
 	write(requestfd, response.c_str(), response.length());
-	std::cout << "Response sent\n" << std::endl;
 	_res_param.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
@@ -149,3 +69,4 @@ bool	Server::hasRequestFd(int requestfd) {
 		return (true);
 	return (false);
 }
+

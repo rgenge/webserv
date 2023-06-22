@@ -2,10 +2,17 @@
 # define SERVER_HPP
 
 # include "Socket.hpp"
+# include "Request.hpp"
+# include "Response.hpp"
 # include "webserv.hpp"
 # include <map>
 # include <sys/stat.h>
 # include <sys/types.h>
+# include <iostream>
+# include <unistd.h>
+# include <fstream>
+# include <sstream>
+# include <string.h>
 
 class Server : public Socket {
 
@@ -22,7 +29,6 @@ class Server : public Socket {
 		bool	hasRequestFd(int i);
 		void	addRequestfd(int requestfd, std::string requestMessage);
 		void	locationCheck();
-
 	private:
 
 		Server();

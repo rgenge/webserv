@@ -1,31 +1,24 @@
 #include "Response.hpp"
-#include <dirent.h>
 
-Response::Response()
+Response::Response(std::map <std::string, std::string>& _res_param_, std::map
+<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_)
+:_res_param(_res_param_), _req_parsed(_req_parsed_), _serverConfig
+(_serverConfig_)
 {
-}
-
-Response::Response(std::string res_input)
-{
-	parse(res_input);
-}
-
-void Response::parse(std::string res_input)
-{
-	std::cout << res_input;
 }
 
 /*Salva a resposta e imprimi no terminal*/
-void Response::print_header(std::string status_code, std::string ok_ko)
+void	Response::print_header(std::string status_code, std::string ok_ko)
 {
 	_response.append("HTTP/1.1 " + status_code + " " + ok_ko +  "\r\n");
-	for (std::map<std::string, std::string>::iterator i = _res_map.begin(); i != _res_map.end(); i++)
+	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
+		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
 	_response.append("\r\n");
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
-std::string Response::get_type()
+std::string	Response::get_type()
 {
 	std::string		type;
 	std::size_t last_dot = _full_path.find_last_of(".");
@@ -45,7 +38,7 @@ std::string Response::get_type()
 	return ("text/html");
 }
 
-void Response::auto_index(std::map <std::string, std::string> _req_parsed, std::map <std::string, std::string> _res_param)
+void	Response::auto_index( std::map <std::string, std::string> _res_param)
 {
 	DIR *dh;
     struct dirent *contents;
@@ -77,12 +70,11 @@ void Response::auto_index(std::map <std::string, std::string> _req_parsed, std::
 					DT_DIR ? "/" : "") + "</a><br>";
 			}
 			closedir(dh);
-			std::cout << _req_parsed["Path"];
 			_body += "</div></body></html>";
 	}
 }
 
-void Response::method_get(std::map <std::string, std::string> _req_parsed,
+void	Response::method_get(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
 	if (_req_parsed["Path"] == "/")
@@ -95,10 +87,9 @@ void Response::method_get(std::map <std::string, std::string> _req_parsed,
 	{
 		_full_path = _res_param["Root"] + _req_parsed["Path"];
 		_dir_path = _res_param["Root"] + _req_parsed["Path"];
-
 	}
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
-		std::cout <<"DIR \t:" << _full_path <<std::endl;
+	std::cout <<"DIR \t:" << _full_path <<std::endl;
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
 	{
 		std::ifstream	page;
@@ -112,7 +103,7 @@ void Response::method_get(std::map <std::string, std::string> _req_parsed,
 		if (_res_param["AutoIndex"] == "off")
 			_body = buffer;
 		if (_res_param["AutoIndex"] == "on")
-			auto_index(_req_parsed, _res_param);
+			auto_index(_res_param);
 		/*Converte o Content-length de size_t pra string e adiciona no map*/
 		std::stringstream sizet_len;
 		sizet_len <<  buffer.size();
@@ -139,7 +130,7 @@ void Response::method_get(std::map <std::string, std::string> _req_parsed,
 		std::cout << "Some error ";
 }
 
-void Response::method_delete(std::map <std::string, std::string> _req_parsed,
+void	Response::method_delete(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
 	if (_req_parsed["Path"] == "/")
@@ -152,7 +143,6 @@ void Response::method_delete(std::map <std::string, std::string> _req_parsed,
 	{
 		_full_path = _res_param["Root"] + _req_parsed["Path"];
 		_dir_path = _res_param["Root"] + _req_parsed["Path"];
-
 	}
 	FILE *file = fopen(_full_path.c_str(), "r");
 	if(!file)
@@ -164,11 +154,72 @@ void Response::method_delete(std::map <std::string, std::string> _req_parsed,
 		std::remove (_full_path.c_str());
 		print_header ("200", "OK");
 	}
-
 }
-void Response::init(std::map <std::string, std::string> _req_parsed, std::map
-	<std::string, std::string> _res_param)
+
+void	Response::locationCheck()
 {
+	std::string temp;
+	std::map<std::string, t_route>::iterator itr;
+	for(itr=_serverConfig.routes.begin();itr!=_serverConfig.routes.end();itr++)
+	{
+		_res_param["AutoIndex"] = "";
+		_res_param["AutoIndex" ] ="on";
+		if ("/" == _req_parsed["Path"])
+			_serverConfig.root = "/index";
+		if (itr->first == _req_parsed["Path"])
+		{	/*checa se o método solicitado está incluso no location*/
+			if (!(itr->second.httpMethods.find(_req_parsed["Method"]) !=
+				itr->second.httpMethods.end()))
+				std::cout << "ERROR INVALID METHOD" << std::endl;
+			_serverConfig.root  = itr->second.root;
+			if (itr->second.dirList)
+				_res_param["AutoIndex" ] ="on";
+			else
+				_res_param["AutoIndex" ] ="off";
+		}
+		if (_serverConfig.root != _req_parsed["Path"] && itr->second.root !=
+			_req_parsed["Path"] && itr->first == _req_parsed["Path"])
+		{
+			_req_parsed["Path"] ="";
+			break;
+		}
+		/*Checa sé não é diretório para ligar autoindex*/
+		struct stat buf;
+		std::string dir = ("." + _serverConfig.root + _req_parsed["Path"]);
+		lstat(dir.c_str(), &buf);
+		FILE *check_fp = fopen(dir.c_str(), "rb");
+		if (!check_fp)
+			std::cout << "Error 404" << std::endl;
+		else
+		{
+			fclose(check_fp);
+			if (S_ISDIR(buf.st_mode) && dir != "./index/")
+				_res_param["AutoIndex" ] ="on";
+			else
+				_res_param["AutoIndex" ] ="off";
+		}
+		if (itr->first == _req_parsed["Path"])
+			break;
+	}
+}
+
+std::string	intToString (int num)
+{
+	std::stringstream temp;
+	temp<<num;
+	return temp.str();
+}
+
+void	Response::init()
+{
+	_res_param.insert(std::pair<std::string,std::string>("Index",_serverConfig.
+		index));
+	_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
+		intToString(_serverConfig.bodySizeLimit)) );
+	_res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
+	locationCheck();
+	_res_param.insert(std::pair<std::string,std::string>("Root",("." +
+		_serverConfig.root)));
 	if (_req_parsed["Method"] == "GET")
 		method_get(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
