@@ -28,16 +28,16 @@ class Response
 		Response(std::string res_input);
 		~Response();
 		void parse (std::string res_input);
-		void init (std::map <std::string, std::string> map_inpu, std::map <std::string, std::string> server_conf);
+		void init (std::map <std::string, std::string> _req_parsed, std::map <std::string, std::string> _res_param);
 		std::string getResponse();
-		void method_get(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
+		void method_get(std::map <std::string, std::string> _req_parsed, std::map <std::string, std::string> _res_param);
 		void print_header(std::string status_code, std::string ok_ko);
 		std::string get_type();
 		std::string get_body();
-		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
+		void auto_index(std::map<std::string, std::string> _req_parsed, std::map <std::string, std::string> _res_param);
 
-		void method_delete(std::map <std::string, std::string> map_input,
-			std::map <std::string, std::string> server_conf);
+		void method_delete(std::map <std::string, std::string> _req_parsed,
+			std::map <std::string, std::string> _res_param);
 
 };
 

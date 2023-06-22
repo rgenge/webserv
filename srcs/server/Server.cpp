@@ -69,8 +69,8 @@ void	Server::locationCheck()
 //		std::cout << "root2" << itr->second.root << std::endl;
 //		std::cout << "root3" << itr->first << std::endl;
 //		std::cout <<" root4 "<< _req_parsed["Path"];
-		_server_conf["AutoIndex"] = "";
-		_server_conf["AutoIndex" ] ="on";
+		_res_param["AutoIndex"] = "";
+		_res_param["AutoIndex" ] ="on";
 		if ("/" == _req_parsed["Path"])
 		{
 			_serverConfig.root = "/index";
@@ -82,9 +82,9 @@ void	Server::locationCheck()
 				std::cout << "ERROR INVALID METHOD" << std::endl;
 			_serverConfig.root  = itr->second.root;
 			if (itr->second.dirList)
-				_server_conf["AutoIndex" ] ="on";
+				_res_param["AutoIndex" ] ="on";
 			else
-				_server_conf["AutoIndex" ] ="off";
+				_res_param["AutoIndex" ] ="off";
 		}
 		if (_serverConfig.root != _req_parsed["Path"] && itr->second.root != _req_parsed["Path"] && itr->first == _req_parsed["Path"])
 		{
@@ -106,11 +106,11 @@ void	Server::locationCheck()
 			fclose(check_fp);
 			if (S_ISDIR(buf.st_mode) && dir != "./index/")
 			{
-				_server_conf["AutoIndex" ] ="on";
+				_res_param["AutoIndex" ] ="on";
 				std::cout << "diretório \n";
 			}
 			else
-				_server_conf["AutoIndex" ] ="off";
+				_res_param["AutoIndex" ] ="off";
 		}
 		if (itr->first == _req_parsed["Path"])
 			break;
@@ -125,14 +125,13 @@ void	Server::respondRequest(int requestfd) {
 	_req_body = _req.getbody();
 	Response res_struct;
 	//Inserindo dados do server manualmente pra teste
-//	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
-	_server_conf.insert(std::pair<std::string,std::string>("Index",_serverConfig.index) );
-	_server_conf.insert(std::pair<std::string,std::string>("bodySizeLimit",intToString(_serverConfig.bodySizeLimit)) );
-	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","") );
+	_res_param.insert(std::pair<std::string,std::string>("Index",_serverConfig.index) );
+	_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",intToString(_serverConfig.bodySizeLimit)) );
+	_res_param.insert(std::pair<std::string,std::string>("AutoIndex","") );
 	/*Iniciando o response*/
 	locationCheck();
-	_server_conf.insert(std::pair<std::string,std::string>("Root",("." + _serverConfig.root)));
-	res_struct.init(_req_parsed, _server_conf);
+	_res_param.insert(std::pair<std::string,std::string>("Root",("." + _serverConfig.root)));
+	res_struct.init(_req_parsed, _res_param);
 	/*response recebe o header da resposta*/
 	response = res_struct.getResponse();
 	/*response recebe o body da resposta*/
@@ -140,7 +139,7 @@ void	Server::respondRequest(int requestfd) {
 	/*Imprimi o site na tela*/
 	write(requestfd, response.c_str(), response.length());
 	std::cout << "Response sent\n" << std::endl;
-	_server_conf.clear();
+	_res_param.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }
