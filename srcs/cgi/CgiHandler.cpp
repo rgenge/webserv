@@ -97,7 +97,7 @@ void	CgiHandler::_child(void)
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
 	const char	*path = "/usr/bin/php";
-	const char	*scriptPath = "./cgi_bin/script.php";
+	const char	*scriptPath = _path.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),
 		const_cast<char *>(scriptPath),
@@ -138,7 +138,6 @@ void	CgiHandler::_parent(void)
 	close(this->_pipeFd[0]);
 	int status;
 	waitpid(this->_pid, &status, 0);
-	std::cout << this->_cgiResult << std::endl;
 	return ;
 }
 
@@ -158,10 +157,11 @@ void	CgiHandler::_execCgi(void)
 	return ;
 }
 
-void	CgiHandler::cgiHandler(void)
+std::string	CgiHandler::cgiHandler(std::string path)
 {
+	_path = path;
 	_getEnv();
 	_convertEnvFormat();
 	_execCgi();
-	return ;
+	return (_cgiResult);
 }

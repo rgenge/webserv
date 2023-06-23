@@ -4,6 +4,7 @@
 
 # include "Server.hpp"
 # include "webserv.hpp"
+# include "CgiHandler.hpp"
 # include <cstring>
 # include <fstream>
 # include <unistd.h>

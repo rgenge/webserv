@@ -88,8 +88,16 @@ void	Response::method_get(std::map <std::string, std::string> _req_parsed,
 		_full_path = _res_param["Root"] + _req_parsed["Path"];
 		_dir_path = _res_param["Root"] + _req_parsed["Path"];
 	}
+	/*CGI funciona mas sem verificar input do server*/
+	if (_full_path[_full_path.size() - 3] == 'p' && _full_path[_full_path.size() - 4] == '.')
+	{
+		CgiHandler	cgi_init;
+		std::string	cgi_body;
+		std::cout << "entro \n\n\n";
+		_body = cgi_init.cgiHandler(_full_path);
+		return;
+	}
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
-	std::cout <<"DIR \t:" << _full_path <<std::endl;
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
 	{
 		std::ifstream	page;
@@ -162,7 +170,6 @@ void	Response::locationCheck()
 	std::map<std::string, t_route>::iterator itr;
 	for(itr=_serverConfig.routes.begin();itr!=_serverConfig.routes.end();itr++)
 	{
-		_res_param["AutoIndex"] = "";
 		_res_param["AutoIndex" ] ="on";
 		if ("/" == _req_parsed["Path"])
 			_serverConfig.root = "/index";
@@ -187,17 +194,21 @@ void	Response::locationCheck()
 		struct stat buf;
 		std::string dir = ("." + _serverConfig.root + _req_parsed["Path"]);
 		lstat(dir.c_str(), &buf);
-		FILE *check_fp = fopen(dir.c_str(), "rb");
+		FILE *check_fp = fopen(dir.c_str(), "r");
 		if (!check_fp)
 			std::cout << "Error 404" << std::endl;
 		else
 		{
 			fclose(check_fp);
-			if (S_ISDIR(buf.st_mode) && dir != "./index/")
-				_res_param["AutoIndex" ] ="on";
+			if (S_ISDIR(buf.st_mode) && dir != ("." +_serverConfig.root +
+				"/"))
+				_res_param["AutoIndex"] ="on";
 			else
-				_res_param["AutoIndex" ] ="off";
+				_res_param["AutoIndex"] ="off";
 		}
+//		std::cout <<"\n" << itr->second.root << "\n" <<  itr->second.index ;
+//		if ((fopen((itr->second.root + itr->second.index).c_str(), "r")))
+//			_res_param["AutoIndex"] ="off";
 		if (itr->first == _req_parsed["Path"])
 			break;
 	}
