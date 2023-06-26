@@ -135,6 +135,12 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 	}
 }
 
+void Response::parseChunk(std::string &body)
+{
+	(void)body;
+	return ;
+}
+
 void Response::removeBreakLinesAndCR(std::string &str)
 {
 	std::string	temp;
@@ -228,11 +234,85 @@ void	Response::setBoundary(std::string &contentType)
 	return ;
 }
 
+void	Response::removeHeaderSpaces(std::string &multipart)
+{
+	size_t		endHeaderPos, i = 0;
+	std::string	tempMultipart;
+
+	if ((endHeaderPos = multipart.find("\r\n\r\n")) != std::string::npos)
+	{
+		while (i < endHeaderPos)
+		{
+			if (multipart[i] != ' ')
+				tempMultipart += multipart[i];
+			i++;
+		}
+		while (i < multipart.size())
+		{
+			tempMultipart += multipart[i];
+			i++;
+		}
+		multipart = tempMultipart;
+	}
+	else
+		throw std::runtime_error("invalid multipart/formdata 'endHeaderPos'");
+
+	return ;
+}
+
+void	Response::setHeaders(std::string &multipart)
+{
+	size_t		boundaryPos, colonPos, argsPos;
+	std::string	headerKey, headerValue;
+
+	if ((boundaryPos = multipart.find(this->_boundary)) != std::string::npos)
+		multipart.erase(0, boundaryPos + this->_boundary.size() + 2);
+	else
+	{
+		std::cout << "multipart error :\n" << multipart << std::endl;
+		std::cout << "\nboundary: " << this->_boundary << std::endl;
+		throw std::runtime_error("invalid multipart/formdata 'boundaryPos'");
+	}
+
+	removeHeaderSpaces(multipart);
+
+	while (true)
+	{
+		if ((colonPos = multipart.find(':')) != std::string::npos)
+		{
+			headerKey = multipart.substr(0, colonPos);
+			multipart.erase(0, headerKey.size() + 1);
+			if ((argsPos = multipart.find("\r\n")) != std::string::npos)
+			{
+				headerValue = multipart.substr(0, argsPos);
+				multipart.erase(0, headerValue.size());
+			}
+			else
+				throw std::runtime_error("invalid multipart/formdata 'argsPos'");
+
+			this->_multipartHeaders[headerKey] = headerValue;
+			if ((multipart.size() >= 4) && (multipart.substr(0, 4) == "\r\n\r\n"))
+			{
+				multipart.erase(0, 4);
+				return ;
+			}
+			else
+				multipart.erase(0, 2);
+		}	
+		else
+			throw std::runtime_error("invalid multipart/formdata 'colonPos'");
+	}
+	return ;
+}
+
 void	Response::parseMultipartFormData(std::string &contentType, std::string &multipart)
 {
 	setBoundary(contentType);
-
-	std::cout << "\n\nMultipartFormData:" << multipart << std::endl;
+	setHeaders(multipart);
+	std::cout << multipart;
+	std::map<std::string, std::string>::iterator it;
+	for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
+		std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	return ;
 }
 
@@ -240,6 +320,8 @@ void	Response::methodPost(std::map <std::string, std::string> map_input,
 	std::map <std::string, std::string> server_conf)
 {
 	(void)server_conf;
+	if (map_input["Transfer-Encoding"] == "chunked")
+		parseChunk(map_input["ChunkBody"]);
 	if (map_input["Content-Type"] == "application/x-www-form-urlencoded")
 		parseUrlEncodedParams(map_input["ChunkBody"]);
 	else if (map_input["Content-Type"] == "text/plain")
@@ -249,11 +331,9 @@ void	Response::methodPost(std::map <std::string, std::string> map_input,
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
 	
-	// std::cout << "POST" << std::endl;
-	// std::map<std::string, std::string>::iterator itr;
-	// for(itr=map_input.begin();itr!=map_input.end();itr++)
-	// 	std::cout << itr->first << ": " << itr->second << std::endl;
-	// std::cout << "FIM DO POST" << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for(it = map_input.begin(); it != map_input.end(); it++)
+	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	return ;
 }
 
@@ -264,6 +344,7 @@ void Response::init(std::map <std::string, std::string> map_input, std::map
 		method_get(map_input, server_conf);
 	else if (map_input["Method"] == "POST")
 		methodPost(map_input, server_conf);
+	throw std::runtime_error("EXIT");
 }
 
 Response::~Response()
