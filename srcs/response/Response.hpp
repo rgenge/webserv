@@ -11,6 +11,7 @@
 # include <map>
 # include <unistd.h>
 # include <sstream>
+# include <ctime>
 # include <sys/dir.h>
 
 class Response
@@ -25,9 +26,26 @@ class Response
 		// POST
 		std::string							_textPlain;
 		std::string 						_boundary;
+		std::string							_fileType;
 		std::map <std::string, std::string>	_decodedParams;
 		std::map <std::string, std::string>	_multipartHeaders;
 
+		// POST
+		void		_methodPost(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
+		void		_parseChunk(std::string &body);
+		void		_parseUrlEncodedParams(std::string params);
+		void		_removeBreakLinesAndCR(std::string &str);
+		void		_replaceHexPercentWithAscii(std::string &params);
+		void		_parseMultipartFormData(std::string &contentType, std::string &multipart);
+		void		_parseTextPlain(std::string &textPlain);
+		void		_setBoundary(std::string &contentType);
+		void		_removeHeaderSpaces(std::string &multipart);
+		void		_setHeaders(std::string &multipart);
+		void		_processBoundaryHeaders(std::string &multipart);
+		void		_handleBoundaryPart(std::string &multipart);
+		void		_handleImputFile(std::string &contentDisposition, std::string &multipart);
+		std::string	_originalFileName(std::string &contentDisposition);
+		std::string	_generateFileName(std::string const &originalFileName);
 
 	public:
 		Response();
@@ -41,18 +59,6 @@ class Response
 		void method_get(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
 		void print_header(std::string status_code, std::string ok_ko);
 		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
-		
-		// POST
-		void methodPost(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
-		void parseChunk(std::string &body);
-		void parseUrlEncodedParams(std::string params);
-		void removeBreakLinesAndCR(std::string &str);
-		void replaceHexPercentWithAscii(std::string &params);
-		void parseMultipartFormData(std::string &contentType, std::string &multipart);
-		void parseTextPlain(std::string &textPlain);
-		void setBoundary(std::string &contentType);
-		void removeHeaderSpaces(std::string &multipart);
-		void setHeaders(std::string &multipart);
 };
 
 #endif

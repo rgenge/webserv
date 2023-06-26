@@ -135,13 +135,13 @@ void Response::method_get(std::map <std::string, std::string> map_input,
 	}
 }
 
-void Response::parseChunk(std::string &body)
+void Response::_parseChunk(std::string &body)
 {
 	(void)body;
 	return ;
 }
 
-void Response::removeBreakLinesAndCR(std::string &str)
+void Response::_removeBreakLinesAndCR(std::string &str)
 {
 	std::string	temp;
 	for (int i = 0; str[i]; i++)
@@ -153,7 +153,7 @@ void Response::removeBreakLinesAndCR(std::string &str)
 	return ;
 }
 
-void Response::replaceHexPercentWithAscii(std::string &params)
+void Response::_replaceHexPercentWithAscii(std::string &params)
 {
 	int	pos = 0;
 	while (true)
@@ -185,13 +185,13 @@ void Response::replaceHexPercentWithAscii(std::string &params)
 	return ;
 }
 
-void Response::parseUrlEncodedParams(std::string params)
+void Response::_parseUrlEncodedParams(std::string params)
 {
 	size_t separatorPos = params.find('=');
 	if (separatorPos == std::string::npos)
 		throw std::runtime_error("invalid application/x-www-form-urlencoded format");
-	removeBreakLinesAndCR (params);
-	replaceHexPercentWithAscii(params);
+	_removeBreakLinesAndCR (params);
+	_replaceHexPercentWithAscii(params);
 	size_t pos = 0;
 	while (true)
 	{
@@ -217,14 +217,14 @@ void Response::parseUrlEncodedParams(std::string params)
 	return ;
 }
 
-void	Response::parseTextPlain(std::string &textPlain)
+void	Response::_parseTextPlain(std::string &textPlain)
 {
-	removeBreakLinesAndCR(textPlain);
+	_removeBreakLinesAndCR(textPlain);
 	this->_textPlain = textPlain;
 	return ;
 }
 
-void	Response::setBoundary(std::string &contentType)
+void	Response::_setBoundary(std::string &contentType)
 {
 	size_t boundaryPos;
 	if ((boundaryPos = contentType.find("---")) != std::string::npos)
@@ -234,7 +234,7 @@ void	Response::setBoundary(std::string &contentType)
 	return ;
 }
 
-void	Response::removeHeaderSpaces(std::string &multipart)
+void	Response::_removeHeaderSpaces(std::string &multipart)
 {
 	size_t		endHeaderPos, i = 0;
 	std::string	tempMultipart;
@@ -260,7 +260,7 @@ void	Response::removeHeaderSpaces(std::string &multipart)
 	return ;
 }
 
-void	Response::setHeaders(std::string &multipart)
+void	Response::_setHeaders(std::string &multipart)
 {
 	size_t		boundaryPos, colonPos, argsPos;
 	std::string	headerKey, headerValue;
@@ -273,9 +273,7 @@ void	Response::setHeaders(std::string &multipart)
 		std::cout << "\nboundary: " << this->_boundary << std::endl;
 		throw std::runtime_error("invalid multipart/formdata 'boundaryPos'");
 	}
-
-	removeHeaderSpaces(multipart);
-
+	_removeHeaderSpaces(multipart);
 	while (true)
 	{
 		if ((colonPos = multipart.find(':')) != std::string::npos)
@@ -305,29 +303,93 @@ void	Response::setHeaders(std::string &multipart)
 	return ;
 }
 
-void	Response::parseMultipartFormData(std::string &contentType, std::string &multipart)
+std::string	Response::_originalFileName(std::string &contentDisposition)
 {
-	setBoundary(contentType);
-	setHeaders(multipart);
-	std::cout << multipart;
-	std::map<std::string, std::string>::iterator it;
-	for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
-		std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
+	std::string	originalFileName = "";
+	std::string	fieldFileName = "filename=\"";
+
+	size_t	fileNamePos;
+	if ((fileNamePos = contentDisposition.find(fieldFileName)) != std::string::npos)
+	{
+		int	i = fileNamePos + fieldFileName.size();
+		while ((contentDisposition[i]) && (contentDisposition[i] != '\"'))
+			originalFileName += contentDisposition[i++];
+		std::cout << originalFileName << std::endl;
+	}
+	else
+		throw std::runtime_error("invalid multipart/formdata '_fileExtension'");
+	return (originalFileName);
+}
+
+std::string	Response::_generateFileName(std::string const &originalFileName)
+{
+	static int	sequenceNumber = 0;
+	std::time_t	currentTime;
+	std::stringstream	fileName;
+
+	currentTime = std::time(0);
+	fileName << "file_" << currentTime << sequenceNumber << originalFileName;
+	sequenceNumber++;
+	return (fileName.str());
+}
+
+void	Response::_handleImputFile(std::string &contentDisposition, std::string &multipart)
+{
+	std::ofstream	file;
+	std::string		originalFileName;
+
+	originalFileName = _originalFileName(contentDisposition);
+	file.open(_generateFileName(originalFileName).c_str(), std::ios::out);
+	if (!file.is_open())
+		throw std::runtime_error("open file error '_handleImputFile'");
+	file << multipart;
+	file.close();
 	return ;
 }
 
-void	Response::methodPost(std::map <std::string, std::string> map_input,
+void	Response::_processBoundaryHeaders(std::string &multipart)
+{
+	if (this->_multipartHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
+	{
+		if (this->_multipartHeaders["Content-Disposition"].find("filename=") != std::string::npos)
+			_handleImputFile(this->_multipartHeaders["Content-Disposition"], multipart);
+		else
+			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+	}
+	else
+		throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+	return ;
+}
+
+void	Response::_handleBoundaryPart(std::string &multipart)
+{
+	_setHeaders(multipart);
+	// std::cout << multipart;
+	// std::map<std::string, std::string>::iterator it;
+	// for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
+	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
+	_processBoundaryHeaders(multipart);
+}
+
+void	Response::_parseMultipartFormData(std::string &contentType, std::string &multipart)
+{
+	_setBoundary(contentType);
+	_handleBoundaryPart(multipart);
+	return ;
+}
+
+void	Response::_methodPost(std::map <std::string, std::string> map_input,
 	std::map <std::string, std::string> server_conf)
 {
 	(void)server_conf;
 	if (map_input["Transfer-Encoding"] == "chunked")
-		parseChunk(map_input["ChunkBody"]);
+		_parseChunk(map_input["ChunkBody"]);
 	if (map_input["Content-Type"] == "application/x-www-form-urlencoded")
-		parseUrlEncodedParams(map_input["ChunkBody"]);
+		_parseUrlEncodedParams(map_input["ChunkBody"]);
 	else if (map_input["Content-Type"] == "text/plain")
-		parseTextPlain(map_input["ChunkBody"]);
+		_parseTextPlain(map_input["ChunkBody"]);
 	else if (map_input["Content-Type"].find("multipart/form-data") != std::string::npos)
-		parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"]);
+		_parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"]);
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
 	
@@ -343,7 +405,7 @@ void Response::init(std::map <std::string, std::string> map_input, std::map
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
 	else if (map_input["Method"] == "POST")
-		methodPost(map_input, server_conf);
+		_methodPost(map_input, server_conf);
 	throw std::runtime_error("EXIT");
 }
 
