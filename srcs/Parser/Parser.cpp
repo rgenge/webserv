@@ -67,6 +67,8 @@ void	Parser::_parseServerConfig(t_linesIterator &it) {
 			_parseErrorPages(lineStream, serverConfig);
 		else if (token == "body_size_limit")
 			_parseLimit(lineStream, serverConfig);
+		else if (token == "cgi")
+			_parseCgi(lineStream, serverConfig.cgi);
 		else if (token == "url")
 			_parseUrl(serverConfig, it);
 		else
@@ -159,9 +161,9 @@ void	Parser::_parseLimit(std::istringstream &lineStream, t_serverConfig &serverC
 }
 
 t_route	Parser::_parseUrlConfigs(t_linesIterator &it) {
-	std::istringstream lineStream; 
-	std::string	token;
-	t_route		route;
+	std::istringstream	lineStream;
+	std::string			token;
+	t_route				route;
 
 	while (*it != "}" && it != _configFileLines.end()) {
 		lineStream.clear();
@@ -178,7 +180,9 @@ t_route	Parser::_parseUrlConfigs(t_linesIterator &it) {
 		else if (token == "dir_list")
 			_parseDirList(lineStream, route);
 		else if (token == "cgi")
-			_parseSimpleParams(lineStream, route.cgi);
+			_parseCgi(lineStream, route.cgi);
+		else if (token == "redirect")
+			_parseSimpleParams(lineStream, route.redirect);
 		else if (token == "upload")
 			_parseSimpleParams(lineStream, route.uploadPath);
 		else
@@ -252,6 +256,23 @@ void	Parser::_parseDirList(std::istringstream &lineStream, t_route &route) {
 		route.dirList = true;
 	else if (token == "off")
 		route.dirList = false;
+}
+
+void	Parser::_parseCgi(std::istringstream &lineStream, std::vector<std::string> &cgi)
+{
+	std::string	token;
+
+	lineStream >> token;
+	if (token.empty())
+		throw Parser::ParserException("missing cgi arguments");
+	cgi.push_back(token);
+	lineStream >> token;
+	if (!lineStream)
+		throw Parser::ParserException("cgi is missing second argument");
+	cgi.push_back(token);
+	lineStream >> token;
+	if (lineStream)
+		throw Parser::ParserException("cgi accepts only two arguments");
 }
 
 void	Parser::_readConfigFile(void) {
