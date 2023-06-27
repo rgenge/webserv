@@ -85,18 +85,18 @@ void	Response::printError(std::string codigo)
 void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
-	if (_req_parsed["Path"] == "/")
-	{
-		_full_path = _res_param["Root"] + _req_parsed["Path"] + _res_param
-			["Index"];
-		_dir_path = _res_param["Root"] + _req_parsed["Path"];
-	}
+//	if (_req_parsed["Path"] == "/")
+//	{
+//		_full_path = _res_param["Root"] + _req_parsed["Path"] + _res_param
+	//		["Index"];
+//		_dir_path = _res_param["Root"] + _req_parsed["Path"];
+//	}
 	// else if (_index_flag == 1)
 	// {
 	// 	_full_path = _res_param["Root"] + _res_param["Index"];
 	// 	_dir_path = _res_param["Root"];
 	// }
-	else if (_path_flag == 1)
+	if (_path_flag == 1)
 	{
 		std::string		temp = _req_parsed["Path"];
 		std::string::size_type i = temp.find(_path_location);
@@ -197,7 +197,11 @@ void	Response::locationCheck()
 //		std::cout << "Actual: " << _actual_root << "\n req_PATH: " << _req_parsed["Path"] << "\n itr->sec: " <<itr->second.root << std::endl;
  		_res_param["AutoIndex" ] ="on";
 		if ("/" == _req_parsed["Path"])
+		{
 			_actual_root = _serverConfig.root;
+//			_req_parsed["Path"] = "/" + _serverConfig.index;
+//			_res_param["AutoIndex"] ="off";
+		}
 		if (itr->first == _req_parsed["Path"])
 		{	/*checa se o método solicitado está incluso no location*/
 			if (!(itr->second.httpMethods.find(_req_parsed["Method"]) !=
@@ -297,8 +301,7 @@ void	Response::init(int _flag)
 	 	_actual_root = _serverConfig.root;
 	 	_flag = 1;
 	}
-	else
-	{
+	
 		_path_flag = 0;
 		_index_flag = 0;
 		_res_param.insert(std::pair<std::string,std::string>("Index",
@@ -314,7 +317,6 @@ void	Response::init(int _flag)
 			methodGet(_req_parsed, _res_param);
 		if (_req_parsed["Method"] == "DELETE")
 			methodDelete(_req_parsed, _res_param);
-	}
 }
 
 Response::~Response()
