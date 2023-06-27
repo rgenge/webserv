@@ -305,7 +305,7 @@ void	Response::_setHeaders(std::string &multipart)
 
 std::string	Response::_originalFileName(std::string &contentDisposition)
 {
-	std::string	originalFileName = "";
+	std::string	originalFileName = "_";
 	std::string	fieldFileName = "filename=\"";
 
 	size_t	fileNamePos;
@@ -333,11 +333,18 @@ std::string	Response::_generateFileName(std::string const &originalFileName)
 	return (fileName.str());
 }
 
-void	Response::_handleImputFile(std::string &contentDisposition, std::string &multipart)
+std::string	Response::_getDir(t_serverConfig &serverConfig)
+{
+	(void)serverConfig;
+	return ("");
+}
+
+void	Response::_handleImputFile(std::string &contentDisposition, std::string &multipart, t_serverConfig &serverConfig)
 {
 	std::ofstream	file;
 	std::string		originalFileName;
 
+	_getDir(serverConfig);
 	originalFileName = _originalFileName(contentDisposition);
 	file.open(_generateFileName(originalFileName).c_str(), std::ios::out);
 	if (!file.is_open())
@@ -347,12 +354,12 @@ void	Response::_handleImputFile(std::string &contentDisposition, std::string &mu
 	return ;
 }
 
-void	Response::_processBoundaryHeaders(std::string &multipart)
+void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig)
 {
 	if (this->_multipartHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
 	{
 		if (this->_multipartHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_multipartHeaders["Content-Disposition"], multipart);
+			_handleImputFile(this->_multipartHeaders["Content-Disposition"], multipart, serverConfig);
 		else
 			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
 	}
@@ -361,27 +368,26 @@ void	Response::_processBoundaryHeaders(std::string &multipart)
 	return ;
 }
 
-void	Response::_handleBoundaryPart(std::string &multipart)
+void	Response::_handleBoundaryPart(std::string &multipart, t_serverConfig &serverConfig)
 {
 	_setHeaders(multipart);
 	// std::cout << multipart;
 	// std::map<std::string, std::string>::iterator it;
 	// for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
 	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
-	_processBoundaryHeaders(multipart);
+	_processBoundaryHeaders(multipart, serverConfig);
 }
 
-void	Response::_parseMultipartFormData(std::string &contentType, std::string &multipart)
+void	Response::_parseMultipartFormData(std::string &contentType, std::string &multipart, t_serverConfig &serverConfig)
 {
 	_setBoundary(contentType);
-	_handleBoundaryPart(multipart);
+	_handleBoundaryPart(multipart, serverConfig);
 	return ;
 }
 
 void	Response::_methodPost(std::map <std::string, std::string> map_input,
-	std::map <std::string, std::string> server_conf)
+	t_serverConfig &serverConfig)
 {
-	(void)server_conf;
 	if (map_input["Transfer-Encoding"] == "chunked")
 		_parseChunk(map_input["ChunkBody"]);
 	if (map_input["Content-Type"] == "application/x-www-form-urlencoded")
@@ -389,7 +395,7 @@ void	Response::_methodPost(std::map <std::string, std::string> map_input,
 	else if (map_input["Content-Type"] == "text/plain")
 		_parseTextPlain(map_input["ChunkBody"]);
 	else if (map_input["Content-Type"].find("multipart/form-data") != std::string::npos)
-		_parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"]);
+		_parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"], serverConfig);
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
 	
@@ -400,12 +406,12 @@ void	Response::_methodPost(std::map <std::string, std::string> map_input,
 }
 
 void Response::init(std::map <std::string, std::string> map_input, std::map
-	<std::string, std::string> server_conf)
+	<std::string, std::string> server_conf, t_serverConfig &serverConfig)
 {
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
 	else if (map_input["Method"] == "POST")
-		_methodPost(map_input, server_conf);
+		_methodPost(map_input, serverConfig);
 	throw std::runtime_error("EXIT");
 }
 

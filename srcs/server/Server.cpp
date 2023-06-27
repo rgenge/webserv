@@ -78,7 +78,7 @@ void	Server::respondRequest(int requestfd) {
 	_server_conf.insert(std::pair<std::string,std::string>("Index","index.html") );
 	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","on") );
 	/*Iniciando o response*/
-	res_struct.init(_req_parsed, _server_conf);
+	res_struct.init(_req_parsed, _server_conf, this->_serverConfig);
 	/*response recebe o header da resposta*/
 	response = res_struct.getResponse();
 	/*response recebe o body da resposta*/
