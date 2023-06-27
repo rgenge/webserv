@@ -29,6 +29,7 @@ class Response
 		std::string							_fileType;
 		std::map <std::string, std::string>	_decodedParams;
 		std::map <std::string, std::string>	_multipartHeaders;
+		std::map <std::string, std::string>	_mapImput;
 
 		// POST
 		void		_methodPost(std::map <std::string, std::string> map_input, t_serverConfig &serverConfig);
@@ -44,7 +45,8 @@ class Response
 		void		_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig);
 		void		_handleBoundaryPart(std::string &multipart, t_serverConfig &serverConfig);
 		void		_handleImputFile(std::string &contentDisposition, std::string &multipart, t_serverConfig &serverConfig);
-		std::string	_getDir(t_serverConfig &serverConfig);
+		std::string	_handleLastSlash(std::string &Route);
+		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
 

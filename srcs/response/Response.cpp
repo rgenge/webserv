@@ -314,7 +314,7 @@ std::string	Response::_originalFileName(std::string &contentDisposition)
 		int	i = fileNamePos + fieldFileName.size();
 		while ((contentDisposition[i]) && (contentDisposition[i] != '\"'))
 			originalFileName += contentDisposition[i++];
-		std::cout << originalFileName << std::endl;
+		// std::cout << originalFileName << std::endl;
 	}
 	else
 		throw std::runtime_error("invalid multipart/formdata '_fileExtension'");
@@ -333,9 +333,34 @@ std::string	Response::_generateFileName(std::string const &originalFileName)
 	return (fileName.str());
 }
 
-std::string	Response::_getDir(t_serverConfig &serverConfig)
+std::string	Response::_handleLastSlash(std::string &Route)
 {
-	(void)serverConfig;
+	std::string	alternativeRoute;
+
+	if (Route[Route.size() - 1] != '/')
+		alternativeRoute = Route + '/';
+	else
+		alternativeRoute = Route.substr(0, Route.size() - 1);
+	std::cout << "alternative: " << alternativeRoute << std::endl;
+	return (alternativeRoute);
+}
+
+std::string	Response::_getUploadDir(t_serverConfig &serverConfig)
+{
+	std::map<std::string, t_route>::iterator it;
+
+	if (this->_mapImput["Path"] == "/")
+		throw std::runtime_error("error 405 '_getDir'");
+	else
+	{
+		if (((it = serverConfig.routes.find(this->_mapImput["Path"])) != serverConfig.routes.end())
+		|| ((it = serverConfig.routes.find(_handleLastSlash(this->_mapImput["Path"]))) != serverConfig.routes.end()))
+		{
+			std::cout << "Encontrou a rota!" << std::endl;
+		}
+		else
+			throw std::runtime_error("error 405 '_getDir'");
+	}
 	return ("");
 }
 
@@ -344,7 +369,7 @@ void	Response::_handleImputFile(std::string &contentDisposition, std::string &mu
 	std::ofstream	file;
 	std::string		originalFileName;
 
-	_getDir(serverConfig);
+	_getUploadDir(serverConfig);
 	originalFileName = _originalFileName(contentDisposition);
 	file.open(_generateFileName(originalFileName).c_str(), std::ios::out);
 	if (!file.is_open())
@@ -399,15 +424,16 @@ void	Response::_methodPost(std::map <std::string, std::string> map_input,
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
 	
-	// std::map<std::string, std::string>::iterator it;
-	// for(it = map_input.begin(); it != map_input.end(); it++)
-	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
+	std::map<std::string, std::string>::iterator it;
+	for(it = map_input.begin(); it != map_input.end(); it++)
+		std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	return ;
 }
 
 void Response::init(std::map <std::string, std::string> map_input, std::map
 	<std::string, std::string> server_conf, t_serverConfig &serverConfig)
 {
+	this->_mapImput = map_input;
 	if (map_input["Method"] == "GET")
 		method_get(map_input, server_conf);
 	else if (map_input["Method"] == "POST")
