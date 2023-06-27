@@ -47,17 +47,17 @@ int	Server::getRequest(int requestfd) {
 
 void	Server::respondRequest(int requestfd) {
 	std::string	response;
-
+	_flag++;
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
-	_req_parsed = _req.getmap();
-	_req_body = _req.getbody();
+	_req_parsed = _req.getMap();
+	_req_body = _req.getBody();
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig);
-	res_struct.init();
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root);
+	res_struct.init(_flag);
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
-	response += res_struct.get_body();
+	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
 	_res_param.clear();
 	_requestfds.erase(requestfd);

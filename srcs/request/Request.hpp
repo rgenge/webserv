@@ -23,12 +23,12 @@ class Request
 		Request(std::string req_input);
 		~Request();
 		void								parse(std::string req_input);
-		void								parse_chunk(std::string request);
-		void								check_request();
-		std::map <std::string, std::string>	&getmap();
-		std::string							getbody();
-		std::string							errortype();
-		std::string							getrequest();
+		void								parseChunk(std::string request);
+		void								checkRequest();
+		std::map <std::string, std::string>	&getMap();
+		std::string							getBody();
+		std::string							errorType();
+		std::string							getRequest();
 };
 
 #endif

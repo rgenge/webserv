@@ -1,16 +1,16 @@
 #include "Response.hpp"
 
 Response::Response(std::map <std::string, std::string>& _res_param_, std::map
-<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_)
+<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_, std::string& _actual_root_)
 :_res_param(_res_param_), _req_parsed(_req_parsed_), _serverConfig
-(_serverConfig_)
+(_serverConfig_), _actual_root(_actual_root_)
 {
 }
 
 /*Salva a resposta e imprimi no terminal*/
-void	Response::print_header(std::string status_code, std::string ok_ko)
+void	Response::printHeader(std::string status_code, std::string ok_ko, std::string http_version)
 {
-	_response.append("HTTP/1.1 " + status_code + " " + ok_ko +  "\r\n");
+	_response.append(http_version + status_code + " " + ok_ko +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
@@ -18,27 +18,30 @@ void	Response::print_header(std::string status_code, std::string ok_ko)
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
-std::string	Response::get_type()
+std::string	Response::getType()
 {
 	std::string		type;
-	std::size_t last_dot = _full_path.find_last_of(".");
-	type = _full_path.substr(last_dot, _full_path.size() - last_dot);
-	if ((type==".css")) return "text/css";
-	if (type==".csv") return "text/csv";
-	if (type ==".htm") return "text/html";
-	if (type ==".shtml") return "text/html";
-	if (type ==".js") return "application/javascript";
-	if (type ==".json") return "application/json";
-	if (type ==".gif") return "image/gif";
-	if (type ==".jpeg") return "image/jpeg";
-	if (type ==".jpg") return "image/jpg";
-	if (type ==".png") return "image/png";
-	if (type ==".svg") return "image/svg+xml";
-	if (type ==".ico") return "image/x-icon|";
+	if(_full_path.find(".") < _full_path.length())
+	{
+		std::size_t last_dot = _full_path.find_last_of(".");
+		type = _full_path.substr(last_dot, _full_path.size() - last_dot);
+		if ((type==".css")) return "text/css";
+		if (type==".csv") return "text/csv";
+		if (type ==".htm") return "text/html";
+		if (type ==".shtml") return "text/html";
+		if (type ==".js") return "application/javascript";
+		if (type ==".json") return "application/json";
+		if (type ==".gif") return "image/gif";
+		if (type ==".jpeg") return "image/jpeg";
+		if (type ==".jpg") return "image/jpg";
+		if (type ==".png") return "image/png";
+		if (type ==".svg") return "image/svg+xml";
+		if (type ==".ico") return "image/x-icon|";
+	}
 	return ("text/html");
 }
 
-void	Response::auto_index( std::map <std::string, std::string> _res_param)
+void	Response::autoIndex( std::map <std::string, std::string> _res_param)
 {
 	DIR *dh;
     struct dirent *contents;
@@ -54,17 +57,15 @@ void	Response::auto_index( std::map <std::string, std::string> _res_param)
 		_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
 			"<title>webserv</title></head><body><h1>Index of " + _res_param
 			["Root"] + "</h1>\n");
+//			std::cout << " Root: "<< _res_param["Root"] << " Path : "<<_req_parsed["Path"] << " dir_path:" <<  _dir_path;
 			while ((contents = readdir(dh)) != NULL)
 			{
-				if (strcmp(contents->d_name, ".") || strcmp(contents->d_name,
+				if (!strcmp(contents->d_name, ".") || !strcmp(contents->d_name,
 					".."))
-					_body += "<a href=\"" + std::string(contents->d_name);
-				else if (_dir_path[_dir_path.length() - 1] ==
-					'/')
-					_body += "<a href=\"" + std::string(contents->d_name);
+					continue;
 				else
-					_body += "<a href=\"" + std::string(contents->d_name);
-				_body += (contents->d_type == DT_DIR ? "/" : "") + (std::string)
+					_body += "<a href=\"" + _req_parsed["Path"] +"/" + std::string(contents->d_name);
+				_body += (contents->d_type == DT_DIR ? "" : "") + (std::string)
 					"\">";
 				_body += (std::string)(contents->d_name) + (contents->d_type ==
 					DT_DIR ? "/" : "") + "</a><br>";
@@ -74,7 +75,14 @@ void	Response::auto_index( std::map <std::string, std::string> _res_param)
 	}
 }
 
-void	Response::method_get(std::map <std::string, std::string> _req_parsed,
+/*
+void	Response::printError(std::string codigo)
+{
+	std::cerr << codigo << std::endl;
+}
+*/
+
+void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
 	if (_req_parsed["Path"] == "/")
@@ -83,17 +91,33 @@ void	Response::method_get(std::map <std::string, std::string> _req_parsed,
 			["Index"];
 		_dir_path = _res_param["Root"] + _req_parsed["Path"];
 	}
+	// else if (_index_flag == 1)
+	// {
+	// 	_full_path = _res_param["Root"] + _res_param["Index"];
+	// 	_dir_path = _res_param["Root"];
+	// }
+	else if (_path_flag == 1)
+	{
+		std::string		temp = _req_parsed["Path"];
+		std::string::size_type i = temp.find(_path_location);
+		if (i != std::string::npos)
+		{
+			temp.erase(i, _path_location.length());
+		}
+		_full_path = _res_param["Root"] + temp;
+		_dir_path = _res_param["Root"] + temp;
+	}
 	else
 	{
 		_full_path = _res_param["Root"] + _req_parsed["Path"];
-		_dir_path = _res_param["Root"] + _req_parsed["Path"];
+		_dir_path = _res_param["Root"]+ _req_parsed["Path"];
 	}
 	/*CGI funciona mas sem verificar input do server*/
-	if (_full_path[_full_path.size() - 3] == 'p' && _full_path[_full_path.size() - 4] == '.')
+	if (_full_path.find(".php") != std::string::npos)
 	{
 		CgiHandler	cgi_init;
 		std::string	cgi_body;
-		std::cout << "entro \n\n\n";
+		std::cout << "cgi entro \n\n\n";
 		_body = cgi_init.cgiHandler(_full_path);
 		return;
 	}
@@ -111,7 +135,7 @@ void	Response::method_get(std::map <std::string, std::string> _req_parsed,
 		if (_res_param["AutoIndex"] == "off")
 			_body = buffer;
 		if (_res_param["AutoIndex"] == "on")
-			auto_index(_res_param);
+			autoIndex(_res_param);
 		/*Converte o Content-length de size_t pra string e adiciona no map*/
 		std::stringstream sizet_len;
 		sizet_len <<  buffer.size();
@@ -128,17 +152,17 @@ void	Response::method_get(std::map <std::string, std::string> _req_parsed,
 			("Content-Length", string_len));
 		}
 		/*Verifica o Content-type do arquivo*/
-		_res_map["Content-type"] = get_type();
+		_res_map["Content-type"] = getType();
 		if(_res_map["Content-Length"] > _res_param["bodySizeLimit"])
 			std::cout << "error 414 bodySize Limite excedido";
-		print_header ("200", "OK");
+		printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
 	else
 		std::cout << "Some error ";
 }
 
-void	Response::method_delete(std::map <std::string, std::string> _req_parsed,
+void	Response::methodDelete(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
 	if (_req_parsed["Path"] == "/")
@@ -160,7 +184,7 @@ void	Response::method_delete(std::map <std::string, std::string> _req_parsed,
 	else
 	{
 		std::remove (_full_path.c_str());
-		print_header ("200", "OK");
+		printHeader ("200", "OK", _req_parsed["Version"]);
 	}
 }
 
@@ -170,45 +194,90 @@ void	Response::locationCheck()
 	std::map<std::string, t_route>::iterator itr;
 	for(itr=_serverConfig.routes.begin();itr!=_serverConfig.routes.end();itr++)
 	{
-		_res_param["AutoIndex" ] ="on";
+//		std::cout << "Actual: " << _actual_root << "\n req_PATH: " << _req_parsed["Path"] << "\n itr->sec: " <<itr->second.root << std::endl;
+ 		_res_param["AutoIndex" ] ="on";
 		if ("/" == _req_parsed["Path"])
-			_serverConfig.root = "/index";
+			_actual_root = _serverConfig.root;
 		if (itr->first == _req_parsed["Path"])
 		{	/*checa se o método solicitado está incluso no location*/
 			if (!(itr->second.httpMethods.find(_req_parsed["Method"]) !=
 				itr->second.httpMethods.end()))
 				std::cout << "ERROR INVALID METHOD" << std::endl;
-			_serverConfig.root  = itr->second.root;
+			if (itr->second.root != "")
+			 	_actual_root = itr->second.root;
+			else
+			 	_actual_root = _serverConfig.root;
 			if (itr->second.dirList)
-				_res_param["AutoIndex" ] ="on";
+			{
+					struct stat buf;
+					std::string dir = _actual_root + "/" + itr->second.index;
+					lstat(dir.c_str(), &buf);
+					std::cout << dir;
+					FILE *check_fp = fopen(dir.c_str(), "r");
+					if (!check_fp)
+						std::cout << "Error 404";
+					else
+					{
+						fclose(check_fp);
+						if (S_ISDIR(buf.st_mode))
+							_res_param["AutoIndex"] ="on";
+						else
+						{
+							_res_param["AutoIndex"] ="off";
+							_req_parsed["Path"] = "/" + itr->second.index;
+						}
+					}
+			}
 			else
 				_res_param["AutoIndex" ] ="off";
 		}
-		if (_serverConfig.root != _req_parsed["Path"] && itr->second.root !=
-			_req_parsed["Path"] && itr->first == _req_parsed["Path"])
+		if ((_actual_root != _req_parsed["Path"] && itr->second.root !=
+			_req_parsed["Path"] && itr->first == _req_parsed["Path"]) ||
+				_req_parsed["Path"].find(itr->first) != std::string::npos)
 		{
-			_req_parsed["Path"] ="";
+			_path_flag = 1;
+			_path_location = itr->first;
+			std::string		temp = _req_parsed["Path"];
+			std::string::size_type i = temp.find(_path_location);
+			if (i != std::string::npos)
+				temp.erase(i, _path_location.length());
+			struct stat buf;
+			std::string dir = (_actual_root + temp);
+			if(dir.find("//") != std::string::npos)
+				dir.replace(dir.find("//"), 2, "/");
+			lstat(dir.c_str(), &buf);
+			FILE *check_fp = fopen(dir.c_str(), "r");
+			if (!check_fp)
+				std::cout << "Error 404";
+			else
+			{
+				fclose(check_fp);
+				if (S_ISDIR(buf.st_mode))
+					_res_param["AutoIndex"] ="on";
+				else
+					_res_param["AutoIndex"] ="off";
+			}
 			break;
 		}
 		/*Checa sé não é diretório para ligar autoindex*/
+		std::string		temp = _req_parsed["Path"];
+		std::string::size_type i = temp.find(_path_location);
+		if (i != std::string::npos)
+			temp.erase(i, _path_location.length());
 		struct stat buf;
-		std::string dir = ("." + _serverConfig.root + _req_parsed["Path"]);
+		std::string dir = (_actual_root + temp);
 		lstat(dir.c_str(), &buf);
 		FILE *check_fp = fopen(dir.c_str(), "r");
 		if (!check_fp)
-			std::cout << "Error 404" << std::endl;
+			std::cout << "Error 404";
 		else
 		{
 			fclose(check_fp);
-			if (S_ISDIR(buf.st_mode) && dir != ("." +_serverConfig.root +
-				"/"))
+			if (S_ISDIR(buf.st_mode))
 				_res_param["AutoIndex"] ="on";
 			else
 				_res_param["AutoIndex"] ="off";
 		}
-//		std::cout <<"\n" << itr->second.root << "\n" <<  itr->second.index ;
-//		if ((fopen((itr->second.root + itr->second.index).c_str(), "r")))
-//			_res_param["AutoIndex"] ="off";
 		if (itr->first == _req_parsed["Path"])
 			break;
 	}
@@ -221,20 +290,31 @@ std::string	intToString (int num)
 	return temp.str();
 }
 
-void	Response::init()
+void	Response::init(int _flag)
 {
-	_res_param.insert(std::pair<std::string,std::string>("Index",_serverConfig.
-		index));
-	_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
-		intToString(_serverConfig.bodySizeLimit)) );
-	_res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
-	locationCheck();
-	_res_param.insert(std::pair<std::string,std::string>("Root",("." +
-		_serverConfig.root)));
-	if (_req_parsed["Method"] == "GET")
-		method_get(_req_parsed, _res_param);
-	if (_req_parsed["Method"] == "DELETE")
-		method_delete(_req_parsed, _res_param);
+	if (_flag == 1)
+	{
+	 	_actual_root = _serverConfig.root;
+	 	_flag = 1;
+	}
+	else
+	{
+		_path_flag = 0;
+		_index_flag = 0;
+		_res_param.insert(std::pair<std::string,std::string>("Index",
+			_serverConfig.
+			index));
+		_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
+			intToString(_serverConfig.bodySizeLimit)) );
+		_res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
+		locationCheck();
+		_res_param.insert(std::pair<std::string,std::string>("Root",
+			_actual_root));
+		if (_req_parsed["Method"] == "GET")
+			methodGet(_req_parsed, _res_param);
+		if (_req_parsed["Method"] == "DELETE")
+			methodDelete(_req_parsed, _res_param);
+	}
 }
 
 Response::~Response()
@@ -246,7 +326,7 @@ std::string Response::getResponse()
 	return _response;
 }
 
-std::string Response::get_body()
+std::string Response::getBody()
 {
 	return _body;
 }
