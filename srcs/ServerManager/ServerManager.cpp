@@ -106,7 +106,7 @@ void	ServerManager::_acceptConnecitons(void) {
 		requestfd = _getServerBySocketFd((*it).fd).acceptConnection();
 		if (requestfd < 0)
 			throw std::runtime_error("In accepting connection");
-		std::cout << "Request accepted!" << std::endl;
+		std::cout << "Connection accepted!" << std::endl;
 		(*it).revents = 0;
 		_getServerBySocketFd((*it).fd).addRequestfd(requestfd, "");
 		_addFdToPoll(requestfd, POLLIN | POLLOUT);

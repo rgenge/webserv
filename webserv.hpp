@@ -7,17 +7,15 @@
 # include <set>
 # include <vector>
 
-
 typedef struct s_route
 {
 	std::set<std::string>			httpMethods;
 	std::string						index;
 	std::string						root;
-	bool							dirList;
 	std::vector<std::string>		cgi;
 	std::string						uploadPath;
 	std::string						redirect;
-
+	bool							dirList;
 }			t_route;
 
 typedef struct s_serverConfig
@@ -30,7 +28,6 @@ typedef struct s_serverConfig
 	std::vector<std::string>			cgi;
 	int									bodySizeLimit;
 	std::map<std::string, t_route>		routes;
-
 }			t_serverConfig;
 
 #endif /* WEBSERV_HPP*/
