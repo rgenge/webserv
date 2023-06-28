@@ -1,5 +1,8 @@
 #include "ServerConfig.hpp"
 
+ServerConfig::ServerConfig() {
+}
+
 ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
 	_port = serverConfig.port;
 	_bodySizeLimit = serverConfig.bodySizeLimit;
