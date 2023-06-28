@@ -39,6 +39,7 @@ class Server : public Socket {
 		t_serverConfig						_serverConfig;
 		int									_flag;
 		std::string							_actual_root;
+		std::vector<unsigned char>			_requestData;
 
 };
 

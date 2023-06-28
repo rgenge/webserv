@@ -1,9 +1,10 @@
 #include "Response.hpp"
 
 Response::Response(std::map <std::string, std::string>& _res_param_, std::map
-<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_, std::string& _actual_root_)
+<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_, std::string& _actual_root_,
+std::vector<unsigned char> &requestData)
 :_res_param(_res_param_), _req_parsed(_req_parsed_), _serverConfig
-(_serverConfig_), _actual_root(_actual_root_)
+(_serverConfig_), _actual_root(_actual_root_), _requestData(requestData)
 {
 }
 
@@ -511,7 +512,8 @@ std::string	Response::_getUploadDir(t_serverConfig &serverConfig)
 		if (((it = serverConfig.routes.find(this->_mapImput["Path"])) != serverConfig.routes.end())
 		|| ((it = serverConfig.routes.find(_handleLastSlash(this->_mapImput["Path"]))) != serverConfig.routes.end()))
 		{
-			std::cout << "Encontrou a rota!" << std::endl;
+			// std::cout << "Encontrou a rota!" << std::endl;
+			;
 		}
 		else
 			throw std::runtime_error("error 405 '_getDir'");
@@ -579,9 +581,9 @@ void	Response::_methodPost(std::map <std::string, std::string> map_input,
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
 	
-	std::map<std::string, std::string>::iterator it;
-	for(it = map_input.begin(); it != map_input.end(); it++)
-		std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for(it = map_input.begin(); it != map_input.end(); it++)
+	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	return ;
 }
 
@@ -614,7 +616,11 @@ void	Response::init(int _flag)
 	{
 		this->_mapImput = _req_parsed;
 		_methodPost(_req_parsed, _serverConfig);
+		std::cout << "Depois: " << std::endl;
+		for (size_t i = 0; i < this->_requestData.size(); i++)
+			std::cout << this->_requestData[i];
 	}
+
 	throw std::runtime_error("EXIT");
 }
 

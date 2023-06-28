@@ -36,6 +36,7 @@ class Response
 		std::map <std::string, std::string>	_decodedParams;
 		std::map <std::string, std::string>	_multipartHeaders;
 		std::map <std::string, std::string>	_mapImput;
+		std::vector<unsigned char>			&_requestData;
 
 		// POST
 		void		_methodPost(std::map <std::string, std::string> map_input, t_serverConfig &serverConfig);
@@ -57,7 +58,8 @@ class Response
 		std::string	_generateFileName(std::string const &originalFileName);
 
 	public:
-		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_, t_serverConfig&_serverConfig_, std::string& _actual_root_);
+		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
+		t_serverConfig&_serverConfig_, std::string& _actual_root_, std::vector<unsigned char> &requestData);
 		~Response();
 		void		init (int _flag);
 		void		methodGet(std::map <std::string, std::string> _req_parsed,

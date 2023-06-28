@@ -40,12 +40,9 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-		// std::cout << "bytes lidos: " << bytesRead << std::endl;
-		// std::cout << "\n\nRequest no formato original:\n";
-		// for (int i = 0; i < bytesRead; i++)
-		// 	std::cout << _request[i];
-		// std::cout << "FIMMMMMMMMMMMMM\n";
 		this->_requestfds[requestfd] = _request;
+		for (int i = 0; i < bytesRead; i++)
+			this->_requestData.push_back(static_cast<unsigned char>(_request[i]));
 	}
 
 	return (bytesRead);
@@ -59,7 +56,7 @@ void	Server::respondRequest(int requestfd) {
 	_req_parsed = _req.getMap();
 	_req_body = _req.getBody();
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root);
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root, this->_requestData);
 	res_struct.init(_flag);
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
