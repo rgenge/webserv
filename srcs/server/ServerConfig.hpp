@@ -10,6 +10,7 @@ class ServerConfig {
 
 	public:
 
+		ServerConfig();
 		ServerConfig(t_serverConfig const &serverConfig);
 		ServerConfig(t_serverConfig const &serverConfig, t_route const &route);
 		ServerConfig(ServerConfig const &rhs);
