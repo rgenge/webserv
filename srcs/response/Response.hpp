@@ -2,17 +2,17 @@
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
+# include "Server.hpp"
+# include "webserv.hpp"
+# include "CgiHandler.hpp"
 # include <string>
 # include <cstring>
-# include <stdio.h>
-# include <stdlib.h>
 # include <iostream>
 # include <fstream>
-# include <map>
 # include <unistd.h>
 # include <sstream>
 # include <ctime>
-# include "webserv.hpp"
+# include <sys/dir.h>
 
 class Response
 {
@@ -22,7 +22,13 @@ class Response
 		std::map <std::string, std::string>	_res_map;
 		std::string							_full_path;
 		std::string							_dir_path;
-		
+		std::map <std::string, std::string>	&_res_param;
+		std::map <std::string, std::string>	&_req_parsed;
+		t_serverConfig						&_serverConfig;
+		std::string							&_actual_root;
+		int									_index_flag;
+		int									_path_flag;
+		std::string							_path_location;
 		// POST
 		std::string							_textPlain;
 		std::string 						_boundary;
@@ -51,17 +57,19 @@ class Response
 		std::string	_generateFileName(std::string const &originalFileName);
 
 	public:
-		Response();
-		Response(std::string res_input);
+		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_, t_serverConfig&_serverConfig_, std::string& _actual_root_);
 		~Response();
-		std::string getResponse();
-		std::string get_type();
-		std::string get_body();
-		void parse (std::string res_input);
-		void init (std::map <std::string, std::string> map_inpu, std::map <std::string, std::string> server_conf, t_serverConfig &serverConfig);
-		void method_get(std::map <std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
-		void print_header(std::string status_code, std::string ok_ko);
-		void auto_index(std::map<std::string, std::string> map_input, std::map <std::string, std::string> server_conf);
-};
+		void		init (int _flag);
+		void		methodGet(std::map <std::string, std::string> _req_parsed,
+			std::map <std::string, std::string> _res_param);
+		void		printHeader(std::string status_code, std::string ok_ko, std::string http_version);
+		void		autoIndex(std::map <std::string, std::string> _res_param);
+		void		methodDelete(std::map <std::string, std::string>
+			_req_parsed, std::map <std::string, std::string> _res_param);
+		void		locationCheck();
+		std::string	getResponse();
+		std::string	getType();
+		std::string	getBody();
 
+};
 #endif
