@@ -19,6 +19,7 @@ ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &ro
 	_dirList = route.dirList;
 	_uploadPath = route.uploadPath;
 	_cgi = route.cgi;
+	_redirect = route.redirect;
 	if (route.httpMethods.size() > 0)
 		_httpMethods = route.httpMethods;
 	else
@@ -72,7 +73,7 @@ const std::string	&ServerConfig::getIndex(void) const {
 	return (this->_index);
 }
 
-const std::string	&ServerConfig::getCgi(void) const {
+const std::vector<std::string>	&ServerConfig::getCgi(void) const {
 	return (this->_cgi);
 }
 
@@ -95,4 +96,8 @@ const std::string	&ServerConfig::getUploadPath(void) const {
 
 const bool	ServerConfig::getDirList(void) const {
 	return (this->_dirList);
+}
+
+const std::string	ServerConfig::getRedirect(void) const {
+	return (this->_redirect);
 }

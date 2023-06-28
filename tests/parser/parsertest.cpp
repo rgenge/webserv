@@ -22,12 +22,12 @@ void	printRoutes(t_serverConfig serverConfig) {
 		route = it->second;
 		std::cout << "\thttpMethods: ";
 		printContainers< std::set<std::string> >(route.httpMethods);
-		std::cout << "\tlocation: " << route.location << std::endl;
 		std::cout << "\tindex: " << route.index << std::endl;
 		std::cout << "\troot: " << route.root << std::endl;
 		std::cout << "\tdirList: " << route.dirList << std::endl;
-		std::cout << "\tcgi: " << route.cgi << std::endl;
+		std::cout << "\tcgi: " << route.cgi[0] << "\t" << route.cgi[1] << std::endl;
 		std::cout << "\tuploadPath: " << route.uploadPath << std::endl;
+		std::cout << "\tredirect: " << route.redirect << std::endl;
 	}
 }
 
@@ -49,12 +49,12 @@ void	showServerConfigs(std::queue<t_serverConfig> serverConfigs) {
 }
 
 int main(int argc, char *argv[]) {
-	Parser						parser(argv[1]);
+	Parser						parser;
 	std::queue<t_serverConfig>	serverConfigs;
 	(void)argc;
 
 	try {
-		serverConfigs = parser.parseConfig();
+		serverConfigs = parser.parseConfig(argv[1]);
 		showServerConfigs(serverConfigs);
 	} catch(std::exception &e) {
 		std::cerr << "test error: " << e.what() << std::endl;

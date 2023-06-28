@@ -301,30 +301,30 @@ void	Response::init(int _flag)
 	 	_actual_root = _serverConfig.root;
 	 	_flag = 1;
 	}
-	if (req_parsed["Path"] == "/")
+	if (_req_parsed["Path"] == "/")
 		_configs = ServerConfig(_serverConfig);
-	else if (_serverConfig.routes.find(req_parsed["Path"]) == _serverConfig.routes.end())
+	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.routes.end())
 	{
-		std::cerr << "Error 404" : std::endl;
+		std::cerr << "Error 404" << std::endl;
 	}
 	else
-		_configs = ServerConfig(_serverConfig, _serverConfig.routes[req_parsed["Path"]]);
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed["Path"]]);
 
-		_path_flag = 0;
-		_index_flag = 0;
-		_res_param.insert(std::pair<std::string,std::string>("Index",
+	_path_flag = 0;
+	_index_flag = 0;
+	_res_param.insert(std::pair<std::string,std::string>("Index",
 			_serverConfig.
 			index));
-		_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
+	_res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
 			intToString(_serverConfig.bodySizeLimit)) );
-		_res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
-		locationCheck();
-		_res_param.insert(std::pair<std::string,std::string>("Root",
-			_actual_root));
-		if (_req_parsed["Method"] == "GET")
-			methodGet(_req_parsed, _res_param);
-		if (_req_parsed["Method"] == "DELETE")
-			methodDelete(_req_parsed, _res_param);
+	_res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
+	locationCheck();
+	_res_param.insert(std::pair<std::string,std::string>("Root",
+		_actual_root));
+	if (_req_parsed["Method"] == "GET")
+		methodGet(_req_parsed, _res_param);
+	if (_req_parsed["Method"] == "DELETE")
+		methodDelete(_req_parsed, _res_param);
 }
 
 Response::~Response()

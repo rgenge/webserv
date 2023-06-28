@@ -27,7 +27,6 @@ class Response
 		int									_index_flag;
 		int									_path_flag;
 		std::string							_path_location;
-		ServerConfig						_configs;
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map

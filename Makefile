@@ -1,5 +1,5 @@
 SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp CgiHandler.cpp Request.cpp\
-	Response.cpp Parser.cpp
+	Response.cpp Parser.cpp ServerConfig.cpp
 NAME = webserv
 SRCS_PATH = ./srcs
 OBJS_PATH = ./objs
@@ -49,7 +49,7 @@ val:	${NAME}
 
 # TESTS
 
-# ***********************WILDCARD COMPILATION******************* # 
+# ***********************WILDCARD COMPILATION******************* #
 NAME_WILD = Webserv
 NAME_ARCHIVE = webserv.a
 SOURCES_W = $(wildcard $(SRCS_PATH)/**/*.cpp) $(wildcard $(SRCS_PATH)/*.cpp) \
@@ -64,7 +64,7 @@ ${NAME_WILD}:
 ${NAME_ARCHIVE}: ${OBJECTS_W}
 				ar -rcs ${NAME_ARCHIVE} ${OBJECTS_W}
 
-# ***********************TESTS******************* # 
+# ***********************TESTS******************* #
 
 TEST_PATH = ./tests
 SOURCES_T = $(wildcard $(TEST_PATH)/*.cpp) $(wildcard ${TEST_PATH}/**/*.cpp)
