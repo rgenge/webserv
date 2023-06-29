@@ -57,6 +57,7 @@ ServerConfig&	ServerConfig::operator=(ServerConfig const &rhs) {
 	_index = rhs._index;
 	_root = rhs._root;
 	_cgi = rhs._cgi;
+	_redirect = rhs._redirect;
 	return (*this);
 }
 
