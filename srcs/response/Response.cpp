@@ -237,16 +237,6 @@ void	Response::init(int _flag)
 	std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
 	std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
 	std::cout <<"Url path :"<<  _url_path<< std::endl;
-	// _path_flag = 0;
-	// _index_flag = 0;
-	// _res_param.insert(std::pair<std::string,std::string>("Index",
-	// 		_serverConfig.
-	// 		index));
-	// _res_param.insert(std::pair<std::string,std::string>("bodySizeLimit",
-	// 		intToString(_serverConfig.bodySizeLimit)) );
-	// _res_param.insert(std::pair<std::string,std::string>("AutoIndex",""));
-	// _res_param.insert(std::pair<std::string,std::string>("Root",
-	// 	_actual_root));
 	if (_req_parsed["Method"] == "GET")
 		methodGet(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
