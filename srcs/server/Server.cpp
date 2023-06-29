@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
+Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config), _flag(0) {
 }
 
 Server::~Server() {
@@ -55,8 +55,21 @@ void	Server::respondRequest(int requestfd) {
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getMap();
 	_req_body = _req.getBody();
+	/*Iniciando o server com os dados do path selecionado*/
+	if (_req_parsed["Path"] == "/")
+	{
+		_configs = ServerConfig(_serverConfig);
+		_url_path = _req_parsed["Path"];
+	}
+	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.routes.end())
+		std::cerr << "Error 404" << std::endl;
+	else
+	{
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed["Path"]]);
+		_url_path = _req_parsed["Path"];
+	}
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root, this->_requestData);
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root, _configs, _url_path, this->_requestData);
 	res_struct.init(_flag);
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();

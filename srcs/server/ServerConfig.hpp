@@ -18,8 +18,8 @@ class ServerConfig {
 
 		ServerConfig&	operator=(ServerConfig const &rhs);
 
-		const int							getPort(void) const;
-		const int							getBodySizeLimit(void) const;
+		int									getPort(void) const;
+		int									getBodySizeLimit(void) const;
 		const std::string					&getRoot(void) const;
 		const std::string					&getIndex(void) const;
 		const std::vector<std::string>		&getCgi(void) const;
@@ -27,8 +27,8 @@ class ServerConfig {
 		const std::map<int, std::string>	&getErrorPages(void) const;
 		const std::set<std::string>			&getHttpMethods(void) const;
 		const std::string					&getUploadPath(void) const;
-		const std::string					getRedirect(void) const;
-		const bool							getDirList(void) const;
+		const std::string					&getRedirect(void) const;
+		bool								getDirList(void) const;
 
 	private:
 
