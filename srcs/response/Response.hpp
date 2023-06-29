@@ -11,6 +11,8 @@
 # include <unistd.h>
 # include <sstream>
 # include <sys/dir.h>
+#include <iostream>
+#include <string>
 
 class Response
 {
@@ -27,11 +29,13 @@ class Response
 		int									_index_flag;
 		int									_path_flag;
 		std::string							_path_location;
+		ServerConfig						&_configs;
+		std::string							&_url_path;
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map
 		<std::string, std::string>& _req_parsed_, t_serverConfig&
-		_serverConfig_, std::string& _actual_root_);
+		_serverConfig_, std::string& _actual_root_,ServerConfig & _configs_, std::string& _url_path_);
 		~Response();
 		void		init (int _flag);
 		void		methodGet(std::map <std::string, std::string> _req_parsed,
@@ -40,7 +44,8 @@ class Response
 		void		autoIndex(std::map <std::string, std::string> _res_param);
 		void		methodDelete(std::map <std::string, std::string>
 			_req_parsed, std::map <std::string, std::string> _res_param);
-		void		locationCheck();
+		bool		dirCheck(std::string dir);
+		std::string sizetToString(std::string text);
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();

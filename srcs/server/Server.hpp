@@ -4,7 +4,7 @@
 # include "Socket.hpp"
 # include "Request.hpp"
 # include "Response.hpp"
-//# include "ServerConfig.hpp"
+# include "ServerConfig.hpp"
 # include "webserv.hpp"
 # include <map>
 # include <sys/stat.h>
@@ -40,6 +40,8 @@ class Server : public Socket {
 		t_serverConfig						_serverConfig;
 		int									_flag;
 		std::string							_actual_root;
+		ServerConfig						_configs;
+		std::string							_url_path;
 
 };
 
