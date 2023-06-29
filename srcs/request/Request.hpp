@@ -1,4 +1,3 @@
-
 #ifndef REQUEST_HPP
 # define REQUEST_HPP
 
@@ -18,17 +17,15 @@ class Request
 		std::string							_request;
 		std::map <std::string, std::string>	_req_map;
 		std::string							_body;
-		std::string							_error_type;
 	public:
 		Request(std::string req_input);
 		~Request();
 		void								parse(std::string req_input);
 		void								parseChunk(std::string request);
 		void								checkRequest();
+		size_t								heximalConverter(std::string input);
 		std::map <std::string, std::string>	&getMap();
 		std::string							getBody();
-		std::string							errorType();
-		std::string							getRequest();
 };
 
 #endif

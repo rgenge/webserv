@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config), _flag(0) {
+Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
 }
 
 Server::~Server() {
@@ -47,7 +47,6 @@ int	Server::getRequest(int requestfd) {
 
 void	Server::respondRequest(int requestfd) {
 	std::string	response;
-	_flag++;
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getMap();
@@ -58,16 +57,19 @@ void	Server::respondRequest(int requestfd) {
 		_configs = ServerConfig(_serverConfig);
 		_url_path = _req_parsed["Path"];
 	}
-	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.routes.end())
-		std::cerr << "Error 404" << std::endl;
+	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.
+		routes.end())
+		std::cerr << "Error 400" << std::endl;
 	else
 	{
-		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed["Path"]]);
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed
+			["Path"]]);
 		_url_path = _req_parsed["Path"];
 	}
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root, _configs, _url_path);
-	res_struct.init(_flag);
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _configs,
+		_url_path);
+	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
 	response += res_struct.getBody();

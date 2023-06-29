@@ -38,8 +38,6 @@ class Server : public Socket {
 		std::map <std::string, std::string>	_req_parsed;
 		std::string							_req_body;
 		t_serverConfig						_serverConfig;
-		int									_flag;
-		std::string							_actual_root;
 		ServerConfig						_configs;
 		std::string							_url_path;
 

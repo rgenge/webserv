@@ -25,30 +25,29 @@ class Response
 		std::map <std::string, std::string>	&_res_param;
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
-		std::string							&_actual_root;
-		int									_index_flag;
-		int									_path_flag;
 		std::string							_path_location;
 		ServerConfig						&_configs;
 		std::string							&_url_path;
-
-	public:
-		Response(std::map <std::string, std::string>& _res_param_, std::map
-		<std::string, std::string>& _req_parsed_, t_serverConfig&
-		_serverConfig_, std::string& _actual_root_,ServerConfig & _configs_, std::string& _url_path_);
-		~Response();
-		void		init (int _flag);
 		void		methodGet(std::map <std::string, std::string> _req_parsed,
 			std::map <std::string, std::string> _res_param);
-		void		printHeader(std::string status_code, std::string ok_ko, std::string http_version);
+		void		printHeader(std::string status_code, std::string ok_ko,
+			std::string http_version);
 		void		autoIndex(std::map <std::string, std::string> _res_param);
 		void		methodDelete(std::map <std::string, std::string>
-			_req_parsed, std::map <std::string, std::string> _res_param);
-		bool		dirCheck(std::string dir);
-		std::string sizetToString(std::string text);
+			_req_parsed);
+		int		dirCheck(std::string dir);
+		std::string	sizetToString(std::string text);
+		void		printError(std::string codigo);
+		bool		checkRequest();
+
+	public:
+		void		init ();
+		Response(std::map <std::string, std::string>& _res_param_, std::map
+		<std::string, std::string>& _req_parsed_, t_serverConfig&
+		_serverConfig_, ServerConfig & _configs_, std::string& _url_path_);
+		~Response();
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
-
 };
 #endif

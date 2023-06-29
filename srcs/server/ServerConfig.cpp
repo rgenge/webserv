@@ -14,7 +14,8 @@ ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
 	_dirList = false;
 }
 
-ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &route) {
+ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &
+	route) {
 	_port = serverConfig.port;
 	_bodySizeLimit = serverConfig.bodySizeLimit;
 	_serverNames = serverConfig.serverNames;
@@ -57,6 +58,7 @@ ServerConfig&	ServerConfig::operator=(ServerConfig const &rhs) {
 	_index = rhs._index;
 	_root = rhs._root;
 	_cgi = rhs._cgi;
+	_redirect = rhs._redirect;
 	return (*this);
 }
 

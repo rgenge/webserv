@@ -1,14 +1,16 @@
 #include "Response.hpp"
 
 Response::Response(std::map <std::string, std::string>& _res_param_, std::map
-<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_, std::string& _actual_root_, ServerConfig & _configs_, std::string&_url_path_)
-:_res_param(_res_param_), _req_parsed(_req_parsed_), _serverConfig
-(_serverConfig_), _actual_root(_actual_root_), _configs(_configs_), _url_path(_url_path_)
+<std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_,
+ServerConfig & _configs_, std::string&_url_path_) :_res_param(_res_param_),
+_req_parsed(_req_parsed_), _serverConfig (_serverConfig_), _configs(_configs_),
+_url_path(_url_path_)
 {
 }
 
 /*Salva a resposta e imprimi no terminal*/
-void	Response::printHeader(std::string status_code, std::string ok_ko, std::string http_version)
+void	Response::printHeader(std::string status_code, std::string ok_ko,
+	std::string http_version)
 {
 	_response.append(http_version + status_code + " " + ok_ko +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
@@ -50,7 +52,10 @@ void	Response::autoIndex( std::map <std::string, std::string> _res_param)
     std::string _content;
 	if (!(dh = opendir(directory.c_str())))
 	{
-		std::cout << "error message e saiu" << std::endl;
+			//checar esse erro
+			std::cerr << "Error 404? Path ñ existe ou s/ permissao"<< std::endl;
+			printError("404");
+			return ;
 	}
 	else
 	{
@@ -63,7 +68,8 @@ void	Response::autoIndex( std::map <std::string, std::string> _res_param)
 					".."))
 					continue;
 				else
-					_body += "<a href=\"" + _req_parsed["Path"] +"/" + std::string(contents->d_name);
+					_body += "<a href=\"" + _req_parsed["Path"] +"/" +
+					std::string(contents->d_name);
 				_body += (contents->d_type == DT_DIR ? "" : "") + (std::string)
 					"\">";
 				_body += (std::string)(contents->d_name) + (contents->d_type ==
@@ -74,12 +80,15 @@ void	Response::autoIndex( std::map <std::string, std::string> _res_param)
 	}
 }
 
-/*
 void	Response::printError(std::string codigo)
 {
-	std::cerr << codigo << std::endl;
+	_body = "";
+	_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
+		"<title>webserv</title></head><body><h1>Error " + codigo + "</h1>\n");
+	_body += "</div></body></html>";
+	printHeader (codigo, "KO", _req_parsed["Version"]);
 }
-*/
+
 
 std::string Response::sizetToString(std::string text)
 {
@@ -88,38 +97,32 @@ std::string Response::sizetToString(std::string text)
 	std::string string_num = sizet_num.str();
 	return (string_num);
 }
+
 void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 	std::map <std::string, std::string> _res_param)
 {
 	std::string check_url;
 	check_url = _req_parsed["Path"].substr(0, _url_path.size());
-	std::cout << "check:" << check_url << std::endl;
 	/*Limpa o caminho e tira o url pra adicionar ao root*/
 	std::string		clean_path = _req_parsed["Path"];
 	std::string::size_type i = clean_path.find(_url_path);
 	if (i != std::string::npos && _url_path != "/")
 		clean_path.erase(i, _url_path.length());
-	if (check_url == _url_path)
-	{
-		_full_path = _configs.getRoot() + clean_path;
-		_dir_path = _configs.getRoot() + clean_path;
-	}
-//	else if ((_req_parsed["Path"] == "/"))
-//	{
-//		_full_path = _configs.getRoot() + _req_parsed["Path"] + "/" + _configs.getIndex();
-//		_dir_path = _configs.getRoot() + _req_parsed["Path"];
-//	}
-	else
-	{
-		_full_path = _configs.getRoot() + clean_path;
-		_dir_path = _configs.getRoot() + clean_path;
-	}
+	_full_path = _configs.getRoot() + clean_path;
+	_dir_path = _configs.getRoot() + clean_path;
+	/*limpa o path quando adicionar // */
 	if(_full_path.find("//") != std::string::npos)
 		_full_path.replace(_full_path.find("//"), 2, "/");
-	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) != -1)
+	/*Checa se o index existe caso exista acessa ele */
+	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) !=
+		-1)
 		_full_path = _full_path + "/" +  _configs.getIndex();
+	/*Ativa o redirect caso possua*/
 	if (_configs.getRedirect() != "")
+	{
 		_full_path = _configs.getRedirect();
+		_dir_path = _configs.getRedirect();
+	}
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
@@ -129,6 +132,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 		return;
 	}
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
+	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
 	{
 		std::ifstream	page;
@@ -139,6 +143,10 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 		while (std::getline(page, line)) {
 			buffer += line + "\n";
 		}
+		/*Checa se pasta não é acessivel*/
+		if (dirCheck(_full_path) == 2)
+			return ;
+		/*Checa se o buffer vai ser gerado por arquivi o autoindex*/
 		if (_configs.getDirList() == 0 || !dirCheck(_full_path))
 			_body = buffer;
 		if (_configs.getDirList() == 1 && dirCheck(_full_path))
@@ -158,33 +166,43 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 		_res_map["Content-type"] = getType();
 		/*Verifica o Content-Length e imprimi erro caso necessário*/
 		int content = atoi(_res_map["Content-Length"].c_str());
+		if (content <= 0)
+		{
+			printError("411");
+			return ;
+		}
 		if((content) > _configs.getBodySizeLimit())
-			std::cout << "error 414 bodySize Limite excedido";
+		{
+			printError("414");
+			return ;
+		}
 		printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
 	else
-		std::cout << "Some error ";
+		printError("404");
 }
 
-void	Response::methodDelete(std::map <std::string, std::string> _req_parsed,
-	std::map <std::string, std::string> _res_param)
+void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
 {
-	if (_req_parsed["Path"] == "/")
-	{
-		_full_path = _res_param["Root"] + _req_parsed["Path"] + _res_param
-			["Index"];
-		_dir_path = _res_param["Root"] + _req_parsed["Path"];
-	}
-	else
-	{
-		_full_path = _res_param["Root"] + _req_parsed["Path"];
-		_dir_path = _res_param["Root"] + _req_parsed["Path"];
-	}
+	std::string		clean_path = _req_parsed["Path"];
+	std::string::size_type i = clean_path.find(_url_path);
+	if (i != std::string::npos && _url_path != "/")
+		clean_path.erase(i, _url_path.length());
+	_full_path = _configs.getRoot() + clean_path;
+	_dir_path = _configs.getRoot() + clean_path;
+	/*limpa o path quando adicionar // */
+	if(_full_path.find("//") != std::string::npos)
+		_full_path.replace(_full_path.find("//"), 2, "/");
+	/*Checa se o index existe caso exista acessa ele */
+	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) !=
+		-1)
+		_full_path = _full_path + "/" +  _configs.getIndex();
 	FILE *file = fopen(_full_path.c_str(), "r");
 	if(!file)
 	{
-			std::cout << "Error 404";
+		printError("404");
+		return ;
 	}
 	else
 	{
@@ -194,15 +212,16 @@ void	Response::methodDelete(std::map <std::string, std::string> _req_parsed,
 }
 
 /*Checa sé não é diretório para ligar autoindex*/
-bool	Response::dirCheck(std::string dir)
+int	Response::dirCheck(std::string dir)
 {
 	struct stat buf;
 	lstat(dir.c_str(), &buf);
 	FILE *check_fp = fopen(dir.c_str(), "r");
 	if (!check_fp)
 	{
-		std::cerr << "Error 404 dirCheck";
-		return (1);
+		std::cerr << "Permission not allowed" << std::endl;
+		printError("403");
+		return (2);
 	}
 	else
 	{
@@ -221,14 +240,27 @@ std::string	intToString (int num)
 	return temp.str();
 }
 
-void	Response::init(int _flag)
+bool	Response::checkRequest()
 {
- 	if (_flag == 1)
- 	{
-// 	 	_actual_root = _serverConfig.root;
-	 	_flag = 1;
-// 		_url_path = _req_parsed["Path"];
- 	}
+	if (_req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
+		"HTTP/1.0" && _req_parsed["Version"] != "HTTP/1.1" &&
+			_req_parsed["Version"] != "HTTP/2.0")
+	{
+		std::cerr << "Error 505 Http Version not supported" << std::endl;
+		printError("505");
+		return (1);
+	}
+	if (_configs.getHttpMethods().find(_req_parsed["Method"]) == _configs.
+		getHttpMethods().end())
+	{
+		std::cerr << "Error 405 invalid method" << std::endl;
+		printError("405");
+		return (1);
+	}
+	return (0);
+}
+void	Response::init()
+{
 	std::cout <<"Root:"<< _configs.getRoot() << std::endl;
 	std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
 	std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
@@ -237,10 +269,13 @@ void	Response::init(int _flag)
 	std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
 	std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
 	std::cout <<"Url path :"<<  _url_path<< std::endl;
+	/*checa se o método solicitado está incluso no location*/
+	if (checkRequest())
+		return ;
 	if (_req_parsed["Method"] == "GET")
 		methodGet(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
-		methodDelete(_req_parsed, _res_param);
+		methodDelete(_req_parsed);
 }
 
 Response::~Response()
