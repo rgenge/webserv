@@ -436,12 +436,12 @@ std::string	Response::_getUploadDir(t_serverConfig &serverConfig)
 {
 	std::map<std::string, t_route>::iterator it;
 
-	if (this->_mapImput["Path"] == "/")
+	if (this->_postHeaders["Path"] == "/")
 		throw std::runtime_error("error 405 '_getDir'");
 	else
 	{
-		if (((it = serverConfig.routes.find(this->_mapImput["Path"])) != serverConfig.routes.end())
-		|| ((it = serverConfig.routes.find(_handleLastSlash(this->_mapImput["Path"]))) != serverConfig.routes.end()))
+		if (((it = serverConfig.routes.find(this->_postHeaders["Path"])) != serverConfig.routes.end())
+		|| ((it = serverConfig.routes.find(_handleLastSlash(this->_postHeaders["Path"]))) != serverConfig.routes.end()))
 		{
 			// std::cout << "Encontrou a rota!" << std::endl;
 			;
@@ -484,7 +484,6 @@ void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &s
 void	Response::_handleBoundaryPart(std::string &multipart, t_serverConfig &serverConfig)
 {
 	_setHeaders(multipart);
-	// std::cout << multipart;
 	// std::map<std::string, std::string>::iterator it;
 	// for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
 	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
@@ -511,12 +510,114 @@ void	Response::_methodPost(std::map <std::string, std::string> map_input,
 		_parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"], serverConfig);
 	else
 		std::cout << map_input["Content-Type"] << std::endl;
-	
-	// std::map<std::string, std::string>::iterator it;
-	// for(it = map_input.begin(); it != map_input.end(); it++)
-	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	return ;
 }
+
+int	Response::_findSequence(std::string const sequence)
+{
+	size_t i = 0;
+	size_t j = 0;
+	while ((i < this->_requestData.size()) && (j < sequence.size()))
+	{
+		if (this->_requestData[i] == sequence[j])
+		{
+			i++;
+			j++;
+		}
+		else
+		{
+			i -= j;
+			j = 0;
+			i++;
+		}
+	}
+	if (j < sequence.size())
+		return (0);
+	return (i);
+}
+
+std::string	Response::_setStringHeaders(void)
+{
+	std::string	postHeaders;
+
+	if (this->_requestData.size() > 3)
+	{
+		int headersEndPos = _findSequence("\r\n\r\n");
+		if (headersEndPos > 0)
+		{
+			for (int i = 0; i < headersEndPos; i++)
+			{
+				postHeaders += this->_requestData[i];
+				this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin());
+			}
+			std::cout << postHeaders << std::endl;\
+		}
+		else
+			throw std::runtime_error("invalid request format '_setPostHeaders'");
+	}
+	else
+		throw std::runtime_error("invalid request format '_setPostHeaders'");
+	return (postHeaders);
+}
+
+void	Response::_parseRequestData(void)
+{
+	std::string		s;
+	std::string		sub;
+	std::string		sub2;
+	std::string		token;
+	std::string		delim = "\r\n";
+	std::string		head1 = "Method";
+	std::string		head2 = "Path";
+	std::string		head3 = "Version";
+	size_t			pos = 0;
+	int				counter = 1;
+
+	s = _setStringHeaders();
+	while ((pos = s.find(delim)) != std::string::npos)
+	{
+		if (s[0] == '\r' && s[1] == '\n')
+			break;
+		token = s.substr(0, pos);
+		size_t found = token.find("HTTP/");
+		if (found == std::string::npos)
+		{
+			size_t pos2 = 0;
+			std::string delim2 = ": ";
+			while((pos2 = token.find(delim2)) != std::string ::npos)
+			{
+				sub = token.substr(0, pos2);
+				token.erase(0, pos2 + delim2.length());
+				this->_postHeaders.insert(make_pair(sub, token));
+			}
+			s.erase(0, pos + delim.length());
+		}
+		else
+		{
+			size_t pos2 = 0;
+			std::string delim3 = " ";
+			while((pos2 = token.find(delim3)) != std::string ::npos)
+			{
+				sub = token.substr(0, pos2);
+				token.erase(0, pos2 + delim3.length());;
+				if (counter == 1)
+				{
+					this->_postHeaders.insert(make_pair(head1, sub));
+					counter++;
+				}
+				else if (counter == 2)
+				{
+					this->_postHeaders.insert(make_pair(head2, sub));
+					this->_postHeaders.insert(make_pair(head3, token));
+					counter++;
+				}
+			}
+			s.erase(0, pos + delim.length());
+		}
+	}
+	return ;
+}
+
 
 void	Response::init(int _flag)
 {
@@ -526,27 +627,24 @@ void	Response::init(int _flag)
 	 	_flag = 1;
 // 		_url_path = _req_parsed["Path"];
  	}
-	std::cout <<"Root:"<< _configs.getRoot() << std::endl;
-	std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
-	std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	std::cout <<"Url path :"<<  _url_path<< std::endl;
+	// std::cout <<"Root:"<< _configs.getRoot() << std::endl;
+	// std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
+	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
+	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
+	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
+	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
+	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
+	// std::cout <<"Url path :"<<  _url_path<< std::endl;
 	if (_req_parsed["Method"] == "GET")
 		methodGet(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
 		methodDelete(_req_parsed, _res_param);
-	if (_req_parsed["Method"] == "POST")
-	{
-		this->_mapImput = _req_parsed;
+	_parseRequestData();
+	std::map<std::string, std::string>::iterator it;
+	for (it = this->_postHeaders.begin(); it != this->_postHeaders.end(); it++)
+		std::cout << it->first << "=" << it->second << std::endl;
+	if (this->_postHeaders["Method"] == "POST")
 		_methodPost(_req_parsed, _serverConfig);
-		std::cout << "Depois: " << std::endl;
-		for (size_t i = 0; i < this->_requestData.size(); i++)
-			std::cout << this->_requestData[i];
-	}
-
 	throw std::runtime_error("EXIT");
 }
 

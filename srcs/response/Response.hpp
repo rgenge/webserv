@@ -41,11 +41,13 @@ class Response
 		std::string							_fileType;
 		std::map <std::string, std::string>	_decodedParams;
 		std::map <std::string, std::string>	_multipartHeaders;
-		std::map <std::string, std::string>	_mapImput;
+		std::map <std::string, std::string>	_postHeaders;
+		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
 
 		// POST
 		void		_methodPost(std::map <std::string, std::string> map_input, t_serverConfig &serverConfig);
+		void		_parseRequestData(void);
 		void		_parseChunk(std::string &body);
 		void		_parseUrlEncodedParams(std::string params);
 		void		_removeBreakLinesAndCR(std::string &str);
@@ -62,6 +64,8 @@ class Response
 		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
+		std::string	_setStringHeaders(void);
+		int			_findSequence(std::string const sequence);
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
