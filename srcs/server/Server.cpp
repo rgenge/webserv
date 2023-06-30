@@ -51,21 +51,6 @@ void	Server::respondRequest(int requestfd) {
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getMap();
 	_req_body = _req.getBody();
-	/*Iniciando o server com os dados do path selecionado*/
-	if (_req_parsed["Path"] == "/")
-	{
-		_configs = ServerConfig(_serverConfig);
-		_url_path = _req_parsed["Path"];
-	}
-	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.
-		routes.end())
-		std::cerr << "Error 400" << std::endl;
-	else
-	{
-		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed
-			["Path"]]);
-		_url_path = _req_parsed["Path"];
-	}
 	/*Iniciando o response*/
 	Response res_struct(_res_param, _req_parsed, _serverConfig, _configs,
 		_url_path);

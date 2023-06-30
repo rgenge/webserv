@@ -43,7 +43,7 @@ std::string	Response::getType()
 	return ("text/html");
 }
 
-void	Response::autoIndex( std::map <std::string, std::string> _res_param)
+void	Response::autoIndex()
 {
 	DIR *dh;
     struct dirent *contents;
@@ -60,18 +60,20 @@ void	Response::autoIndex( std::map <std::string, std::string> _res_param)
 	else
 	{
 		_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
-			"<title>webserv</title></head><body><h1>Index of " + _res_param
-			["Root"] + "</h1>\n");
+			"<title>webserv</title></head><body><h1>Index of " +
+			_configs.getRoot() + "</h1>\n");
 			while ((contents = readdir(dh)) != NULL)
 			{
+
 				if (!strcmp(contents->d_name, ".") || !strcmp(contents->d_name,
 					".."))
 					continue;
-				else
+				else if (_configs.getRedirect() == "")
 					_body += "<a href=\"" + _req_parsed["Path"] +"/" +
 					std::string(contents->d_name);
-				_body += (contents->d_type == DT_DIR ? "" : "") + (std::string)
-					"\">";
+				else
+					_body += "<a href=\"" + _req_parsed["Path"];
+				_body +=  "\">";
 				_body += (std::string)(contents->d_name) + (contents->d_type ==
 					DT_DIR ? "/" : "") + "</a><br>";
 			}
@@ -87,6 +89,7 @@ void	Response::printError(std::string codigo)
 		"<title>webserv</title></head><body><h1>Error " + codigo + "</h1>\n");
 	_body += "</div></body></html>";
 	printHeader (codigo, "KO", _req_parsed["Version"]);
+	_error_flag = 1;
 }
 
 
@@ -98,8 +101,7 @@ std::string Response::sizetToString(std::string text)
 	return (string_num);
 }
 
-void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
-	std::map <std::string, std::string> _res_param)
+void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 {
 	std::string check_url;
 	check_url = _req_parsed["Path"].substr(0, _url_path.size());
@@ -150,7 +152,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 		if (_configs.getDirList() == 0 || !dirCheck(_full_path))
 			_body = buffer;
 		if (_configs.getDirList() == 1 && dirCheck(_full_path))
-			autoIndex(_res_param);
+			autoIndex();
 		/*Converte o Content-length de size_t pra string e adiciona no map*/
 		std::string string_len = sizetToString(buffer);
 		if (_configs.getDirList() == 0 || !dirCheck(_full_path))
@@ -171,12 +173,19 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed,
 			printError("411");
 			return ;
 		}
-		if((content) > _configs.getBodySizeLimit())
+		if((content)/1000 > _configs.getBodySizeLimit())
 		{
+			std::cerr << "Body size limit exceeded" << std::endl;
 			printError("414");
 			return ;
 		}
-		printHeader ("200", "OK", _req_parsed["Version"]);
+//		if (_configs.getRedirect() != "")
+//		{
+//			printHeader ("308", "Permanent Redirect", _req_parsed["Version"]);
+//			return ;
+//		}
+//		if (_error_flag != 1)
+			printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
 	else
@@ -261,6 +270,22 @@ bool	Response::checkRequest()
 }
 void	Response::init()
 {
+	_error_flag = 0;
+	/*Iniciando o server com os dados do path selecionado*/
+	if (_req_parsed["Path"] == "/")
+	{
+		_configs = ServerConfig(_serverConfig);
+		_url_path = _req_parsed["Path"];
+	}
+	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.
+		routes.end())
+		std::cerr << "Error 400" << std::endl;
+	else
+	{
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed
+			["Path"]]);
+		_url_path = _req_parsed["Path"];
+	}
 	std::cout <<"Root:"<< _configs.getRoot() << std::endl;
 	std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
 	std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
@@ -273,7 +298,7 @@ void	Response::init()
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")
-		methodGet(_req_parsed, _res_param);
+		methodGet(_req_parsed);
 	if (_req_parsed["Method"] == "DELETE")
 		methodDelete(_req_parsed);
 }

@@ -28,11 +28,11 @@ class Response
 		std::string							_path_location;
 		ServerConfig						&_configs;
 		std::string							&_url_path;
-		void		methodGet(std::map <std::string, std::string> _req_parsed,
-			std::map <std::string, std::string> _res_param);
+		int									_error_flag;
+		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string ok_ko,
 			std::string http_version);
-		void		autoIndex(std::map <std::string, std::string> _res_param);
+		void		autoIndex();
 		void		methodDelete(std::map <std::string, std::string>
 			_req_parsed);
 		int		dirCheck(std::string dir);
@@ -49,5 +49,6 @@ class Response
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
+
 };
 #endif
