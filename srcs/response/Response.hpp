@@ -30,14 +30,14 @@ class Response
 		std::string							&_url_path;
 		int									_error_flag;
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
-		void		printHeader(std::string status_code, std::string ok_ko,
+		void		printHeader(std::string status_code, std::string message,
 			std::string http_version);
 		void		autoIndex();
 		void		methodDelete(std::map <std::string, std::string>
 			_req_parsed);
 		int		dirCheck(std::string dir);
 		std::string	sizetToString(std::string text);
-		void		printError(std::string codigo);
+		void		printError(std::string codigo, std::string message);
 		bool		checkRequest();
 
 	public:

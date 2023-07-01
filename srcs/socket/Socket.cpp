@@ -19,7 +19,7 @@ Socket::Socket() {
 	this->_socketfd = -1;
 }
 
-Socket::Socket(int port, int backlog) : _port(port), _backlog(backlog) { 
+Socket::Socket(int port, int backlog) : _port(port), _backlog(backlog) {
 	this->_address.sin_family = AF_INET;
 	this->_address.sin_addr.s_addr = INADDR_ANY;
 	this->_address.sin_port = htons(this->_port);
@@ -51,7 +51,7 @@ Socket::~Socket(void) {
 }
 
 void	Socket::initialize(void) {
-	if ((this->_socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // Estes parametros serão provavelmente variáveis
+	if ((this->_socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // Estes parametros serão provavelmente variáveisz
 		throw std::runtime_error("When creating socket");
 	if (this->_bindSocket() < 0)
 		throw std::runtime_error("When binding socket");

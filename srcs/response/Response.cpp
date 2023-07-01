@@ -9,10 +9,10 @@ _url_path(_url_path_)
 }
 
 /*Salva a resposta e imprimi no terminal*/
-void	Response::printHeader(std::string status_code, std::string ok_ko,
+void	Response::printHeader(std::string status_code, std::string message,
 	std::string http_version)
 {
-	_response.append(http_version + status_code + " " + ok_ko +  "\r\n");
+	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
@@ -54,7 +54,7 @@ void	Response::autoIndex()
 	{
 			//checar esse erro
 			std::cerr << "Error 404? Path ñ existe ou s/ permissao"<< std::endl;
-			printError("404");
+			printError("404", "Not Found");
 			return ;
 	}
 	else
@@ -82,13 +82,16 @@ void	Response::autoIndex()
 	}
 }
 
-void	Response::printError(std::string codigo)
+void	Response::printError(std::string codigo, std::string message)
 {
 	_body = "";
 	_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
 		"<title>webserv</title></head><body><h1>Error " + codigo + "</h1>\n");
 	_body += "</div></body></html>";
-	printHeader (codigo, "KO", _req_parsed["Version"]);
+	_res_map["Content-type"] = getType();
+	_res_map["Content-Length"] = "1000";
+	_res_map["Connection"] = "close";
+	printHeader (codigo, message, _req_parsed["Version"]);
 	_error_flag = 1;
 }
 
@@ -170,26 +173,26 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		int content = atoi(_res_map["Content-Length"].c_str());
 		if (content <= 0)
 		{
-			printError("411");
+			printError("411", "Length Required");
 			return ;
 		}
 		if((content)/1000 > _configs.getBodySizeLimit())
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
-			printError("414");
+			printError("414", "URI Too Long");
 			return ;
 		}
-//		if (_configs.getRedirect() != "")
-//		{
-//			printHeader ("308", "Permanent Redirect", _req_parsed["Version"]);
-//			return ;
-//		}
-//		if (_error_flag != 1)
+		if (_configs.getRedirect() != "")
+		{
+			printHeader ("308", "Permanent Redirect", _req_parsed["Version"]);
+			return ;
+		}
+		if (_error_flag != 1)
 			printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
 	else
-		printError("404");
+		printError("404", "Not Found");
 }
 
 void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
@@ -210,7 +213,7 @@ void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
 	FILE *file = fopen(_full_path.c_str(), "r");
 	if(!file)
 	{
-		printError("404");
+		printError("404", "Not Found");
 		return ;
 	}
 	else
@@ -228,8 +231,8 @@ int	Response::dirCheck(std::string dir)
 	FILE *check_fp = fopen(dir.c_str(), "r");
 	if (!check_fp)
 	{
-		std::cerr << "Permission not allowed" << std::endl;
-		printError("403");
+		std::cerr << "Forbidden" << std::endl;
+		printError("403", "Forbidden");
 		return (2);
 	}
 	else
@@ -256,14 +259,14 @@ bool	Response::checkRequest()
 			_req_parsed["Version"] != "HTTP/2.0")
 	{
 		std::cerr << "Error 505 Http Version not supported" << std::endl;
-		printError("505");
+		printError("505", "HTTP Version Not Supported");
 		return (1);
 	}
 	if (_configs.getHttpMethods().find(_req_parsed["Method"]) == _configs.
 		getHttpMethods().end())
 	{
 		std::cerr << "Error 405 invalid method" << std::endl;
-		printError("405");
+		printError("405", "Method Not Allowed");
 		return (1);
 	}
 	return (0);
@@ -286,14 +289,14 @@ void	Response::init()
 			["Path"]]);
 		_url_path = _req_parsed["Path"];
 	}
-	std::cout <<"Root:"<< _configs.getRoot() << std::endl;
-	std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
-	std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	std::cout <<"Url path :"<<  _url_path<< std::endl;
+	// std::cout <<"Root:"<< _configs.getRoot() << std::endl;
+	// std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
+	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
+	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
+	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
+	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
+	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
+	// std::cout <<"Url path :"<<  _url_path<< std::endl;
 	/*checa se o método solicitado está incluso no location*/
 	if (checkRequest())
 		return ;
