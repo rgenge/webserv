@@ -36,36 +36,37 @@ class Response
 		std::string							&_url_path;
 
 		// POST
-		std::string							_textPlain;
 		std::string 						_boundary;
 		std::string							_fileType;
-		std::map <std::string, std::string>	_decodedParams;
-		std::map <std::string, std::string>	_multipartHeaders;
+		std::string							_postBodyStr;
+		std::map <std::string, std::string>	_vars;
+		std::map <std::string, std::string>	_boundaryHeaders;
 		std::map <std::string, std::string>	_postHeaders;
 		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
 
 		// POST
-		void		_methodPost(std::map <std::string, std::string> map_input, t_serverConfig &serverConfig);
+		void		_methodPost(t_serverConfig &serverConfig);
 		void		_parseRequestData(void);
-		void		_parseChunk(std::string &body);
-		void		_parseUrlEncodedParams(std::string params);
+		void		_setPostBodyStr(void);
+		void		_parseChunk(void);
+		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
-		void		_parseMultipartFormData(std::string &contentType, std::string &multipart, t_serverConfig &serverConfig);
-		void		_parseTextPlain(std::string &textPlain);
-		void		_setBoundary(std::string &contentType);
+		void		_parseMultipartFormData(t_serverConfig &serverConfig);
+		void		_parseTextPlain(void);
+		void		_setBoundary(void);
 		void		_removeHeaderSpaces(std::string &multipart);
-		void		_setHeaders(std::string &multipart);
+		void		_setHeaders(void);
 		void		_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig);
-		void		_handleBoundaryPart(std::string &multipart, t_serverConfig &serverConfig);
+		void		_handleBoundaryPart(t_serverConfig &serverConfig);
 		void		_handleImputFile(std::string &contentDisposition, std::string &multipart, t_serverConfig &serverConfig);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
 		std::string	_setStringHeaders(void);
-		int			_findSequence(std::string const sequence);
+		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,

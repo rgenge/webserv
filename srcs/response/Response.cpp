@@ -222,9 +222,8 @@ std::string	intToString (int num)
 	return temp.str();
 }
 
-void Response::_parseChunk(std::string &body)
+void Response::_parseChunk(void)
 {
-	(void)body;
 	return ;
 }
 
@@ -260,7 +259,6 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 				iss >> std::hex >> value;
 				if (iss.fail())
 					throw std::runtime_error("failed to convert hex to ASCII");
-
 				std::string asciiChar;
 				asciiChar.push_back(static_cast<char>(value));
 				params.replace(percentPos, 3, asciiChar);
@@ -272,11 +270,15 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 	return ;
 }
 
-void Response::_parseUrlEncodedParams(std::string params)
+void Response::_parseUrlEncodedParams(void)
 {
+	std::string	&params = this->_postBodyStr;
+
+	std::cout << "_postBodyStr:\n" << this->_postBodyStr << std::endl;
+
 	size_t separatorPos = params.find('=');
 	if (separatorPos == std::string::npos)
-		throw std::runtime_error("invalid application/x-www-form-urlencoded format");
+		throw std::runtime_error("error 400??? invalid application/x-www-form-urlencoded format");
 	_removeBreakLinesAndCR (params);
 	_replaceHexPercentWithAscii(params);
 	size_t pos = 0;
@@ -296,23 +298,25 @@ void Response::_parseUrlEncodedParams(std::string params)
 		std::string	value = params.substr(pos, ampersandPos - pos);
 		params.erase(pos, ampersandPos + 1);
 
-		this->_decodedParams[key] = value;
+		this->_vars[key] = value;
 	}
-	// std::map<std::string, std::string>::iterator it;
-	// for(it = this->_decodedParams.begin(); it != this->_decodedParams.end(); it++)
-	// 	std::cout << it->first << "=" << it->second << std::endl;
+	std::map<std::string, std::string>::iterator it;
+	for(it = this->_vars.begin(); it != this->_vars.end(); it++)
+		std::cout << it->first << "=" << it->second << std::endl;
 	return ;
 }
 
-void	Response::_parseTextPlain(std::string &textPlain)
+void	Response::_parseTextPlain(void)
 {
-	_removeBreakLinesAndCR(textPlain);
-	this->_textPlain = textPlain;
+	// ver se é mesmo necessário chamar essa função nesse caso
+	// _removeBreakLinesAndCR(textPlain);
 	return ;
 }
 
-void	Response::_setBoundary(std::string &contentType)
+void	Response::_setBoundary(void)
 {
+	std::string &contentType = this->_postHeaders["Content-Type"];
+
 	size_t boundaryPos;
 	if ((boundaryPos = contentType.find("---")) != std::string::npos)
 		this->_boundary = contentType.substr(boundaryPos, contentType.size() - boundaryPos);
@@ -347,45 +351,65 @@ void	Response::_removeHeaderSpaces(std::string &multipart)
 	return ;
 }
 
-void	Response::_setHeaders(std::string &multipart)
+void	Response::_setHeaders(void)
 {
-	size_t		boundaryPos, colonPos, argsPos;
-	std::string	headerKey, headerValue;
+	size_t		npos;
+	std::string	headers, headerKey, headerValue;
 
-	if ((boundaryPos = multipart.find(this->_boundary)) != std::string::npos)
-		multipart.erase(0, boundaryPos + this->_boundary.size() + 2);
+	// std::cout << "ANTES: size:" << this->_requestData.size() << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
+	if ((npos = _findSequence(this->_requestData, this->_boundary)) != 0)
+		this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + npos + 2);
 	else
 	{
-		std::cout << "multipart error :\n" << multipart << std::endl;
-		std::cout << "\nboundary: " << this->_boundary << std::endl;
-		throw std::runtime_error("invalid multipart/formdata 'boundaryPos'");
+		std::cout << "headers error: " << std::endl << headers << std::endl;
+		std::cout << "boundary: " << this->_boundary << std::endl;
+		throw std::runtime_error("invalid multipart/formdata '_setHeaders'");
 	}
-	_removeHeaderSpaces(multipart);
+	// std::cout << "DEPOIS:" << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
+	npos = _findSequence(this->_requestData, "\r\n\r\n");
+	for (size_t i = 0; i < npos; i++)
+	{
+		headers += this->_requestData[0];
+		this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
+	}
+	std::cout << "DEPOIS DE NOVO:" << std::endl;
+	for (size_t i = 0; i < this->_requestData.size(); i++)
+		std::cout << this->_requestData[i];
+	std::cout << "headers:" << std::endl << headers << std::endl;
+	_removeHeaderSpaces(headers);
 	while (true)
 	{
-		if ((colonPos = multipart.find(':')) != std::string::npos)
+		if ((npos = headers.find(':')) != std::string::npos)
 		{
-			headerKey = multipart.substr(0, colonPos);
-			multipart.erase(0, headerKey.size() + 1);
-			if ((argsPos = multipart.find("\r\n")) != std::string::npos)
+			headerKey = headers.substr(0, npos);
+			headers.erase(0, headerKey.size() + 1);
+			if ((npos = headers.find("\r\n")) != std::string::npos)
 			{
-				headerValue = multipart.substr(0, argsPos);
-				multipart.erase(0, headerValue.size());
+				headerValue = headers.substr(0, npos);
+				headers.erase(0, headerValue.size());
 			}
 			else
-				throw std::runtime_error("invalid multipart/formdata 'argsPos'");
+				throw std::runtime_error("invalid multipart/formdata 'npos'");
 
-			this->_multipartHeaders[headerKey] = headerValue;
-			if ((multipart.size() >= 4) && (multipart.substr(0, 4) == "\r\n\r\n"))
+			this->_boundaryHeaders[headerKey] = headerValue;
+			if ((headers.size() >= 4) && (headers.substr(0, 4) == "\r\n\r\n"))
 			{
-				multipart.erase(0, 4);
+				headers.erase(0, 4);
 				return ;
+				std::cout << "MAP DAS HEADERS DO BOUNDARY:" << std::endl;
+				std::map<std::string, std::string>::iterator it;
+				for (it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
+					std::cout << it->first << "=" << it->second << std::endl;
 			}
 			else
-				multipart.erase(0, 2);
+				headers.erase(0, 2);
 		}	
 		else
-			throw std::runtime_error("invalid multipart/formdata 'colonPos'");
+			throw std::runtime_error("invalid multipart/formdata 'npos'");
 	}
 	return ;
 }
@@ -469,10 +493,10 @@ void	Response::_handleImputFile(std::string &contentDisposition, std::string &mu
 
 void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig)
 {
-	if (this->_multipartHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
+	if (this->_boundaryHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
 	{
-		if (this->_multipartHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_multipartHeaders["Content-Disposition"], multipart, serverConfig);
+		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
+			_handleImputFile(this->_boundaryHeaders["Content-Disposition"], multipart, serverConfig);
 		else
 			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
 	}
@@ -481,45 +505,45 @@ void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &s
 	return ;
 }
 
-void	Response::_handleBoundaryPart(std::string &multipart, t_serverConfig &serverConfig)
+void	Response::_handleBoundaryPart(t_serverConfig &serverConfig)
 {
-	_setHeaders(multipart);
+	std::string multipart = "";
+	_setHeaders();
 	// std::map<std::string, std::string>::iterator it;
-	// for(it = this->_multipartHeaders.begin(); it != this->_multipartHeaders.end(); it++)
+	// for(it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
 	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
 	_processBoundaryHeaders(multipart, serverConfig);
 }
 
-void	Response::_parseMultipartFormData(std::string &contentType, std::string &multipart, t_serverConfig &serverConfig)
+void	Response::_parseMultipartFormData(t_serverConfig &serverConfig)
 {
-	_setBoundary(contentType);
-	_handleBoundaryPart(multipart, serverConfig);
+	_setBoundary();
+	_handleBoundaryPart(serverConfig);
 	return ;
 }
 
-void	Response::_methodPost(std::map <std::string, std::string> map_input,
-	t_serverConfig &serverConfig)
+void	Response::_methodPost(t_serverConfig &serverConfig)
 {
-	if (map_input["Transfer-Encoding"] == "chunked")
-		_parseChunk(map_input["ChunkBody"]);
-	if (map_input["Content-Type"] == "application/x-www-form-urlencoded")
-		_parseUrlEncodedParams(map_input["ChunkBody"]);
-	else if (map_input["Content-Type"] == "text/plain")
-		_parseTextPlain(map_input["ChunkBody"]);
-	else if (map_input["Content-Type"].find("multipart/form-data") != std::string::npos)
-		_parseMultipartFormData(map_input["Content-Type"], map_input["ChunkBody"], serverConfig);
+	if (this->_postHeaders["Transfer-Encoding"] == "chunked")
+		_parseChunk();
+	if (this->_postHeaders["Content-Type"] == "application/x-www-form-urlencoded")
+		_parseUrlEncodedParams();
+	else if (this->_postHeaders["Content-Type"] == "text/plain")
+		_parseTextPlain();
+	else if (this->_postHeaders["Content-Type"].find("multipart/form-data") != std::string::npos)
+		_parseMultipartFormData(serverConfig);
 	else
-		std::cout << map_input["Content-Type"] << std::endl;
+		std::cerr << "ERROR: " << this->_postHeaders["Content-Type"] << std::endl;
 	return ;
 }
 
-int	Response::_findSequence(std::string const sequence)
+int	Response::_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
 {
 	size_t i = 0;
 	size_t j = 0;
-	while ((i < this->_requestData.size()) && (j < sequence.size()))
+	while ((i < vector.size()) && (j < sequence.size()))
 	{
-		if (this->_requestData[i] == sequence[j])
+		if (vector[i] == sequence[j])
 		{
 			i++;
 			j++;
@@ -542,15 +566,15 @@ std::string	Response::_setStringHeaders(void)
 
 	if (this->_requestData.size() > 3)
 	{
-		int headersEndPos = _findSequence("\r\n\r\n");
+		int headersEndPos = _findSequence(this->_requestData, "\r\n\r\n");
 		if (headersEndPos > 0)
 		{
 			for (int i = 0; i < headersEndPos; i++)
 			{
-				postHeaders += this->_requestData[i];
-				this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin());
+				postHeaders += this->_requestData[0];
+				this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
 			}
-			std::cout << postHeaders << std::endl;\
+			// std::cout << "Header: \n" << postHeaders << std::endl;
 		}
 		else
 			throw std::runtime_error("invalid request format '_setPostHeaders'");
@@ -558,6 +582,13 @@ std::string	Response::_setStringHeaders(void)
 	else
 		throw std::runtime_error("invalid request format '_setPostHeaders'");
 	return (postHeaders);
+}
+
+void	Response::_setPostBodyStr(void)
+{
+	for (size_t i = 0; i < this->_requestData.size(); i++)
+		this->_postBodyStr += this->_requestData[i];
+	return ;
 }
 
 void	Response::_parseRequestData(void)
@@ -572,6 +603,10 @@ void	Response::_parseRequestData(void)
 	std::string		head3 = "Version";
 	size_t			pos = 0;
 	int				counter = 1;
+
+	// std::cout << "_requestData:\n" << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
 
 	s = _setStringHeaders();
 	while ((pos = s.find(delim)) != std::string::npos)
@@ -615,6 +650,12 @@ void	Response::_parseRequestData(void)
 			s.erase(0, pos + delim.length());
 		}
 	}
+	// std::cout << "POST HEADERS:\n" << std::endl;
+	// std::map<std::string, std::string>::iterator	it;
+	// for (it = _postHeaders.begin(); it != _postHeaders.end(); it++)
+	// 	std::cout << it->first << "=" << it->second << std::endl;
+	if (!(this->_postHeaders["Content-Type"].find("multipart/form-data") != std::string::npos))
+		_setPostBodyStr();
 	return ;
 }
 
@@ -639,12 +680,15 @@ void	Response::init(int _flag)
 		methodGet(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
 		methodDelete(_req_parsed, _res_param);
+	std::cout << "ANTES DE MODIFICAR - SIZE: " << this->_requestData.size() << std::endl;
+	for (size_t i = 0; i < this->_requestData.size(); i++)
+		std::cout << this->_requestData[i];
 	_parseRequestData();
-	std::map<std::string, std::string>::iterator it;
-	for (it = this->_postHeaders.begin(); it != this->_postHeaders.end(); it++)
-		std::cout << it->first << "=" << it->second << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for (it = this->_postHeaders.begin(); it != this->_postHeaders.end(); it++)
+	// 	std::cout << it->first << "=" << it->second << std::endl;
 	if (this->_postHeaders["Method"] == "POST")
-		_methodPost(_req_parsed, _serverConfig);
+		_methodPost(_serverConfig);
 	throw std::runtime_error("EXIT");
 }
 
