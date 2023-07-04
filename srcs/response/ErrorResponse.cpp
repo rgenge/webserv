@@ -13,7 +13,6 @@ std::string	ErrorResponse::getErrorResponse(ErrorCode errorCode, std::string con
 
 	errorBody = ErrorResponse::_getErrorBody(errorCode, errorPage);
 	bodySize = errorBody.size();
-
 }
 
 std::string ErrorResponse::_getErrorHeader(ErrorCode errorCode, size_t bodySize) {
