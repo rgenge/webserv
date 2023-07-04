@@ -514,6 +514,7 @@ void	Response::_handleImputFile(std::string &contentDisposition, t_serverConfig 
 	// 	std::cout << this->_requestData[i];
 	// std::cout << "size: " << this->_boundary << std::endl;
 	file.close();
+	printHeader ("200", "OK", this->_postHeaders["Version"]);
 	return ;
 }
 
