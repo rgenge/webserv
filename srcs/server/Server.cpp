@@ -78,7 +78,7 @@ void	Server::respondRequest(int requestfd) {
 	write(requestfd, response.c_str(), response.length());
 //	_res_param.clear();
 //	_req_parsed.clear();
-//	_requestfds.erase(requestfd);
+	_requestfds.erase(requestfd);
 	close(requestfd);
 }
 
