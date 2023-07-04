@@ -6,13 +6,13 @@
 #include "Response.hpp"
 #include <string.h>
 
-Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
+Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
 }
 
 Server::~Server() {
 }
 
-Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
+Server::Server(Server const &rhs) : Socket(10, rhs._port) {
 	*this = rhs;
 }
 
@@ -46,7 +46,7 @@ int	Server::getRequest(int requestfd) {
 		close(requestfd);
 	}
 	else {
-//		std::cout << "Request { " << _request << " }" << std::endl;
+		// std::cout << "Request { " << _request << " }" << std::endl;
 		this->_requestfds[requestfd] = _request;
 	}
 	return (bytesRead);

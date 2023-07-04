@@ -4,13 +4,13 @@
 # include <string>
 # include <sys/socket.h>
 # include <netinet/in.h>
+# include <netdb.h>
 
 class Socket {
 
 	public:
 
-		Socket();
-		Socket(int port, int backlog);
+		Socket(int backlog, std::string const &port);
 		Socket(Socket const &rhs);
 		~Socket();
 
@@ -23,13 +23,14 @@ class Socket {
 	
 	protected:
 
-		int					_socketfd;
-		int					_addrlen;
-		int					_port;
-		int					_backlog;
-		socklen_t			*_socketAddrlen;
-		struct sockaddr		*_socketaddr;
-		struct sockaddr_in	_address;
+		int						_socketfd;
+		int						_optval;
+		int						_backlog;
+		socklen_t				_addrSize;
+		std::string				_port;
+		struct addrinfo			_hints;
+		struct addrinfo			*_serverInfo;
+		struct sockaddr_storage	_clientAddr;
 
 		int		_listen(int backlog);
 		int		_bindSocket(void);
