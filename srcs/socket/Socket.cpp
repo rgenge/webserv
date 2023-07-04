@@ -58,6 +58,7 @@ int	Socket::_bindSocket(void) {
 
 int	Socket::_listen(int backlog) {
 	return (listen(this->_socketfd, backlog));
+
 }
 
 int	Socket::acceptConnection(void) {

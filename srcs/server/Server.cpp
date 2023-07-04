@@ -1,10 +1,4 @@
 #include "Server.hpp"
-#include <iostream>
-#include <unistd.h>
-#include <fstream>
-#include "Request.hpp"
-#include "Response.hpp"
-#include <string.h>
 
 Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
 }
@@ -31,58 +25,60 @@ void	Server::addRequestfd(int requestfd, std::string requestMessage) {
 	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
 }
 
-int	Server::getRequest(int requestfd) {
+requestStatus	Server::_checkRequestStatus(std::string const &_request) {
+	size_t		contentLengthIndex;
+	size_t		contentLength;
+	size_t		bodyPosition;
+	std::string	body;
+
+	contentLengthIndex = _request.find("Content-Length: ");
+	if (contentLengthIndex == std::string::npos)
+		return (DONE);
+	contentLengthIndex += 15;
+	contentLength = std::atoi(&_request.c_str()[contentLengthIndex]);
+	bodyPosition = _request.find(DCRLF) + 4;
+	body = _request.substr(bodyPosition);
+	if (body.size() != contentLength)
+		return (PROCESSING);
+	return (DONE);
+}
+
+requestStatus	Server::getRequest(int requestfd) {
 	int	bytesRead;
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	if (bytesRead < 0)
-	{
+	if (bytesRead < 0) {
 		close(requestfd);
 		throw std::runtime_error("Fail to read client request");
 	}
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		close(requestfd);
+		return (ERROR);
 	}
-	else {
-		// std::cout << "Request { " << _request << " }" << std::endl;
-		this->_requestfds[requestfd] = _request;
-	}
-	return (bytesRead);
+	else 
+		this->_requestfds[requestfd] += _request;
+	return (_checkRequestStatus(this->_requestfds[requestfd]));
 }
 
 void	Server::respondRequest(int requestfd) {
 	std::string	response;
-
-	/* Nesta parte do código, a partir do requestfd, que é uma key value do map
-	de response, será chamado uma função de parser para parsear e responder
-	o request (que está salvo no map) de acordo com o pedido e as configurações
-	registradas do servidor nesta mesma classe.
-	Por enquanto, estou apenas devolvendo uma página padrão para saber
-	que tudo está funcionando de acordo */
-
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
-	_req_parsed = _req.getmap();
-	_req_body = _req.getbody();
-	Response res_struct;
-	//Inserindo dados do server manualmente pra teste
-	_server_conf.insert(std::pair<std::string,std::string>("Root","./index"));
-	_server_conf.insert(std::pair<std::string,std::string>("AllowedMethod","GET") );
-	_server_conf.insert(std::pair<std::string,std::string>("Index","index.html") );
-	_server_conf.insert(std::pair<std::string,std::string>("AutoIndex","on") );
+	_req_parsed = _req.getMap();
+	_req_body = _req.getBody();
 	/*Iniciando o response*/
-	res_struct.init(_req_parsed, _server_conf);
-	/*response recebe o header da resposta*/
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _configs,
+		_url_path);
+	res_struct.init();
+	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
-	/*response recebe o body da resposta*/
-	response += res_struct.get_body();
-	/*Imprimi o site na tela*/
-	std::cout << response ;
+	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
-	std::cout << "Response sent\n" << std::endl;
-	_requestfds.erase(requestfd);
+//	_res_param.clear();
+//	_req_parsed.clear();
+//	_requestfds.erase(requestfd);
 	close(requestfd);
 }
 
@@ -91,3 +87,4 @@ bool	Server::hasRequestFd(int requestfd) {
 		return (true);
 	return (false);
 }
+
