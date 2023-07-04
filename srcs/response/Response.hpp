@@ -6,7 +6,6 @@
 # include "ServerConfig.hpp"
 # include "webserv.hpp"
 # include "CgiHandler.hpp"
-# include <string>
 # include <cstring>
 # include <iostream>
 # include <fstream>
@@ -14,8 +13,9 @@
 # include <sstream>
 # include <ctime>
 # include <sys/dir.h>
-#include <iostream>
-#include <string>
+# include <iostream>
+# include <string>
+# include <sys/stat.h>
 
 class Response
 {
@@ -28,12 +28,10 @@ class Response
 		std::map <std::string, std::string>	&_res_param;
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
-		std::string							&_actual_root;
-		int									_index_flag;
-		int									_path_flag;
 		std::string							_path_location;
 		ServerConfig						&_configs;
 		std::string							&_url_path;
+		int									_error_flag;
 
 		// POST
 		std::string 						_boundary;
@@ -44,6 +42,18 @@ class Response
 		std::map <std::string, std::string>	_postHeaders;
 		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
+
+
+		void		methodGet(std::map <std::string, std::string> _req_parsed);
+		void		printHeader(std::string status_code, std::string message,
+			std::string http_version);
+		void		autoIndex();
+		void		methodDelete(std::map <std::string, std::string>
+			_req_parsed);
+		int		dirCheck(std::string dir);
+		std::string	sizetToString(std::string text);
+		void		printError(std::string codigo, std::string message);
+		bool		checkRequest();
 
 		// POST
 		void		_methodPost(t_serverConfig &serverConfig);
@@ -70,18 +80,11 @@ class Response
 		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
+		void		init ();
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig_, std::string& _actual_root_,ServerConfig & _configs_, std::string& _url_path_, std::vector<unsigned char> &requestData);
+		t_serverConfig&_serverConfig_, ServerConfig & _configs_, std::string& _url_path_, std::vector<unsigned char> &requestData);
 		~Response();
-		void		init (int _flag);
-		void		methodGet(std::map <std::string, std::string> _req_parsed,
-			std::map <std::string, std::string> _res_param);
-		void		printHeader(std::string status_code, std::string ok_ko, std::string http_version);
-		void		autoIndex(std::map <std::string, std::string> _res_param);
-		void		methodDelete(std::map <std::string, std::string>
-			_req_parsed, std::map <std::string, std::string> _res_param);
-		bool		dirCheck(std::string dir);
-		std::string sizetToString(std::string text);
+		void		init ();
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();

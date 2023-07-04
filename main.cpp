@@ -1,10 +1,10 @@
 #include <iostream>
 #include "ServerManager.hpp"
 #include "Parser.hpp"
+#include <csignal>
+#include <signal.h>
 
 int main(int argc, char *argv[]) {
-	(void)argc;
-	(void)argv;
 	ServerManager	serverManager;
 	Parser			parserConfig;
 	std::queue<t_serverConfig>	serverConfigs;

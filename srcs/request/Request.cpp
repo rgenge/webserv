@@ -4,7 +4,6 @@
 Request::Request(std::string req_input)
 {
 	parse(req_input);
-	checkRequest();
 	if (_req_map.count("Transfer-Encoding") > 0 && _req_map["Transfer-Encoding"]
 		== "chunked")
 		parseChunk(_req_map["ChunkBody"]);
@@ -76,7 +75,7 @@ void Request::parse(std::string req_input)
 //	}
 }
 /*Checa o tamanho do chunk e retorno o valor em decimal pra conversão*/
-size_t heximalConverter(std::string input)
+size_t Request::heximalConverter(std::string input)
 {
 	std::stringstream convert;
 	size_t ret = 0;
@@ -109,29 +108,8 @@ void Request::parseChunk(std::string request)
 //	std::cout <<"print chunked bodu: "<< _body << std::endl;
 }
 
-/*Pode não precisar aqui, podemos transferir ela por response depois*/
-void Request::checkRequest()
-{
-	if (_req_map["Version"] != "HTTP/1.1")
-	{
-		std::cout << "Invalid Version" << std::endl;
-		_error_type = "505";
-	}
-	if ((_req_map["Method"] != "GET" && _req_map["Method"] != "DELETE"
-	&& _req_map["Method"] != "POST"))
-	{
-		std::cout << "Invalid Method" << std::endl;
-		_error_type = "405";
-	}
-}
-
 Request::~Request()
 {
-}
-
-std::string Request::getRequest()
-{
-	return _request;
 }
 
 std::map <std::string, std::string> &Request::getMap()
@@ -142,9 +120,4 @@ std::map <std::string, std::string> &Request::getMap()
 std::string Request::getBody(void)
 {
 	return _body;
-}
-
-std::string Request::errorType(void)
-{
-	return _error_type;
 }

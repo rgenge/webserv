@@ -1,12 +1,12 @@
 #include "Server.hpp"
 
-Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config), _flag(0) {
+Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
 }
 
 Server::~Server() {
 }
 
-Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
+Server::Server(Server const &rhs) : Socket(10, rhs._port) {
 	*this = rhs;
 }
 
@@ -25,60 +25,66 @@ void	Server::addRequestfd(int requestfd, std::string requestMessage) {
 	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
 }
 
-int	Server::getRequest(int requestfd) {
+requestStatus	Server::_checkRequestStatus(std::string const &_request) {
+	size_t		contentLengthIndex;
+	size_t		contentLength;
+	size_t		bodyPosition;
+	std::string	body;
+
+	contentLengthIndex = _request.find("Content-Length: ");
+	if (contentLengthIndex == std::string::npos)
+		return (DONE);
+	contentLengthIndex += 15;
+	contentLength = std::atoi(&_request.c_str()[contentLengthIndex]);
+	bodyPosition = _request.find(DCRLF) + 4;
+	body = _request.substr(bodyPosition);
+	if (body.size() != contentLength)
+		return (PROCESSING);
+	return (DONE);
+}
+
+requestStatus	Server::getRequest(int requestfd) {
 	int	bytesRead;
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	if (bytesRead < 0)
-	{
+	if (bytesRead < 0) {
 		close(requestfd);
 		throw std::runtime_error("Fail to read client request");
 	}
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		close(requestfd);
+		return (ERROR);
 	}
-	else {
-		this->_requestfds[requestfd] = _request;
+	else
+	{
+		this->_requestfds[requestfd] += _request;
 		for (int i = 0; i < bytesRead; i++)
 		{
 			this->_requestData.push_back(static_cast<unsigned char>(_request[i]));
 			std::cout << _request[i];
 		}
 	}
-
-	return (bytesRead);
+	return (_checkRequestStatus(this->_requestfds[requestfd]));
 }
 
 void	Server::respondRequest(int requestfd) {
 	std::string	response;
-	_flag++;
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
 	_req_parsed = _req.getMap();
 	_req_body = _req.getBody();
-	/*Iniciando o server com os dados do path selecionado*/
-	if (_req_parsed["Path"] == "/")
-	{
-		_configs = ServerConfig(_serverConfig);
-		_url_path = _req_parsed["Path"];
-	}
-	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.routes.end())
-		std::cerr << "Error 404" << std::endl;
-	else
-	{
-		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed["Path"]]);
-		_url_path = _req_parsed["Path"];
-	}
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig, _actual_root, _configs, _url_path, this->_requestData);
-	res_struct.init(_flag);
+	Response res_struct(_res_param, _req_parsed, _serverConfig, _configs,
+		_url_path, this->_requestData);
+	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
 	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
-	_res_param.clear();
+//	_res_param.clear();
+//	_req_parsed.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }

@@ -130,13 +130,14 @@ void	CgiHandler::_child(void)
 
 void	CgiHandler::_parent(void)
 {
-	close(this->_pipeFd[1]);
-	char	buffer[4096];
+	int		status;
 	ssize_t	bytesRead;
+	char	buffer[4096] = {0};
+
+	close(this->_pipeFd[1]);
 	while ((bytesRead = read(this->_pipeFd[0], buffer, sizeof(buffer))) > 0)
 		this->_cgiResult += buffer;
 	close(this->_pipeFd[0]);
-	int status;
 	waitpid(this->_pid, &status, 0);
 	return ;
 }
