@@ -134,12 +134,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) !=
 		-1)
 		_full_path = _full_path + "/" +  _configs.getIndex();
-	/*Ativa o redirect caso possua*/
-	if (_configs.getRedirect() != "")
-	{
-		_full_path = _configs.getRedirect();
-		_dir_path = _configs.getRedirect();
-	}
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
@@ -192,11 +186,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
 			printError("414", "URI Too Long");
-			return ;
-		}
-		if (_configs.getRedirect() != "")
-		{
-			printHeader ("308", "Permanent Redirect", _req_parsed["Version"]);
 			return ;
 		}
 		if (_error_flag != 1)
