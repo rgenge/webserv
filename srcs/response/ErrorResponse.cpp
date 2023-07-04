@@ -13,6 +13,9 @@ std::string	ErrorResponse::getErrorResponse(ErrorCode errorCode, std::string con
 
 	errorBody = ErrorResponse::_getErrorBody(errorCode, errorPage);
 	bodySize = errorBody.size();
+	errorResponse = _getErrorHeader(errorCode, bodySize);
+	errorResponse += errorBody;
+	return (errorResponse);
 }
 
 std::string ErrorResponse::_getErrorHeader(ErrorCode errorCode, size_t bodySize) {
@@ -68,11 +71,14 @@ std::string	ErrorResponse::_getErrorMsg(ErrorCode errorCode) {
 			return ("406 Not Acceptable");
 		case ERROR_500:
 			return ("500 Internal Server Error");
+		case ERROR_501:
+			return ("501 Not Implemented");
 		case ERROR_502:
 			return ("502 Bad Gateway");
 		case ERROR_505:
 			return ("505 HTTP Version Not Supported");
 	}
+	return ("500 Internal Server Error");
 }
 
 std::string	ErrorResponse::_getErrorPage(ErrorCode errorCode) {
@@ -91,9 +97,12 @@ std::string	ErrorResponse::_getErrorPage(ErrorCode errorCode) {
 			return ("./errorpages/406.html");
 		case ERROR_500:
 			return ("./errorpages/500.html");
+		case ERROR_501:
+			return ("./errorpages/501.html");
 		case ERROR_502:
 			return ("./errorpages/502.html");
 		case ERROR_505:
 			return ("./errorpages/505.html");
 	}
+	return ("./errorpages/500.html");
 }

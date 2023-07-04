@@ -21,7 +21,6 @@ enum ErrorCode {
 	ERROR_500,
 	ERROR_501,
 	ERROR_502,
-	ERROR_503,
 	ERROR_505,
 };
 
