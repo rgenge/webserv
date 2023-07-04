@@ -7,14 +7,13 @@
 # include "ServerConfig.hpp"
 # include "webserv.hpp"
 # include <map>
-# include <vector>
-# include <sys/stat.h>
-# include <sys/types.h>
-# include <iostream>
-# include <unistd.h>
-# include <fstream>
-# include <sstream>
-# include <string.h>
+# define DCRLF "\r\n\r\n"
+
+enum requestStatus {
+	ERROR = 1,
+	PROCESSING,
+	DONE,
+};
 
 class Server : public Socket {
 
@@ -26,11 +25,11 @@ class Server : public Socket {
 
 		Server&	operator=(Server const &rhs);
 
-		int		getRequest(int fd);
-		void	respondRequest(int fd);
-		bool	hasRequestFd(int i);
-		void	addRequestfd(int requestfd, std::string requestMessage);
-		void	locationCheck();
+		requestStatus		getRequest(int fd);
+		void				respondRequest(int fd);
+		bool				hasRequestFd(int i);
+		void				addRequestfd(int requestfd, std::string requestMessage);
+
 	private:
 
 		Server();
@@ -41,6 +40,8 @@ class Server : public Socket {
 		t_serverConfig						_serverConfig;
 		ServerConfig						_configs;
 		std::string							_url_path;
+
+		requestStatus _checkRequestStatus(std::string const &_request);
 
 };
 

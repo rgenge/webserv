@@ -7,8 +7,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
 
 Socket::Socket(int backlog, std::string const &port) : _backlog(backlog), _port(port) {
 	_optval = 1;

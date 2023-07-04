@@ -11,8 +11,9 @@
 # include <unistd.h>
 # include <sstream>
 # include <sys/dir.h>
-#include <iostream>
-#include <string>
+# include <iostream>
+# include <string>
+# include <sys/stat.h>
 
 class Response
 {
