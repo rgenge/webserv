@@ -20,7 +20,7 @@ typedef struct s_route
 
 typedef struct s_serverConfig
 {
-	int									port;
+	std::string							port;
 	std::string							root;
 	std::string							index;
 	std::set<std::string>				serverNames;
