@@ -519,9 +519,9 @@ void	Response::_setPostBodyVector(void)
 			this->_postBody.push_back(this->_requestData[0]);
 			this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
 		}
-		std::cout << "Result of requestData after boundary" << std::endl;
-		for (size_t i = 0; i < this->_requestData.size(); i++)
-			std::cout << this->_requestData[i];
+		// std::cout << "Result of requestData after boundary" << std::endl;
+		// for (size_t i = 0; i < this->_requestData.size(); i++)
+		// 	std::cout << this->_requestData[i];
 	}
 	else
 		throw std::runtime_error("invalid request format '_setPostBodyVector'");
@@ -778,7 +778,7 @@ void	Response::init()
 	// 	std::cout << it->first << "=" << it->second << std::endl;
 	if (this->_postHeaders["Method"] == "POST")
 		_methodPost(_serverConfig);
-	throw std::runtime_error("EXIT");
+	// throw std::runtime_error("EXIT");
 }
 
 Response::~Response()
