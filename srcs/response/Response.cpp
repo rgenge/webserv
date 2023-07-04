@@ -115,7 +115,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 			("Content-Length", string_len));
 		_res_map.insert(std::pair<std::string,std::string>
 			("Location", _configs.getRedirect()));
-		printHeader("301", "Moved Permanently", _req_parsed["Version"]);
+		printHeader("307", "Temporary Redirect", _req_parsed["Version"]);
 		return;
 	}
 	std::string check_url;
