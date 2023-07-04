@@ -1,5 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
+	<script>
+	  function deleteFile() {
+		// Get the file you want to delete (e.g., by its ID or name)
+		const fileId ="mystyle.css" ;
+
+		// Send the DELETE request using the Fetch API
+		fetch(`${fileId}`, {
+		  method: 'DELETE',
+		})
+		  .then(response => {
+			if (response.ok) {
+			  // File deleted successfully
+			  console.log('File deleted.');
+			} else {
+			  // Handle error response
+			  console.error('Error deleting file:', response.status);
+			}
+		  })
+		  .catch(error => {
+			console.error('Error deleting file:', error);
+		  });
+	  }
+	</script>
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -15,6 +39,8 @@
 	<p class="text">Um tedasdasdxto</p>
 	<p class="text">Um texdjdaksto</p>
 	<p class="text">Um tdasdasexto</p>
-	<button id="btn">Clique em mim!</button>
+	<button onclick="deleteFile()">Delete File</button>
 </body>
 </html>
+
+

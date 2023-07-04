@@ -1,6 +1,8 @@
 #include <iostream>
 #include "ServerManager.hpp"
 #include "Parser.hpp"
+#include <csignal>
+#include <signal.h>
 
 int main(int argc, char *argv[]) {
 	(void)argc;
@@ -8,7 +10,6 @@ int main(int argc, char *argv[]) {
 	ServerManager	serverManager;
 	Parser			parserConfig;
 	std::queue<t_serverConfig>	serverConfigs;
-
 	try {
 		serverConfigs = parserConfig.parseConfig(argv[1]);
 		serverManager.createServers(serverConfigs);

@@ -168,7 +168,7 @@ t_route	Parser::_parseUrlConfigs(t_linesIterator &it) {
 	while (*it != "}" && it != _configFileLines.end()) {
 		lineStream.clear();
 		lineStream.str(*it);
-		lineStream >> token; 
+		lineStream >> token;
 		if (_isLineInvalid(*it))
 			;
 		else if (token == "methods")
@@ -315,7 +315,7 @@ void	Parser::_validateConfigFileBraces(void) {
 
 void	Parser::_validateConfigFileName(std::string const &configFilePath) {
 	size_t	index;
-	
+
 	index = configFilePath.find_first_of(".conf");
 	if (index != (configFilePath.size() - 5))
 		throw Parser::ParserException("webserv only accepts '.conf' file");

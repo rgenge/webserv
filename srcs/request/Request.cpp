@@ -4,10 +4,9 @@
 Request::Request(std::string req_input)
 {
 	parse(req_input);
-	check_request();
 	if (_req_map.count("Transfer-Encoding") > 0 && _req_map["Transfer-Encoding"]
 		== "chunked")
-		parse_chunk(_req_map["ChunkBody"]);
+		parseChunk(_req_map["ChunkBody"]);
 }
 /*Faz o parseamento do input do request e separa em um std::map  */
 void Request::parse(std::string req_input)
@@ -76,7 +75,7 @@ void Request::parse(std::string req_input)
 //	}
 }
 /*Checa o tamanho do chunk e retorno o valor em decimal pra conversão*/
-size_t heximal_converter(std::string input)
+size_t Request::heximalConverter(std::string input)
 {
 	std::stringstream convert;
 	size_t ret = 0;
@@ -85,7 +84,7 @@ size_t heximal_converter(std::string input)
 	return ret;
 }
 /*Faz o parseamento do chunk e gera um body tirando todos os \r\n */
-void Request::parse_chunk(std::string request)
+void Request::parseChunk(std::string request)
 {
 	std::size_t size = 1;
 	std::string  size_buf, buf;
@@ -97,7 +96,7 @@ void Request::parse_chunk(std::string request)
 		while (line[i] != '\r' && line[i + 1] != '\n')
 			i++;
 		size_buf = line.substr(j, i - j);
-		size = heximal_converter(size_buf);
+		size = heximalConverter(size_buf);
 		if (size == 0)
 			break;
 		j = i + 2;
@@ -109,42 +108,16 @@ void Request::parse_chunk(std::string request)
 //	std::cout <<"print chunked bodu: "<< _body << std::endl;
 }
 
-/*Pode não precisar aqui, podemos transferir ela por response depois*/
-void Request::check_request()
-{
-	if (_req_map["Version"] != "HTTP/1.1")
-	{
-		std::cout << "Invalid Version" << std::endl;
-		_error_type = "505";
-	}
-	if ((_req_map["Method"] != "GET" && _req_map["Method"] != "DELETE"
-	&& _req_map["Method"] != "POST"))
-	{
-		std::cout << "Invalid Method" << std::endl;
-		_error_type = "405";
-	}
-}
-
 Request::~Request()
 {
 }
 
-std::string Request::getrequest()
-{
-	return _request;
-}
-
-std::map <std::string, std::string> &Request::getmap()
+std::map <std::string, std::string> &Request::getMap()
 {
 	return _req_map;
 }
 
-std::string Request::getbody(void)
+std::string Request::getBody(void)
 {
 	return _body;
-}
-
-std::string Request::errortype(void)
-{
-	return _error_type;
 }

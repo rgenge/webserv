@@ -4,7 +4,7 @@ ServerConfig::ServerConfig() {
 }
 
 ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
-	_port = std::atoi(serverConfig.port.c_str());
+	_port = atoi(serverConfig.port.c_str());
 	_bodySizeLimit = serverConfig.bodySizeLimit;
 	_root = serverConfig.root;
 	_index = serverConfig.index;
@@ -15,7 +15,7 @@ ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
 }
 
 ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &route) {
-	_port = std::atoi(serverConfig.port.c_str());
+	_port = atoi(serverConfig.port.c_str());
 	_bodySizeLimit = serverConfig.bodySizeLimit;
 	_serverNames = serverConfig.serverNames;
 	_errorPages = serverConfig.errorPages;
@@ -61,11 +61,11 @@ ServerConfig&	ServerConfig::operator=(ServerConfig const &rhs) {
 	return (*this);
 }
 
-const int	ServerConfig::getPort(void) const {
+int	ServerConfig::getPort(void) const {
 	return (this->_port);
 }
 
-const int	ServerConfig::getBodySizeLimit(void) const {
+int	ServerConfig::getBodySizeLimit(void) const {
 	return (this->_bodySizeLimit);
 }
 
@@ -98,10 +98,10 @@ const std::string	&ServerConfig::getUploadPath(void) const {
 	return (this->_uploadPath);
 }
 
-const bool	ServerConfig::getDirList(void) const {
+bool	ServerConfig::getDirList(void) const {
 	return (this->_dirList);
 }
 
-const std::string	ServerConfig::getRedirect(void) const {
+const std::string	&ServerConfig::getRedirect(void) const {
 	return (this->_redirect);
 }
