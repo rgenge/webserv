@@ -7,6 +7,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdlib.h>
+#include <arpa/inet.h>
 
 Socket::Socket() {
 	this->_address.sin_family = AF_INET;
@@ -51,12 +53,24 @@ Socket::~Socket(void) {
 }
 
 void	Socket::initialize(void) {
-	if ((this->_socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // Estes parametros serão provavelmente variáveisz
+	if ((this->_socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0) // Estes parametros serão provavelmente variáveis
 		throw std::runtime_error("When creating socket");
 	if (this->_bindSocket() < 0)
 		throw std::runtime_error("When binding socket");
 	if (_listen(this->_backlog) < 0)
 		throw std::runtime_error("When listening socket");
+	int on = 1; // used for setsockopt
+	int rc=setsockopt(this->_socketfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	if (rc < 0)
+	{
+		close(this->_socketfd);
+		exit(-1);
+	}
+	if ( fcntl( this->_socketfd, F_SETFL, O_NONBLOCK ) < 0 )
+	{
+		close( this->_socketfd );
+		exit( -1 );
+	}
 }
 
 int	Socket::_bindSocket(void) {
@@ -65,12 +79,16 @@ int	Socket::_bindSocket(void) {
 
 int	Socket::_listen(int backlog) {
 	return (listen(this->_socketfd, backlog));
+
 }
 
 int	Socket::acceptConnection(void) {
 	int				newSocket;
 
-	if ((newSocket = accept(this->_socketfd, this->_socketaddr, this->_socketAddrlen)) < 0)
+	struct sockaddr_in cli_addr;
+	socklen_t clilen = sizeof( cli_addr );
+
+	if ((newSocket = accept(this->_socketfd, ( struct sockaddr * ) &cli_addr, &clilen)) < 0)
 		throw std::runtime_error("In accepting connection");
 	return (newSocket);
 }

@@ -115,7 +115,8 @@ void	ServerManager::_acceptConnecitons(void) {
 
 void	ServerManager::initialize(void) {
 	_initializeServers();
-	for (size_t i = 0; i < this->_servers.size(); i++) {
+	for (size_t i = 0; i < this->_servers.size(); i++)
+	{
 		_addFdToPoll(_servers[i].getSocketFd(), POLLIN);
 	}
 	std::cout << "Waiting for connection" << std::endl;
