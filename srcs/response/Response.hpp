@@ -58,9 +58,10 @@ class Response
 		void		_setBoundary(void);
 		void		_removeHeaderSpaces(std::string &multipart);
 		void		_setHeaders(void);
-		void		_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig);
+		void		_processBoundaryHeaders(t_serverConfig &serverConfig);
 		void		_handleBoundaryPart(t_serverConfig &serverConfig);
-		void		_handleImputFile(std::string &contentDisposition, std::string &multipart, t_serverConfig &serverConfig);
+		void		_handleImputFile(std::string &contentDisposition, t_serverConfig &serverConfig);
+		void		_setPostBodyVector(void);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);

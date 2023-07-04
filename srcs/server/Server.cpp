@@ -42,7 +42,10 @@ int	Server::getRequest(int requestfd) {
 	else {
 		this->_requestfds[requestfd] = _request;
 		for (int i = 0; i < bytesRead; i++)
+		{
 			this->_requestData.push_back(static_cast<unsigned char>(_request[i]));
+			std::cout << _request[i];
+		}
 	}
 
 	return (bytesRead);

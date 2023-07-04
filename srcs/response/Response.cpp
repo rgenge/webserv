@@ -274,7 +274,7 @@ void Response::_parseUrlEncodedParams(void)
 {
 	std::string	&params = this->_postBodyStr;
 
-	std::cout << "_postBodyStr:\n" << this->_postBodyStr << std::endl;
+	// std::cout << "_postBodyStr:\n" << this->_postBodyStr << std::endl;
 
 	size_t separatorPos = params.find('=');
 	if (separatorPos == std::string::npos)
@@ -300,9 +300,9 @@ void Response::_parseUrlEncodedParams(void)
 
 		this->_vars[key] = value;
 	}
-	std::map<std::string, std::string>::iterator it;
-	for(it = this->_vars.begin(); it != this->_vars.end(); it++)
-		std::cout << it->first << "=" << it->second << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for(it = this->_vars.begin(); it != this->_vars.end(); it++)
+	// 	std::cout << it->first << "=" << it->second << std::endl;
 	return ;
 }
 
@@ -376,10 +376,10 @@ void	Response::_setHeaders(void)
 		headers += this->_requestData[0];
 		this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
 	}
-	std::cout << "DEPOIS DE NOVO:" << std::endl;
-	for (size_t i = 0; i < this->_requestData.size(); i++)
-		std::cout << this->_requestData[i];
-	std::cout << "headers:" << std::endl << headers << std::endl;
+	// std::cout << "DEPOIS DE NOVO:" << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
+	// std::cout << "headers:" << std::endl << headers << std::endl;
 	_removeHeaderSpaces(headers);
 	while (true)
 	{
@@ -400,10 +400,10 @@ void	Response::_setHeaders(void)
 			{
 				headers.erase(0, 4);
 				return ;
-				std::cout << "MAP DAS HEADERS DO BOUNDARY:" << std::endl;
-				std::map<std::string, std::string>::iterator it;
-				for (it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
-					std::cout << it->first << "=" << it->second << std::endl;
+				// std::cout << "MAP DAS HEADERS DO BOUNDARY:" << std::endl;
+				// std::map<std::string, std::string>::iterator it;
+				// for (it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
+				// 	std::cout << it->first << "=" << it->second << std::endl;
 			}
 			else
 				headers.erase(0, 2);
@@ -476,7 +476,27 @@ std::string	Response::_getUploadDir(t_serverConfig &serverConfig)
 	return ("");
 }
 
-void	Response::_handleImputFile(std::string &contentDisposition, std::string &multipart, t_serverConfig &serverConfig)
+void	Response::_setPostBodyVector(void)
+{
+	size_t	boundaryStart = 2;
+	int npos = _findSequence(this->_requestData, this->_boundary);
+	if (npos > 0)
+	{
+		for (size_t i = 0; i < (npos - boundaryStart - this->_boundary.size()); i++)
+		{
+			this->_postBody.push_back(this->_requestData[0]);
+			this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
+		}
+		std::cout << "Result of requestData after boundary" << std::endl;
+		for (size_t i = 0; i < this->_requestData.size(); i++)
+			std::cout << this->_requestData[i];
+	}
+	else
+		throw std::runtime_error("invalid request format '_setPostBodyVector'");
+	return ;
+}
+
+void	Response::_handleImputFile(std::string &contentDisposition, t_serverConfig &serverConfig)
 {
 	std::ofstream	file;
 	std::string		originalFileName;
@@ -486,17 +506,23 @@ void	Response::_handleImputFile(std::string &contentDisposition, std::string &mu
 	file.open(_generateFileName(originalFileName).c_str(), std::ios::out);
 	if (!file.is_open())
 		throw std::runtime_error("open file error '_handleImputFile'");
-	file << multipart;
+	_setPostBodyVector();
+	for (size_t i = 0; i < this->_postBody.size(); i++)
+		file << this->_postBody[i];
+	// std::cout << "Result of requestData after boundary part" << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
+	// std::cout << "size: " << this->_boundary << std::endl;
 	file.close();
 	return ;
 }
 
-void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &serverConfig)
+void	Response::_processBoundaryHeaders(t_serverConfig &serverConfig)
 {
 	if (this->_boundaryHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
 	{
 		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_boundaryHeaders["Content-Disposition"], multipart, serverConfig);
+			_handleImputFile(this->_boundaryHeaders["Content-Disposition"], serverConfig);
 		else
 			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
 	}
@@ -507,12 +533,11 @@ void	Response::_processBoundaryHeaders(std::string &multipart, t_serverConfig &s
 
 void	Response::_handleBoundaryPart(t_serverConfig &serverConfig)
 {
-	std::string multipart = "";
 	_setHeaders();
 	// std::map<std::string, std::string>::iterator it;
 	// for(it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
 	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
-	_processBoundaryHeaders(multipart, serverConfig);
+	_processBoundaryHeaders(serverConfig);
 }
 
 void	Response::_parseMultipartFormData(t_serverConfig &serverConfig)
@@ -566,15 +591,15 @@ std::string	Response::_setStringHeaders(void)
 
 	if (this->_requestData.size() > 3)
 	{
-		int headersEndPos = _findSequence(this->_requestData, "\r\n\r\n");
-		if (headersEndPos > 0)
+		int npos = _findSequence(this->_requestData, "\r\n\r\n");
+		if (npos > 0)
 		{
-			for (int i = 0; i < headersEndPos; i++)
+			for (int i = 0; i < npos; i++)
 			{
 				postHeaders += this->_requestData[0];
 				this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);
 			}
-			// std::cout << "Header: \n" << postHeaders << std::endl;
+			// std::cout << "Header 1º: \n" << postHeaders << std::endl;
 		}
 		else
 			throw std::runtime_error("invalid request format '_setPostHeaders'");
@@ -659,7 +684,6 @@ void	Response::_parseRequestData(void)
 	return ;
 }
 
-
 void	Response::init(int _flag)
 {
  	if (_flag == 1)
@@ -680,9 +704,9 @@ void	Response::init(int _flag)
 		methodGet(_req_parsed, _res_param);
 	if (_req_parsed["Method"] == "DELETE")
 		methodDelete(_req_parsed, _res_param);
-	std::cout << "ANTES DE MODIFICAR - SIZE: " << this->_requestData.size() << std::endl;
-	for (size_t i = 0; i < this->_requestData.size(); i++)
-		std::cout << this->_requestData[i];
+	// std::cout << "ANTES DE MODIFICAR - SIZE: " << this->_requestData.size() << std::endl;
+	// for (size_t i = 0; i < this->_requestData.size(); i++)
+	// 	std::cout << this->_requestData[i];
 	_parseRequestData();
 	// std::map<std::string, std::string>::iterator it;
 	// for (it = this->_postHeaders.begin(); it != this->_postHeaders.end(); it++)
