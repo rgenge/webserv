@@ -15,7 +15,7 @@ class	CgiHandler
 		CgiHandler(CgiHandler const &src);
 		~CgiHandler(void);
 		CgiHandler							&operator=(CgiHandler const &rhs);
-		void								cgiHandler(void);
+		std::string							cgiHandler(std::string path);
 	private:
 		void								_getEnv(void);
 		void								_convertEnvFormat(void);
@@ -27,6 +27,7 @@ class	CgiHandler
 
 		std::map<std::string, std::string>	_tempEnv;
 		std::string							_cgiResult;
+		std::string							_path;
 		pid_t								_pid;
 		char								**_envp;
 		int									_pipeFd[2];

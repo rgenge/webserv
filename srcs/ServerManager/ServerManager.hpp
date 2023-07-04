@@ -18,7 +18,7 @@ class ServerManager {
 		void	initialize(void);
 		void	createServers(std::queue<t_serverConfig> &serverConfigs);
 		Server	&getServer(int index);
-		
+
 		static int	active;
 
 	private:
