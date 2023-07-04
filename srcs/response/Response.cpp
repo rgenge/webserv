@@ -335,6 +335,9 @@ void Response::_parseUrlEncodedParams(void)
 	// std::map<std::string, std::string>::iterator it;
 	// for(it = this->_vars.begin(); it != this->_vars.end(); it++)
 	// 	std::cout << it->first << "=" << it->second << std::endl;
+
+	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
+	printHeader ("200", "OK", this->_postHeaders["Version"]);
 	return ;
 }
 
@@ -342,6 +345,9 @@ void	Response::_parseTextPlain(void)
 {
 	// ver se é mesmo necessário chamar essa função nesse caso
 	// _removeBreakLinesAndCR(textPlain);
+
+	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
+	printHeader ("200", "OK", this->_postHeaders["Version"]);
 	return ;
 }
 

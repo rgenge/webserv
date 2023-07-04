@@ -48,9 +48,8 @@ class Response
 		void		printHeader(std::string status_code, std::string message,
 			std::string http_version);
 		void		autoIndex();
-		void		methodDelete(std::map <std::string, std::string>
-			_req_parsed);
-		int		dirCheck(std::string dir);
+		void		methodDelete(std::map <std::string, std::string>_req_parsed);
+		int			dirCheck(std::string dir);
 		std::string	sizetToString(std::string text);
 		void		printError(std::string codigo, std::string message);
 		bool		checkRequest();
