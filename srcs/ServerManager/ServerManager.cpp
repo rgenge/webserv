@@ -52,12 +52,15 @@ bool	ServerManager::_isFdNotReadable(struct pollfd fd) {
 }
 
 void	ServerManager::_getServersRequests(void) {
+	requestStatus	status;
+
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
 		if (_isFdNotReadable(*it))
 			continue ;
-		if (_getServerByRequestFd((*it).fd).getRequest((*it).fd) == 0)
+		status = _getServerByRequestFd((*it).fd).getRequest((*it).fd);
+		if (status == ERROR)
 			(*it).fd = -1;
-		else {
+		else if (status == DONE) {
 			_requestFds.erase((*it).fd);
 			_respondFds.insert((*it).fd);
 		}

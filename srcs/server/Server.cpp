@@ -31,25 +31,41 @@ void	Server::addRequestfd(int requestfd, std::string requestMessage) {
 	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
 }
 
-int	Server::getRequest(int requestfd) {
+requestStatus	Server::_checkRequestStatus(std::string const &_request) {
+	size_t		contentLengthIndex;
+	size_t		contentLength;
+	size_t		bodyPosition;
+	std::string	body;
+
+	contentLengthIndex = _request.find("Content-Length: ");
+	if (contentLengthIndex == std::string::npos)
+		return (DONE);
+	contentLengthIndex += 15;
+	contentLength = std::atoi(&_request.c_str()[contentLengthIndex]);
+	bodyPosition = _request.find(DCRLF) + 4;
+	body = _request.substr(bodyPosition);
+	if (body.size() != contentLength)
+		return (PROCESSING);
+	return (DONE);
+}
+
+requestStatus	Server::getRequest(int requestfd) {
 	int	bytesRead;
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
-	if (bytesRead < 0)
-	{
+	if (bytesRead < 0) {
 		close(requestfd);
 		throw std::runtime_error("Fail to read client request");
 	}
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		close(requestfd);
+		return (ERROR);
 	}
-	else {
-		// std::cout << "Request { " << _request << " }" << std::endl;
-		this->_requestfds[requestfd] = _request;
-	}
-	return (bytesRead);
+	else 
+		this->_requestfds[requestfd] += _request;
+	return (_checkRequestStatus(this->_requestfds[requestfd]));
 }
 
 void	Server::respondRequest(int requestfd) {
