@@ -106,6 +106,18 @@ std::string Response::sizetToString(std::string text)
 
 void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 {
+	if (_configs.getRedirect() != "")
+	{
+		_body = "";
+		_res_map["Content-type"] = getType();
+		std::string string_len = sizetToString(_body);
+		_res_map.insert(std::pair<std::string,std::string>
+			("Content-Length", string_len));
+		_res_map.insert(std::pair<std::string,std::string>
+			("Location", _configs.getRedirect()));
+		printHeader("307", "Temporary Redirect", _req_parsed["Version"]);
+		return;
+	}
 	std::string check_url;
 	check_url = _req_parsed["Path"].substr(0, _url_path.size());
 	/*Limpa o caminho e tira o url pra adicionar ao root*/
@@ -122,12 +134,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) !=
 		-1)
 		_full_path = _full_path + "/" +  _configs.getIndex();
-	/*Ativa o redirect caso possua*/
-	if (_configs.getRedirect() != "")
-	{
-		_full_path = _configs.getRedirect();
-		_dir_path = _configs.getRedirect();
-	}
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
@@ -136,8 +142,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		_body = cgi_init.cgiHandler(_full_path);
 		return;
 	}
-	if(_full_path.find("//") != std::string::npos)
-		_full_path.replace(_full_path.find("//"), 2, "/");
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -182,11 +186,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
 			printError("414", "URI Too Long");
-			return ;
-		}
-		if (_configs.getRedirect() != "")
-		{
-			printHeader ("308", "Permanent Redirect", _req_parsed["Version"]);
 			return ;
 		}
 		if (_error_flag != 1)
