@@ -1,12 +1,12 @@
 #include "Server.hpp"
 
-Server::Server(t_serverConfig const &config) : Socket(config.port, 10), _serverConfig(config) {
+Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
 }
 
 Server::~Server() {
 }
 
-Server::Server(Server const &rhs) : Socket(rhs._port, 10) {
+Server::Server(Server const &rhs) : Socket(10, rhs._port) {
 	*this = rhs;
 }
 

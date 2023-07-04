@@ -96,7 +96,7 @@ void	Parser::_parsePort(std::istringstream &lineStream, t_serverConfig &serverCo
 	lineStream >> token;
 	if (lineStream)
 		throw Parser::ParserException("Port accepts only one argument");
-	serverConfig.port = std::atoi(token.c_str());
+	serverConfig.port = token;
 }
 
 void	Parser::_parseSimpleParams(std::istringstream &lineStream, std::string &param) {

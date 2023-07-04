@@ -4,7 +4,7 @@ ServerConfig::ServerConfig() {
 }
 
 ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
-	_port = serverConfig.port;
+	_port = atoi(serverConfig.port.c_str());
 	_bodySizeLimit = serverConfig.bodySizeLimit;
 	_root = serverConfig.root;
 	_index = serverConfig.index;
@@ -14,9 +14,8 @@ ServerConfig::ServerConfig(t_serverConfig const &serverConfig) {
 	_dirList = false;
 }
 
-ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &
-	route) {
-	_port = serverConfig.port;
+ServerConfig::ServerConfig(t_serverConfig const &serverConfig, t_route const &route) {
+	_port = atoi(serverConfig.port.c_str());
 	_bodySizeLimit = serverConfig.bodySizeLimit;
 	_serverNames = serverConfig.serverNames;
 	_errorPages = serverConfig.errorPages;

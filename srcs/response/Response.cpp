@@ -136,6 +136,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		_body = cgi_init.cgiHandler(_full_path);
 		return;
 	}
+	if(_full_path.find("//") != std::string::npos)
+		_full_path.replace(_full_path.find("//"), 2, "/");
 	std::cout <<"FULL \t:" << _full_path <<std::endl;
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -282,7 +284,7 @@ void	Response::init()
 	}
 	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.
 		routes.end())
-		std::cerr << "Error 400" << std::endl;
+		std::cerr << "";
 	else
 	{
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed
