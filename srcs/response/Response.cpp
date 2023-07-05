@@ -2,9 +2,9 @@
 
 Response::Response(std::map <std::string, std::string>& _res_param_, std::map
 <std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_,
-ServerConfig & _configs_, std::string&_url_path_,
+std::string&_url_path_,
 std::vector<unsigned char> &requestData) :_res_param(_res_param_),
-_req_parsed(_req_parsed_), _serverConfig (_serverConfig_), _configs(_configs_),
+_req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
 _url_path(_url_path_), _requestData(requestData)
 {
 }

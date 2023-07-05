@@ -42,7 +42,8 @@ class Server : public Socket {
 		std::string							_url_path;
 		std::vector<unsigned char>			_requestData;
 
-		requestStatus _checkRequestStatus(std::string const &_request);
+		requestStatus	_checkRequestStatus(std::string const &_request);
+		void			_respondInternalServerError(int requestfd);
 
 };
 
