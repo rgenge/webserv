@@ -29,7 +29,7 @@ class Response
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
 		std::string							_path_location;
-		ServerConfig						&_configs;
+		ServerConfig						_configs;
 		std::string							&_url_path;
 		int									_error_flag;
 
@@ -80,7 +80,7 @@ class Response
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig_, ServerConfig & _configs_, std::string& _url_path_, std::vector<unsigned char> &requestData);
+		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData);
 		~Response();
 		void		init ();
 		std::string	getResponse();

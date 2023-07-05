@@ -128,7 +128,7 @@ void	ServerManager::initialize(void) {
 		{
 			if (errno == EINTR)
 				break ;
-			throw std::runtime_error("Failed to poll");
+			throw ServerManager::ServerManagerException("Failed to poll");
 		}
 		_acceptConnecitons();
 		_getServersRequests();
@@ -179,4 +179,22 @@ void	ServerManager::createServers(std::queue<t_serverConfig> &serverConfigs) {
 		_addServer(Server(serverConfigs.front()));
 		serverConfigs.pop();
 	}
+}
+
+// ServerManagerException
+
+ServerManager::ServerManagerException::ServerManagerException(std::string const &errorMessage) {
+	std::string	_ServerManagerError("ServerManager: ");
+	_ServerManagerError += errorMessage;
+	_errorMessage = new char[_ServerManagerError.size() + 1];
+	_ServerManagerError.copy(_errorMessage, _ServerManagerError.size());
+	_errorMessage[_ServerManagerError.size()] = 0;
+}
+
+ServerManager::ServerManagerException::~ServerManagerException() throw() {
+	delete [] _errorMessage;
+}
+
+const char	*ServerManager::ServerManagerException::what() const throw() {
+	return (this->_errorMessage);
 }
