@@ -76,8 +76,8 @@ void	Server::respondRequest(int requestfd) {
 	response = res_struct.getResponse();
 	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
-//	_res_param.clear();
-//	_req_parsed.clear();
+	_res_param.clear();
+	_req_parsed.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }

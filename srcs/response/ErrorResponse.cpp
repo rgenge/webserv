@@ -22,7 +22,7 @@ std::string ErrorResponse::_getErrorHeader(ErrorCode errorCode, size_t bodySize)
 	std::ostringstream	errorHeader;
 
 	errorHeader << "HTTP/1.1 " << _getErrorMsg(errorCode) << CRLF;
-	errorHeader << "Content-Type: text/html";
+	errorHeader << "Content-Type: text/html;" << CRLF;
 	errorHeader << "Content-Length: " << bodySize;
 	errorHeader << CRLF << CRLF;
 	return (errorHeader.str());
@@ -37,7 +37,7 @@ std::string	ErrorResponse::_getErrorBody(ErrorCode errorCode, std::string const 
 		filePath = errorPage;
 	else
 		filePath = _getErrorPage(errorCode);
-	errorFile.open(errorPage.c_str(), std::ios::in);
+	errorFile.open(filePath.c_str(), std::ios::in);
 	if (errorFile.fail())
 		return (DEFAULT_PAGE);
 	errorBody = _readErrorBodyFile(errorFile);
@@ -84,25 +84,25 @@ std::string	ErrorResponse::_getErrorMsg(ErrorCode errorCode) {
 std::string	ErrorResponse::_getErrorPage(ErrorCode errorCode) {
 	switch (errorCode) {
 		case ERROR_400:
-			return ("./errorpages/400.html");
+			return ("errorpages/400.html");
 		case ERROR_401:
-			return ("./errorpages/401.html");
+			return ("errorpages/401.html");
 		case ERROR_403:
-			return ("./errorpages/403.html");
+			return ("errorpages/403.html");
 		case ERROR_404:
-			return ("./errorpages/404.html");
+			return ("errorpages/404.html");
 		case ERROR_405:
-			return ("./errorpages/405.html");
+			return ("errorpages/405.html");
 		case ERROR_406:
-			return ("./errorpages/406.html");
+			return ("errorpages/406.html");
 		case ERROR_500:
-			return ("./errorpages/500.html");
+			return ("errorpages/500.html");
 		case ERROR_501:
-			return ("./errorpages/501.html");
+			return ("errorpages/501.html");
 		case ERROR_502:
-			return ("./errorpages/502.html");
+			return ("errorpages/502.html");
 		case ERROR_505:
-			return ("./errorpages/505.html");
+			return ("errorpages/505.html");
 	}
 	return ("./errorpages/500.html");
 }

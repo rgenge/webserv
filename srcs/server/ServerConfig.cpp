@@ -85,8 +85,8 @@ const std::set<std::string>	&ServerConfig::getServerNames(void) const {
 	return (this->_serverNames);
 }
 
-const std::map<int, std::string>	&ServerConfig::getErrorPages(void) const {
-	return (this->_errorPages);
+const std::string	&ServerConfig::getErrorPage(int errorCode) {
+	return (this->_errorPages[errorCode]);
 }
 
 const std::set<std::string>	&ServerConfig::getHttpMethods(void) const {
