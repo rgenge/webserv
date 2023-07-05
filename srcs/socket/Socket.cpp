@@ -15,7 +15,7 @@ Socket::Socket(int backlog, std::string const &port) : _backlog(backlog), _port(
 	_hints.ai_socktype = SOCK_STREAM;
 	_hints.ai_flags = AI_PASSIVE;
 	if (getaddrinfo(NULL, _port.c_str(), &_hints, &_serverInfo) != 0)
-		throw std::runtime_error("Failed to get socket info (getaddrinfo)");
+		throw Socket::SocketException("Failed to get socket info (getaddrinfo)");
 	_addrSize = sizeof(this->_clientAddr);
 	this->_socketfd = -1;
 }
@@ -43,13 +43,13 @@ Socket::~Socket(void) {
 
 void	Socket::initialize(void) {
 	if ((this->_socketfd = socket(_serverInfo->ai_family, _serverInfo->ai_socktype, _serverInfo->ai_protocol)) == 0)
-		throw std::runtime_error("When creating socket");
+		throw Socket::SocketException("When creating socket");
 	if (setsockopt(this->_socketfd, SOL_SOCKET, SO_REUSEADDR, &_optval, sizeof(_optval)) == -1)
-		throw std::runtime_error("Fail to set socket options (setsockopt)");
+		throw Socket::SocketException("Fail to set socket options (setsockopt)");
 	if (this->_bindSocket() < 0)
-		throw std::runtime_error("When binding socket");
+		throw Socket::SocketException("When binding socket");
 	if (_listen(this->_backlog) < 0)
-		throw std::runtime_error("When listening socket");
+		throw Socket::SocketException("When listening socket");
 }
 
 int	Socket::_bindSocket(void) {
@@ -65,7 +65,7 @@ int	Socket::acceptConnection(void) {
 	int				newSocket;
 
 	if ((newSocket = accept(this->_socketfd, (struct sockaddr *) &this->_clientAddr, &_addrSize)) < 0)
-		throw std::runtime_error("In accepting connection");
+		throw Socket::SocketException("In accepting connection");
 	return (newSocket);
 }
 
@@ -75,4 +75,22 @@ void	Socket::closeSocket(void) const {
 
 int	Socket::getSocketFd(void) const {
 	return (this->_socketfd);
+}
+
+// SocketException
+
+Socket::SocketException::SocketException(std::string const &errorMessage) {
+	std::string	_socketError("Socket: ");
+	_socketError += errorMessage;
+	_errorMessage = new char[_socketError.size() + 1];
+	_socketError.copy(_errorMessage, _socketError.size());
+	_errorMessage[_socketError.size()] = 0;
+}
+
+Socket::SocketException::~SocketException() throw() {
+	delete [] _errorMessage;
+}
+
+const char	*Socket::SocketException::what() const throw() {
+	return (this->_errorMessage);
 }
