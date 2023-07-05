@@ -2,7 +2,7 @@
 # define SERVERMANAGER_HPP
 
 # include "Server.hpp"
-#include "CgiHandler.hpp"
+# include "CgiHandler.hpp"
 # include <vector>
 # include <set>
 # include <queue>
@@ -11,6 +11,19 @@
 class ServerManager {
 
 	public:
+
+		class ServerManagerException : public std::exception {
+
+			public:
+
+				ServerManagerException(std::string const &errorMessage);
+				virtual ~ServerManagerException() throw();
+				virtual const char	*what() const throw();
+
+			private:
+
+				char	*_errorMessage;
+		};
 
 		ServerManager();
 		~ServerManager();
