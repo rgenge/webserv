@@ -10,6 +10,19 @@ class Socket {
 
 	public:
 
+		class SocketException : public std::exception {
+			
+			public:
+				SocketException(std::string const &errorMessage);
+				virtual ~SocketException() throw();
+
+				const char *what() const throw();
+			
+			private:
+				
+				char	*_errorMessage;
+		};
+
 		Socket(int backlog, std::string const &port);
 		Socket(Socket const &rhs);
 		~Socket();

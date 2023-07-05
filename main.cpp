@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 		serverManager.createServers(serverConfigs);
 		serverManager.initialize();
 	}	catch (std::exception &e) {
-		std::cout << "Error to initialize webserv: " << e.what() << std::endl;
+		std::cout << "Error to initialize webserv\n" << e.what() << std::endl;
 	}
 	return (0);
 }
