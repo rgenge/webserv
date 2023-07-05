@@ -24,7 +24,7 @@ class ServerConfig {
 		const std::string					&getIndex(void) const;
 		const std::vector<std::string>		&getCgi(void) const;
 		const std::set<std::string>			&getServerNames(void) const;
-		const std::map<int, std::string>	&getErrorPages(void) const;
+		const std::string					&getErrorPage(int errorCode);
 		const std::set<std::string>			&getHttpMethods(void) const;
 		const std::string					&getUploadPath(void) const;
 		const std::string					&getRedirect(void) const;
