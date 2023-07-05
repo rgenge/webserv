@@ -105,8 +105,6 @@ void	ServerManager::_acceptConnecitons(void) {
 		if (_hasNotReceivedConnection((*it)))
 			continue ;
 		requestfd = _getServerBySocketFd((*it).fd).acceptConnection();
-		if (requestfd < 0)
-			throw std::runtime_error("In accepting connection");
 		std::cout << "Connection accepted!" << std::endl;
 		(*it).revents = 0;
 		_getServerBySocketFd((*it).fd).addRequestfd(requestfd, "");
@@ -161,7 +159,7 @@ Server&	ServerManager::_getServerBySocketFd(int fd) {
 		if ((*it).getSocketFd() == fd)
 			return (*it);
 	}
-	throw std::runtime_error("Couldn't find server");
+	throw ServerManager::ServerManagerException("Couldn't find server");
 }
 
 Server&	ServerManager::_getServerByRequestFd(int fd) {
@@ -169,7 +167,7 @@ Server&	ServerManager::_getServerByRequestFd(int fd) {
 		if ((*it).hasRequestFd(fd))
 			return (*it);
 	}
-	throw std::runtime_error("Couldn't find server");
+	throw ServerManager::ServerManagerException("Couldn't find server");
 }
 
 void	ServerManager::createServers(std::queue<t_serverConfig> &serverConfigs) {
