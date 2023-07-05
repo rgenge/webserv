@@ -1,5 +1,5 @@
 SOURCES = Socket.cpp Server.cpp main.cpp ServerManager.cpp CgiHandler.cpp Request.cpp\
-	Response.cpp Parser.cpp ServerConfig.cpp
+	Response.cpp Parser.cpp ErrorResponse.cpp ServerConfig.cpp
 NAME = webserv
 SRCS_PATH = ./srcs
 OBJS_PATH = ./objs
