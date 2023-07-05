@@ -57,8 +57,15 @@ requestStatus	Server::getRequest(int requestfd) {
 		close(requestfd);
 		return (ERROR);
 	}
-	else 
+	else
+	{
 		this->_requestfds[requestfd] += _request;
+		for (int i = 0; i < bytesRead; i++)
+		{
+			this->_requestData.push_back(static_cast<unsigned char>(_request[i]));
+			// std::cout << _request[i];
+		}
+	}
 	return (_checkRequestStatus(this->_requestfds[requestfd]));
 }
 
@@ -70,7 +77,7 @@ void	Server::respondRequest(int requestfd) {
 	_req_body = _req.getBody();
 	/*Iniciando o response*/
 	Response res_struct(_res_param, _req_parsed, _serverConfig, _configs,
-		_url_path);
+		_url_path, this->_requestData);
 	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();

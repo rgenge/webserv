@@ -40,6 +40,7 @@ class Server : public Socket {
 		t_serverConfig						_serverConfig;
 		ServerConfig						_configs;
 		std::string							_url_path;
+		std::vector<unsigned char>			_requestData;
 
 		requestStatus _checkRequestStatus(std::string const &_request);
 
