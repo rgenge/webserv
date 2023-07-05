@@ -16,7 +16,7 @@ class Socket {
 				SocketException(std::string const &errorMessage);
 				virtual ~SocketException() throw();
 
-				const char *what() const throw();
+				virtual const char *what() const throw();
 			
 			private:
 				
