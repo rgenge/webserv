@@ -55,24 +55,23 @@ class Response
 		bool		checkRequest();
 
 		// POST
-		void		_methodPost(t_serverConfig &serverConfig);
+		void		_methodPost(void);
 		void		_parseRequestData(void);
 		void		_setPostBodyStr(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
-		void		_parseMultipartFormData(t_serverConfig &serverConfig);
+		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);
 		void		_removeHeaderSpaces(std::string &multipart);
 		void		_setHeaders(void);
-		void		_processBoundaryHeaders(t_serverConfig &serverConfig);
-		void		_handleBoundaryPart(t_serverConfig &serverConfig);
-		void		_handleImputFile(std::string &contentDisposition, t_serverConfig &serverConfig);
+		void		_processBoundaryHeaders(void);
+		void		_handleBoundaryPart(void);
+		void		_handleImputFile(std::string &contentDisposition);
 		void		_setPostBodyVector(void);
 		std::string	_handleLastSlash(std::string &Route);
-		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
 		std::string	_setStringHeaders(void);

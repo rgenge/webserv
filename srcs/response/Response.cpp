@@ -482,37 +482,17 @@ std::string	Response::_generateFileName(std::string const &originalFileName)
 	return (fileName.str());
 }
 
-std::string	Response::_handleLastSlash(std::string &Route)
-{
-	std::string	alternativeRoute;
+// std::string	Response::_handleLastSlash(std::string &Route)
+// {
+// 	std::string	alternativeRoute;
 
-	if (Route[Route.size() - 1] != '/')
-		alternativeRoute = Route + '/';
-	else
-		alternativeRoute = Route.substr(0, Route.size() - 1);
-	std::cout << "alternative: " << alternativeRoute << std::endl;
-	return (alternativeRoute);
-}
-
-std::string	Response::_getUploadDir(t_serverConfig &serverConfig)
-{
-	std::map<std::string, t_route>::iterator it;
-
-	if (this->_postHeaders["Path"] == "/")
-		throw std::runtime_error("error 405 '_getDir'");
-	else
-	{
-		if (((it = serverConfig.routes.find(this->_postHeaders["Path"])) != serverConfig.routes.end())
-		|| ((it = serverConfig.routes.find(_handleLastSlash(this->_postHeaders["Path"]))) != serverConfig.routes.end()))
-		{
-			// std::cout << "Encontrou a rota!" << std::endl;
-			;
-		}
-		else
-			throw std::runtime_error("error 405 '_getDir'");
-	}
-	return ("");
-}
+// 	if (Route[Route.size() - 1] != '/')
+// 		alternativeRoute = Route + '/';
+// 	else
+// 		alternativeRoute = Route.substr(0, Route.size() - 1);
+// 	std::cout << "alternative: " << alternativeRoute << std::endl;
+// 	return (alternativeRoute);
+// }
 
 void	Response::_setPostBodyVector(void)
 {
@@ -534,34 +514,38 @@ void	Response::_setPostBodyVector(void)
 	return ;
 }
 
-void	Response::_handleImputFile(std::string &contentDisposition, t_serverConfig &serverConfig)
+void	Response::_handleImputFile(std::string &contentDisposition)
 {
+	size_t			pos;
 	std::ofstream	file;
 	std::string		originalFileName;
+	std::string		fileName = _configs.getUploadPath();
 
-	_getUploadDir(serverConfig);
-	originalFileName = _originalFileName(contentDisposition);
-	file.open(_generateFileName(originalFileName).c_str(), std::ios::out);
+	pos = _configs.getUploadPath().size() - 1;
+	if (_configs.getUploadPath().find('/', pos) == std::string::npos)
+		fileName += '/';
+	originalFileName = _generateFileName(originalFileName);
+	originalFileName += _originalFileName(contentDisposition);
+	fileName += originalFileName;
+
+	// std::cout << "RESULTADO: " << fileName << std::endl;
+	file.open(fileName.c_str(), std::ios::out);
 	if (!file.is_open())
 		throw std::runtime_error("open file error '_handleImputFile'");
 	_setPostBodyVector();
 	for (size_t i = 0; i < this->_postBody.size(); i++)
 		file << this->_postBody[i];
-	// std::cout << "Result of requestData after boundary part" << std::endl;
-	// for (size_t i = 0; i < this->_requestData.size(); i++)
-	// 	std::cout << this->_requestData[i];
-	// std::cout << "size: " << this->_boundary << std::endl;
 	file.close();
 	printHeader ("200", "OK", this->_postHeaders["Version"]);
 	return ;
 }
 
-void	Response::_processBoundaryHeaders(t_serverConfig &serverConfig)
+void	Response::_processBoundaryHeaders(void)
 {
 	if (this->_boundaryHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
 	{
 		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_boundaryHeaders["Content-Disposition"], serverConfig);
+			_handleImputFile(this->_boundaryHeaders["Content-Disposition"]);
 		else
 			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
 	}
@@ -570,23 +554,23 @@ void	Response::_processBoundaryHeaders(t_serverConfig &serverConfig)
 	return ;
 }
 
-void	Response::_handleBoundaryPart(t_serverConfig &serverConfig)
+void	Response::_handleBoundaryPart(void)
 {
 	_setHeaders();
 	// std::map<std::string, std::string>::iterator it;
 	// for(it = this->_boundaryHeaders.begin(); it != this->_boundaryHeaders.end(); it++)
 	// 	std::cout << "key: " << it->first << " | value: " << it->second << std::endl;
-	_processBoundaryHeaders(serverConfig);
+	_processBoundaryHeaders();
 }
 
-void	Response::_parseMultipartFormData(t_serverConfig &serverConfig)
+void	Response::_parseMultipartFormData(void)
 {
 	_setBoundary();
-	_handleBoundaryPart(serverConfig);
+	_handleBoundaryPart();
 	return ;
 }
 
-void	Response::_methodPost(t_serverConfig &serverConfig)
+void	Response::_methodPost(void)
 {
 	if (this->_postHeaders["Transfer-Encoding"] == "chunked")
 		_parseChunk();
@@ -595,7 +579,7 @@ void	Response::_methodPost(t_serverConfig &serverConfig)
 	else if (this->_postHeaders["Content-Type"] == "text/plain")
 		_parseTextPlain();
 	else if (this->_postHeaders["Content-Type"].find("multipart/form-data") != std::string::npos)
-		_parseMultipartFormData(serverConfig);
+		_parseMultipartFormData();
 	else
 		std::cerr << "ERROR: " << this->_postHeaders["Content-Type"] << std::endl;
 	return ;
@@ -783,7 +767,7 @@ void	Response::init()
 	// for (it = this->_postHeaders.begin(); it != this->_postHeaders.end(); it++)
 	// 	std::cout << it->first << "=" << it->second << std::endl;
 	if (this->_postHeaders["Method"] == "POST")
-		_methodPost(_serverConfig);
+		_methodPost();
 	// throw std::runtime_error("EXIT");
 }
 
