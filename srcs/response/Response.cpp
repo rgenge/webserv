@@ -3,9 +3,9 @@
 Response::Response(std::map <std::string, std::string>& _res_param_, std::map
 <std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_,
 std::string&_url_path_,
-std::vector<unsigned char> &requestData) :_res_param(_res_param_),
+std::vector<unsigned char> &requestData, std::string &_actual_root_) :_res_param(_res_param_),
 _req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
-_url_path(_url_path_), _requestData(requestData)
+_url_path(_url_path_), _requestData(requestData), _actual_root(_actual_root_)
 {
 }
 
@@ -93,7 +93,6 @@ void	Response::printError(std::string codigo, std::string message)
 	_res_map["Content-Length"] = "1000";
 	_res_map["Connection"] = "close";
 	printHeader (codigo, message, _req_parsed["Version"]);
-	_error_flag = 1;
 }
 
 
@@ -119,22 +118,28 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		printHeader("307", "Temporary Redirect", _req_parsed["Version"]);
 		return;
 	}
-	std::string check_url;
-	check_url = _req_parsed["Path"].substr(0, _url_path.size());
-	/*Limpa o caminho e tira o url pra adicionar ao root*/
-	std::string		clean_path = _req_parsed["Path"];
-	std::string::size_type i = clean_path.find(_url_path);
-	if (i != std::string::npos && _url_path != "/")
-		clean_path.erase(i, _url_path.length());
-	_full_path = _configs.getRoot() + clean_path;
-	_dir_path = _configs.getRoot() + clean_path;
+	_full_path = _actual_root;
+	_dir_path = _actual_root;
 	/*limpa o path quando adicionar // */
 	if(_full_path.find("//") != std::string::npos)
 		_full_path.replace(_full_path.find("//"), 2, "/");
 	/*Checa se o index existe caso exista acessa ele */
-	if (access (((_full_path + + "/" + _configs.getIndex()).c_str()), F_OK) !=
+	if (access (((_full_path + "/" + _configs.getIndex()).c_str()), F_OK) !=
 		-1)
-		_full_path = _full_path + "/" +  _configs.getIndex();
+	{
+		if(_serverConfig.routes.find(_req_parsed["Path"]) != _serverConfig.routes.end() || _req_parsed["Path"] == "/")
+			_full_path = _full_path + "/" +  _configs.getIndex();
+		else
+			_full_path = _full_path + "/" +  _req_parsed["Path"];
+	}
+	if(_full_path.find("//") != std::string::npos)
+		_full_path.replace(_full_path.find("//"), 2, "/");
+	if(_dir_path.find("//") != std::string::npos)
+		_dir_path.replace(_dir_path.find("//"), 2, "/");
+	if(_actual_root.find("//") != std::string::npos)
+		_actual_root.replace(_actual_root.find("//"), 2, "/");
+	if(_url_path.find("//") != std::string::npos)
+		_url_path.replace(_url_path.find("//"), 2, "/");
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
@@ -143,7 +148,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		_body = cgi_init.cgiHandler(_full_path);
 		return;
 	}
-	std::cout <<"FULL \t:" << _full_path <<std::endl;
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
 	{
@@ -189,7 +193,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 			printError("414", "URI Too Long");
 			return ;
 		}
-		if (_error_flag != 1)
+//		if (_error_flag != 1)
 			printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
@@ -199,12 +203,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 
 void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
 {
-	std::string		clean_path = _req_parsed["Path"];
-	std::string::size_type i = clean_path.find(_url_path);
-	if (i != std::string::npos && _url_path != "/")
-		clean_path.erase(i, _url_path.length());
-	_full_path = _configs.getRoot() + clean_path;
-	_dir_path = _configs.getRoot() + clean_path;
+	_full_path = _actual_root;
+	_dir_path = _actual_root;
 	/*limpa o path quando adicionar // */
 	if(_full_path.find("//") != std::string::npos)
 		_full_path.replace(_full_path.find("//"), 2, "/");
@@ -445,7 +445,7 @@ void	Response::_setHeaders(void)
 			}
 			else
 				headers.erase(0, 2);
-		}	
+		}
 		else
 			throw std::runtime_error("invalid multipart/formdata 'npos'");
 	}
@@ -733,7 +733,7 @@ bool	Response::checkRequest()
 		printError("505", "HTTP Version Not Supported");
 		return (1);
 	}
-	if (_configs.getHttpMethods().find(_req_parsed["Method"]) == _configs.
+	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find(_req_parsed["Method"]) == _configs.
 		getHttpMethods().end())
 	{
 		std::cerr << "Error 405 invalid method" << std::endl;
@@ -744,30 +744,35 @@ bool	Response::checkRequest()
 }
 void	Response::init()
 {
-	_error_flag = 0;
 	/*Iniciando o server com os dados do path selecionado*/
-	if (_req_parsed["Path"] == "/")
+	std::string url;
+	std::string _clean_address;
+
+	url = _req_parsed["Path"].substr(0,_req_parsed["Path"].find('/', 1));
+	if (_req_parsed["Path"] != url)
+		_clean_address =  _req_parsed["Path"].substr(_req_parsed["Path"].find
+			('/', 1),_req_parsed["Path"].size());
+	if (_serverConfig.routes.find(url) != _serverConfig.routes.end())
+	{
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[url]);
+		_url_path = _req_parsed["Path"];
+	}
+	else
 	{
 		_configs = ServerConfig(_serverConfig);
 		_url_path = _req_parsed["Path"];
 	}
-	else if (_serverConfig.routes.find(_req_parsed["Path"]) == _serverConfig.
-		routes.end())
-		std::cerr << "";
-	else
-	{
-		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_req_parsed
-			["Path"]]);
-		_url_path = _req_parsed["Path"];
-	}
-	// // std::cout <<"Root:"<< _configs.getRoot() << std::endl;
-	// // std::cout <<"Auxindex:"<< _configs.getDirList() << std::endl;
-	// // std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	// // std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	// // std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	// // std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	// // std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	// // std::cout <<"Url path :"<<  _url_path<< std::endl;
+	if (_serverConfig.routes.find(_url_path) != _serverConfig.routes.end())
+		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_url_path]);
+	_actual_root = _configs.getRoot() + _clean_address;
+	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
+	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
+	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
+	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
+	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
+	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
+	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
+	// std::cout <<"Url path :"<<  _url_path<< std::endl;
 	/*checa se o método solicitado está incluso no location*/
 	if (checkRequest())
 		return ;
@@ -800,3 +805,4 @@ std::string Response::getBody()
 {
 	return _body;
 }
+

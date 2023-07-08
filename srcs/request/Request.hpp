@@ -14,7 +14,6 @@
 class Request
 {
 	private:
-//		std::string							_request;
 		std::map <std::string, std::string>	_req_map;
 		std::string							_body;
 	public:

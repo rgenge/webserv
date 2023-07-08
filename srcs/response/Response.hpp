@@ -1,4 +1,3 @@
-
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
@@ -28,10 +27,9 @@ class Response
 		std::map <std::string, std::string>	&_res_param;
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
-		std::string							_path_location;
 		ServerConfig						_configs;
 		std::string							&_url_path;
-		int									_error_flag;
+//		std::string							_clean_address;
 
 		// POST
 		std::string 						_boundary;
@@ -42,7 +40,7 @@ class Response
 		std::map <std::string, std::string>	_postHeaders;
 		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
-
+		std::string							&_actual_root;
 
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string message,
@@ -80,7 +78,7 @@ class Response
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData);
+		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData, std::string& _actual_root_);
 		~Response();
 		void		init ();
 		std::string	getResponse();
