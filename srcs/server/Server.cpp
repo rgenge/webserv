@@ -78,14 +78,13 @@ void	Server::respondRequest(int requestfd) {
 	_req_parsed = _req.getMap();
 	_req_body = _req.getBody();
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig,
+	Response res_struct(_req_parsed, _serverConfig,
 		_url_path, this->_requestData, _actual_root);
 	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
 	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
-	_res_param.clear();
 	_req_parsed.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);

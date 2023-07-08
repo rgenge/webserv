@@ -3,6 +3,7 @@
 
 # include "Server.hpp"
 # include "ServerConfig.hpp"
+# include "ErrorResponse.hpp"
 # include "webserv.hpp"
 # include "CgiHandler.hpp"
 # include <cstring>
@@ -24,12 +25,10 @@ class Response
 		std::map <std::string, std::string>	_res_map;
 		std::string							_full_path;
 		std::string							_dir_path;
-		std::map <std::string, std::string>	&_res_param;
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
 		ServerConfig						_configs;
 		std::string							&_url_path;
-//		std::string							_clean_address;
 
 		// POST
 		std::string 						_boundary;
@@ -77,7 +76,7 @@ class Response
 		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
-		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
+		Response(std::map<std::string, std::string>& _req_parsed_,
 		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData, std::string& _actual_root_);
 		~Response();
 		void		init ();

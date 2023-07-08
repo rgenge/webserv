@@ -1,9 +1,9 @@
 #include "Response.hpp"
 
-Response::Response(std::map <std::string, std::string>& _res_param_, std::map
+Response::Response(std::map
 <std::string, std::string>& _req_parsed_, t_serverConfig& _serverConfig_,
 std::string&_url_path_,
-std::vector<unsigned char> &requestData, std::string &_actual_root_) :_res_param(_res_param_),
+std::vector<unsigned char> &requestData, std::string &_actual_root_) :
 _req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
 _url_path(_url_path_), _requestData(requestData), _actual_root(_actual_root_)
 {
@@ -54,8 +54,9 @@ void	Response::autoIndex()
 	if (!(dh = opendir(directory.c_str())))
 	{
 			//checar esse erro
-			std::cerr << "Error 404? Path ñ existe ou s/ permissao"<< std::endl;
-			printError("404", "Not Found");
+			std::cerr << "Page Not Found"<< std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_404, _configs.
+				getErrorPage(ERROR_404));
 			return ;
 	}
 	else
@@ -82,19 +83,6 @@ void	Response::autoIndex()
 			_body += "</div></body></html>";
 	}
 }
-
-void	Response::printError(std::string codigo, std::string message)
-{
-	_body = "";
-	_body += ("<!DOCTYPE html><html><head><meta charset=\"UTF-8\" />"
-		"<title>webserv</title></head><body><h1>Error " + codigo + "</h1>\n");
-	_body += "</div></body></html>";
-	_res_map["Content-type"] = getType();
-	_res_map["Content-Length"] = "1000";
-	_res_map["Connection"] = "close";
-	printHeader (codigo, message, _req_parsed["Version"]);
-}
-
 
 std::string Response::sizetToString(std::string text)
 {
@@ -184,21 +172,27 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		int content = atoi(_res_map["Content-Length"].c_str());
 		if (content <= 0)
 		{
-			printError("411", "Length Required");
+			std::cerr << "ContentL Length Required" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_411, _configs.
+				getErrorPage(ERROR_411));
 			return ;
 		}
 		if((content)/1000 > _configs.getBodySizeLimit())
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
-			printError("414", "URI Too Long");
+			_response = ErrorResponse::getErrorResponse(ERROR_414, _configs.
+				getErrorPage(ERROR_414));
 			return ;
 		}
-//		if (_error_flag != 1)
-			printHeader ("200", "OK", _req_parsed["Version"]);
+		printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
 	else
-		printError("404", "Not Found");
+	{
+		std::cerr << "Page Not Found"<< std::endl;
+		_response = ErrorResponse::getErrorResponse(ERROR_404, _configs.
+			getErrorPage(ERROR_404));
+	}
 }
 
 void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
@@ -215,7 +209,9 @@ void	Response::methodDelete(std::map <std::string, std::string> _req_parsed)
 	FILE *file = fopen(_full_path.c_str(), "r");
 	if(!file)
 	{
-		printError("404", "Not Found");
+		std::cerr << "Page Not Found"<< std::endl;
+		_response = ErrorResponse::getErrorResponse(ERROR_404, _configs.
+			getErrorPage(ERROR_404));
 		return ;
 	}
 	else
@@ -234,7 +230,8 @@ int	Response::dirCheck(std::string dir)
 	if (!check_fp)
 	{
 		std::cerr << "Forbidden" << std::endl;
-		printError("403", "Forbidden");
+		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+			getErrorPage(ERROR_403));
 		return (2);
 	}
 	else
@@ -730,14 +727,17 @@ bool	Response::checkRequest()
 			_req_parsed["Version"] != "HTTP/2.0")
 	{
 		std::cerr << "Error 505 Http Version not supported" << std::endl;
-		printError("505", "HTTP Version Not Supported");
+		_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
+			getErrorPage(ERROR_505));
 		return (1);
 	}
-	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find(_req_parsed["Method"]) == _configs.
+	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
+		(_req_parsed["Method"]) == _configs.
 		getHttpMethods().end())
 	{
 		std::cerr << "Error 405 invalid method" << std::endl;
-		printError("405", "Method Not Allowed");
+		_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
+			getErrorPage(ERROR_405));
 		return (1);
 	}
 	return (0);

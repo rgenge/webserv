@@ -33,7 +33,6 @@ class Server : public Socket {
 	private:
 
 		Server();
-		std::map <std::string, std::string>	_res_param;
 		std::map<int, std::string>			_requestfds;
 		std::map <std::string, std::string>	_req_parsed;
 		std::string							_req_body;
