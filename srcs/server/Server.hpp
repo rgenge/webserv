@@ -28,21 +28,19 @@ class Server : public Socket {
 		requestStatus		getRequest(int fd);
 		void				respondRequest(int fd);
 		bool				hasRequestFd(int i);
-		void				addRequestfd(int requestfd, std::string requestMessage);
+		void				addRequestfd(int requestfd, std::vector<unsigned char> requestMessage);
 
 	private:
 
 		Server();
-		std::map <std::string, std::string>	_res_param;
-		std::map<int, std::string>			_requestfds;
-		std::map <std::string, std::string>	_req_parsed;
-		std::string							_req_body;
-		t_serverConfig						_serverConfig;
-		ServerConfig						_configs;
-		std::string							_url_path;
-		std::vector<unsigned char>			_requestData;
+		std::map <std::string, std::string>			_res_param;
+		std::map<int, std::vector <unsigned char> >	_requestfds;
+		t_serverConfig								_serverConfig;
+		ServerConfig								_configs;
+		std::string									_url_path;
 
-		requestStatus	_checkRequestStatus(std::string const &_request);
+		requestStatus	_checkRequestStatus(std::vector<unsigned char> const &_request);
+		size_t			_findSequenceVector(std::vector<unsigned char> const &vector, std::string const sequence);
 		void			_respondInternalServerError(int requestfd);
 
 };

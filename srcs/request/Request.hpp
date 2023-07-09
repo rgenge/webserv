@@ -8,6 +8,7 @@
 # include <iostream>
 # include <fstream>
 # include <map>
+# include <vector>
 # include <unistd.h>
 # include <sstream>
 
@@ -15,17 +16,24 @@ class Request
 {
 	private:
 //		std::string							_request;
-		std::map <std::string, std::string>	_req_map;
+		std::vector<unsigned char>			&_requestData;
 		std::string							_body;
+		std::string							_strBody;
+		std::map <std::string, std::string>	_headers;
+
+		void		_parse(void);
+		void		_parseChunk(void);
+		size_t		_heximalConverter(std::string input);
+		void		_setStrBody(void);
+		std::string	_setStringHeaders(void);
+
 	public:
-		Request(std::string req_input);
+		Request(std::vector<unsigned char> &requestData);
 		~Request();
-		void								parse(std::string req_input);
-		void								parseChunk(std::string request);
 		void								checkRequest();
-		size_t								heximalConverter(std::string input);
-		std::map <std::string, std::string>	&getMap();
-		std::string							getBody();
+		std::map<std::string, std::string>	&getMap();
+		std::string							&getStrBody();
+		std::vector<unsigned char>			&getVectorBody();
 };
 
 #endif

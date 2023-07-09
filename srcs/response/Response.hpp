@@ -36,12 +36,11 @@ class Response
 		// POST
 		std::string 						_boundary;
 		std::string							_fileType;
-		std::string							_postBodyStr;
+		std::string							&_strBody;
 		std::map <std::string, std::string>	_vars;
 		std::map <std::string, std::string>	_boundaryHeaders;
-		std::map <std::string, std::string>	_postHeaders;
-		std::vector<unsigned char>			_postBody;
-		std::vector<unsigned char>			&_requestData;
+		std::vector<unsigned char>			_vectorBoundaryBody;
+		std::vector<unsigned char>			&_vectorBody;
 
 
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
@@ -56,8 +55,6 @@ class Response
 
 		// POST
 		void		_methodPost(void);
-		void		_parseRequestData(void);
-		void		_setPostBodyStr(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
@@ -70,21 +67,19 @@ class Response
 		void		_processBoundaryHeaders(void);
 		void		_handleBoundaryPart(void);
 		void		_handleImputFile(std::string &contentDisposition);
-		void		_setPostBodyVector(void);
+		void		_setBoundaryBody(void);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
-		std::string	_setStringHeaders(void);
 		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
 		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData);
+		t_serverConfig&_serverConfig__, std::string& _url_path_, std::string &strBody, std::vector<unsigned char> &vectorBody);
 		~Response();
 		void		init ();
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
-
 };
 #endif

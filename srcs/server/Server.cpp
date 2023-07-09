@@ -16,29 +16,54 @@ Server&	Server::operator=(Server const &rhs) {
 		return (*this);
 	Socket::operator=(rhs);
 	this->_requestfds = rhs._requestfds;
-	this->_req_parsed = rhs._req_parsed;
-	this->_req_body = rhs._req_body;
 	this->_serverConfig = rhs._serverConfig;
 	return (*this);
 }
 
-void	Server::addRequestfd(int requestfd, std::string requestMessage) {
-	_requestfds.insert(std::pair<int, std::string>(requestfd, requestMessage));
+void	Server::addRequestfd(int requestfd, std::vector<unsigned char> requestMessage) {
+	_requestfds.insert(std::pair<int, std::vector<unsigned char> >(requestfd, requestMessage));
 }
 
-requestStatus	Server::_checkRequestStatus(std::string const &_request) {
-	size_t		contentLengthIndex;
-	size_t		contentLength;
-	size_t		bodyPosition;
-	std::string	body;
+size_t	Server::_findSequenceVector(std::vector<unsigned char> const &vector, std::string const sequence)
+{
+	size_t i = 0;
+	size_t j = 0;
+	while ((i < vector.size()) && (j < sequence.size()))
+	{
+		if (vector[i] == sequence[j])
+		{
+			i++;
+			j++;
+		}
+		else
+		{
+			i -= j;
+			j = 0;
+			i++;
+		}
+	}
+	if (j < sequence.size())
+		return (std::string::npos);
+	return (i - j);
+}
 
-	contentLengthIndex = _request.find("Content-Length: ");
+requestStatus	Server::_checkRequestStatus(std::vector<unsigned char> const &_request) {
+	size_t						contentLengthIndex;
+	size_t						contentLength;
+	size_t						bodyPosition;
+	std::string					contentValue;
+	std::vector<unsigned char>	body;
+
+	contentLengthIndex = _findSequenceVector(_request, "Content-Length: ");
 	if (contentLengthIndex == std::string::npos)
 		return (DONE);
 	contentLengthIndex += 15;
-	contentLength = std::atoi(&_request.c_str()[contentLengthIndex]);
-	bodyPosition = _request.find(DCRLF) + 4;
-	body = _request.substr(bodyPosition);
+	for (size_t i = contentLengthIndex; std::isdigit(static_cast<int>(_request[i])); i++)
+		contentValue += _request[i];
+	contentLength = std::atoi(contentValue.c_str());
+	bodyPosition = _findSequenceVector(_request, DCRLF) + 4;
+	for (size_t i = bodyPosition; i < _request.size(); i++)
+		body.push_back(_request[i]);
 	if (body.size() != contentLength)
 		return (PROCESSING);
 	return (DONE);
@@ -62,10 +87,9 @@ requestStatus	Server::getRequest(int requestfd) {
 	}
 	else
 	{
-		this->_requestfds[requestfd] += _request;
 		for (int i = 0; i < bytesRead; i++)
 		{
-			this->_requestData.push_back(static_cast<unsigned char>(_request[i]));
+			this->_requestfds[requestfd].push_back(static_cast<unsigned char>(_request[i]));
 			// std::cout << _request[i];
 		}
 	}
@@ -76,18 +100,15 @@ void	Server::respondRequest(int requestfd) {
 	std::string	response;
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
-	_req_parsed = _req.getMap();
-	_req_body = _req.getBody();
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req_parsed, _serverConfig,
-		_url_path, this->_requestData);
+	Response res_struct(_res_param, _req.getMap(), _serverConfig,
+		_url_path, _req.getStrBody(), _req.getVectorBody());
 	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
 	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
 	_res_param.clear();
-	_req_parsed.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }
