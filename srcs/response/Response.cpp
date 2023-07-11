@@ -17,7 +17,16 @@ void	Response::printHeader(std::string status_code, std::string message,
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
+	std::string cookie = "Set-Cookie: " + _req_parsed["Cookie"];
+	std::string oldStr = ";";
+	std::string newStr = "\r\nSet-Cookie:";
+	for(size_t pos = 0; (pos = cookie.find(oldStr, pos)) != std::string::npos;) {
+		cookie.replace(pos, oldStr.length(), newStr);
+		pos += newStr.length();
+	}
+	_response.append(cookie);
 	_response.append("\r\n");
+	std::cout << _response << std::endl;
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/

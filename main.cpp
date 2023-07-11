@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
 	ServerManager	serverManager;
 	Parser			parserConfig;
 	std::queue<t_serverConfig>	serverConfigs;
-
+	
 	if (argc != 2)
 	{
 		std::cerr << "Error to initialize webserv: invalid number of arguments"<< std::endl;
