@@ -1,9 +1,9 @@
-
 #ifndef RESPONSE_HPP
 # define RESPONSE_HPP
 
 # include "Server.hpp"
 # include "ServerConfig.hpp"
+# include "ErrorResponse.hpp"
 # include "webserv.hpp"
 # include "CgiHandler.hpp"
 # include <cstring>
@@ -25,13 +25,10 @@ class Response
 		std::map <std::string, std::string>	_res_map;
 		std::string							_full_path;
 		std::string							_dir_path;
-		std::map <std::string, std::string>	&_res_param;
 		std::map <std::string, std::string>	&_req_parsed;
 		t_serverConfig						&_serverConfig;
-		std::string							_path_location;
 		ServerConfig						_configs;
 		std::string							&_url_path;
-		int									_error_flag;
 
 		// POST
 		std::string 						_boundary;
@@ -42,7 +39,7 @@ class Response
 		std::map <std::string, std::string>	_postHeaders;
 		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
-
+		std::string							&_actual_root; //GET
 
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string message,
@@ -79,8 +76,9 @@ class Response
 		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
-		Response(std::map <std::string, std::string>& _res_param_, std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData);
+		Response(std::map<std::string, std::string>& _req_parsed_,
+		t_serverConfig&_serverConfig__, std::string& _url_path_,
+		std::vector<unsigned char> &requestData, std::string& _actual_root_);
 		~Response();
 		void		init ();
 		std::string	getResponse();

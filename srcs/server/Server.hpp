@@ -33,15 +33,13 @@ class Server : public Socket {
 	private:
 
 		Server();
-		std::map <std::string, std::string>	_res_param;
 		std::map<int, std::string>			_requestfds;
 		std::map <std::string, std::string>	_req_parsed;
 		std::string							_req_body;
 		t_serverConfig						_serverConfig;
-		ServerConfig						_configs;
 		std::string							_url_path;
+		std::string							_actual_root;
 		std::vector<unsigned char>			_requestData;
-
 		requestStatus	_checkRequestStatus(std::string const &_request);
 		void			_respondInternalServerError(int requestfd);
 

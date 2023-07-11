@@ -18,6 +18,8 @@ enum ErrorCode {
 	ERROR_404,
 	ERROR_405,
 	ERROR_406,
+	ERROR_411,
+	ERROR_414,
 	ERROR_500,
 	ERROR_501,
 	ERROR_502,
@@ -35,7 +37,7 @@ class ErrorResponse {
 	private:
 
 		ErrorResponse();
-		
+
 		static std::string	_getErrorBody(ErrorCode errorCode, std::string const &errorPage);
 		static std::string	_getErrorHeader(ErrorCode errorCode, size_t bodySize);
 		static std::string	_getErrorMsg(ErrorCode errorCode);

@@ -68,11 +68,11 @@ void Request::parse(std::string req_input)
 			s.erase(0, pos + delim.length());
 		}
 	}/*Código abaixo apenas para testar o parser do request*/
-//	std::map<std::string, std::string>::iterator itr;
-//	for(itr=_req_map.begin();itr!=_req_map.end();itr++)
-//	{
-//		std::cout<<itr->first<<"::"<<itr->second<<std::endl;
-//	}
+	//  std::map<std::string, std::string>::iterator itr;
+	//  for(itr=_req_map.begin();itr!=_req_map.end();itr++)
+	//  {
+	//  	std::cout<<itr->first<<"::"<<itr->second<<std::endl;
+	//  }
 }
 /*Checa o tamanho do chunk e retorno o valor em decimal pra conversão*/
 size_t Request::heximalConverter(std::string input)

@@ -69,6 +69,10 @@ std::string	ErrorResponse::_getErrorMsg(ErrorCode errorCode) {
 			return ("405 Method Not Allowed");
 		case ERROR_406:
 			return ("406 Not Acceptable");
+		case ERROR_411:
+			return ("411 Content Length Required");
+		case ERROR_414:
+			return ("414 Body Size Limit Exceeded");
 		case ERROR_500:
 			return ("500 Internal Server Error");
 		case ERROR_501:
@@ -95,6 +99,10 @@ std::string	ErrorResponse::_getErrorPage(ErrorCode errorCode) {
 			return ("errorpages/405.html");
 		case ERROR_406:
 			return ("errorpages/406.html");
+		case ERROR_411:
+			return ("errorpages/411.html");
+		case ERROR_414:
+			return ("errorpages/414.html");
 		case ERROR_500:
 			return ("errorpages/500.html");
 		case ERROR_501:

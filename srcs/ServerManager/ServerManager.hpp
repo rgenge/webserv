@@ -48,7 +48,7 @@ class ServerManager {
 		void	_initializeServers();
 		void	_acceptConnecitons(void);
 		void	_getServersRequests(void);
-		void	_respondServerRequests(void);
+		void	_respondServerRequests();
 		void	_cleanPollfds(void);
 
 		bool	_isFdNotReadable(struct pollfd pollfd);

@@ -77,7 +77,7 @@ bool	ServerManager::_isFdNotWritable(struct pollfd pollfd) {
 	return (false);
 }
 
-void	ServerManager::_respondServerRequests(void) {
+void	ServerManager::_respondServerRequests() {
 	for (std::vector<struct pollfd>::iterator it = _pollFdsMaster.begin(); it < _pollFdsMaster.end(); it++) {
 		if (_isFdNotWritable((*it)))
 			continue ;
