@@ -9,7 +9,7 @@ Request::Request(std::vector<unsigned char> &requestData): _requestData(requestD
 	// 	_parseChunk();
 }
 
-int	_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
+size_t	_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
 {
 	size_t i = 0;
 	size_t j = 0;
@@ -28,20 +28,21 @@ int	_findSequence(std::vector<unsigned char> &vector, std::string const sequence
 		}
 	}
 	if (j < sequence.size())
-		return (0);
-	return (i);
+		return (std::string::npos);
+	return (i - j);
 }
 
 std::string	Request::_setStringHeaders(void)
 {
+	size_t		npos;
 	std::string	headers;
+	size_t		endHeader = 4;
 
 	if (this->_requestData.size() > 3)
 	{
-		int npos = _findSequence(this->_requestData, "\r\n\r\n");
-		if (npos > 0)
+		if ((npos = _findSequence(this->_requestData, "\r\n\r\n")) != std::string::npos)
 		{
-			for (int i = 0; i < npos; i++)
+			for (size_t i = 0; i < (npos + endHeader); i++)
 			{
 				headers += this->_requestData[0];
 				this->_requestData.erase(this->_requestData.begin(), this->_requestData.begin() + 1);

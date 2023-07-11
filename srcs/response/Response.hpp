@@ -59,7 +59,7 @@ class Response
 		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);
-		void		_removeHeaderSpaces(std::string &multipart);
+		void		_removeHeaderSpaces(std::string &header);
 		void		_setHeaders(void);
 		void		_processBoundaryHeaders(void);
 		void		_handleBoundaryPart(void);
@@ -68,7 +68,7 @@ class Response
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
-		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
+		size_t		_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
 		Response(std::map<std::string, std::string>& _req_parsed_,

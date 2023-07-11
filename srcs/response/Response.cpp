@@ -353,25 +353,25 @@ void	Response::_setBoundary(void)
 	return ;
 }
 
-void	Response::_removeHeaderSpaces(std::string &multipart)
+void	Response::_removeHeaderSpaces(std::string &header)
 {
 	size_t		endHeaderPos, i = 0;
-	std::string	tempMultipart;
+	std::string	tempHeader;
 
-	if ((endHeaderPos = multipart.find("\r\n\r\n")) != std::string::npos)
+	if ((endHeaderPos = header.find("\r\n\r\n")) != std::string::npos)
 	{
 		while (i < endHeaderPos)
 		{
-			if (multipart[i] != ' ')
-				tempMultipart += multipart[i];
+			if (header[i] != ' ')
+				tempHeader += header[i];
 			i++;
 		}
-		while (i < multipart.size())
+		while (i < header.size())
 		{
-			tempMultipart += multipart[i];
+			tempHeader += header[i];
 			i++;
 		}
-		multipart = tempMultipart;
+		header = tempHeader;
 	}
 	else
 		throw std::runtime_error("invalid multipart/formdata 'endHeaderPos'");
@@ -379,7 +379,7 @@ void	Response::_removeHeaderSpaces(std::string &multipart)
 	return ;
 }
 
-int	Response::_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
+size_t	Response::_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
 {
 	size_t i = 0;
 	size_t j = 0;
@@ -398,17 +398,18 @@ int	Response::_findSequence(std::vector<unsigned char> &vector, std::string cons
 		}
 	}
 	if (j < sequence.size())
-		return (0);
-	return (i);
+		return (std::string::npos);
+	return (i - j);
 }
 
 void	Response::_setHeaders(void)
 {
 	size_t		npos;
+	size_t		endHeader = 4;
 	std::string	headers, headerKey, headerValue;
 
-	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != 0)
-		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + npos + 2);
+	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
+		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + npos + this->_boundary.size() + 2);
 	else
 	{
 		std::cerr << "headers error: " << std::endl << headers << std::endl;
@@ -416,7 +417,7 @@ void	Response::_setHeaders(void)
 		throw std::runtime_error("invalid multipart/formdata '_setHeaders'");
 	}
 	npos = _findSequence(this->_vectorBody, "\r\n\r\n");
-	for (size_t i = 0; i < npos; i++)
+	for (size_t i = 0; i < (npos + endHeader); i++)
 	{
 		headers += this->_vectorBody[0];
 		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
@@ -494,11 +495,12 @@ std::string	Response::_generateFileName(std::string const &originalFileName)
 
 void	Response::_setBoundaryBody(void)
 {
+	size_t npos;
 	size_t	boundaryStart = 2;
-	int npos = _findSequence(this->_vectorBody, this->_boundary);
-	if (npos > 0)
+
+	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
 	{
-		for (size_t i = 0; i < (npos - boundaryStart - this->_boundary.size()); i++)
+		for (size_t i = 0; i < (npos - boundaryStart); i++)
 		{
 			this->_vectorBoundaryBody.push_back(this->_vectorBody[0]);
 			this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
