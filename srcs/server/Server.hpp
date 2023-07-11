@@ -37,7 +37,6 @@ class Server : public Socket {
 		std::map <std::string, std::string>	_req_parsed;
 		std::string							_req_body;
 		t_serverConfig						_serverConfig;
-		ServerConfig						_configs;
 		std::string							_url_path;
 		std::string							_actual_root;
 		std::vector<unsigned char>			_requestData;

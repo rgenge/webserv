@@ -39,7 +39,7 @@ class Response
 		std::map <std::string, std::string>	_postHeaders;
 		std::vector<unsigned char>			_postBody;
 		std::vector<unsigned char>			&_requestData;
-		std::string							&_actual_root;
+		std::string							&_actual_root; //GET
 
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string message,
@@ -77,7 +77,8 @@ class Response
 
 	public:
 		Response(std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig__, std::string& _url_path_, std::vector<unsigned char> &requestData, std::string& _actual_root_);
+		t_serverConfig&_serverConfig__, std::string& _url_path_,
+		std::vector<unsigned char> &requestData, std::string& _actual_root_);
 		~Response();
 		void		init ();
 		std::string	getResponse();

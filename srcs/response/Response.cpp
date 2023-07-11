@@ -729,7 +729,7 @@ bool	Response::checkRequest()
 		std::cerr << "Error 505 Http Version not supported" << std::endl;
 		_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
 			getErrorPage(ERROR_505));
-		return (1);
+		return (true);
 	}
 	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
 		(_req_parsed["Method"]) == _configs.
@@ -738,9 +738,9 @@ bool	Response::checkRequest()
 		std::cerr << "Error 405 invalid method" << std::endl;
 		_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
 			getErrorPage(ERROR_405));
-		return (1);
+		return (true);
 	}
-	return (0);
+	return (false);
 }
 void	Response::init()
 {
@@ -751,20 +751,24 @@ void	Response::init()
 	url = _req_parsed["Path"].substr(0,_req_parsed["Path"].find('/', 1));
 	if (_req_parsed["Path"] != url)
 		_clean_address =  _req_parsed["Path"].substr(_req_parsed["Path"].find
-			('/', 1),_req_parsed["Path"].size());
+			('/', 1));
+//	if (_actual_root != "" && _actual_root == _configs.getRoot())
+//		std::cout << "";
 	if (_serverConfig.routes.find(url) != _serverConfig.routes.end())
 	{
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[url]);
 		_url_path = _req_parsed["Path"];
 	}
-	else
+	else if (_serverConfig.routes.find(url) == _serverConfig.routes.end())
 	{
 		_configs = ServerConfig(_serverConfig);
 		_url_path = _req_parsed["Path"];
 	}
-	if (_serverConfig.routes.find(_url_path) != _serverConfig.routes.end())
+	else if (_serverConfig.routes.find(_url_path) != _serverConfig.routes.end())
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_url_path]);
 	_actual_root = _configs.getRoot() + _clean_address;
+	//	std::cout <<"Actual Root:"<< _actual_root<< std::endl;
+	//	std::cout << "url: "<<  url << std::endl;
 	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
 	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
 	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
