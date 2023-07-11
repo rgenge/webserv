@@ -637,19 +637,18 @@ void	Response::init()
 	// std::cout <<"Url path :"<<  _url_path<< std::endl;
 	/*checa se o método solicitado está incluso no location*/
 
-	std::cout << "headers RESPONSE:" << std::endl;
-	std::map<std::string, std::string>::iterator it;
-	for (it = this->_req_parsed.begin(); it != this->_req_parsed.end(); it++)
-		std::cout << it->first << "=" << it->second << std::endl;
-	std::cout << std::endl;
+	// std::cout << "headers RESPONSE:" << std::endl;
+	// std::map<std::string, std::string>::iterator it;
+	// for (it = this->_req_parsed.begin(); it != this->_req_parsed.end(); it++)
+	// 	std::cout << it->first << "=" << it->second << std::endl;
+	// std::cout << std::endl;
+	// std::cout << "_vectorBody RESPONSE:" << std::endl;
+	// for (size_t i = 0; i < _vectorBody.size(); i++)
+	// 	std::cout << _vectorBody[i];
+	// std::cout << std::endl;
 
-	std::cout << "_vectorBody RESPONSE:" << std::endl;
-	for (size_t i = 0; i < _vectorBody.size(); i++)
-		std::cout << _vectorBody[i];
-	std::cout << std::endl;
-
-	std::cout << "_strBody RESPONSE:" << std::endl;
-	std::cout << _strBody << std::endl;
+	// std::cout << "_strBody RESPONSE:" << std::endl;
+	// std::cout << _strBody << std::endl;
 
 	if (checkRequest())
 		return ;
