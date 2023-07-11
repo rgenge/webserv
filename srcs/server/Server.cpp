@@ -101,14 +101,13 @@ void	Server::respondRequest(int requestfd) {
 	/*Parseamento do request e salva um map comtudo e o body do request*/
 	Request _req(_requestfds[requestfd]);
 	/*Iniciando o response*/
-	Response res_struct(_res_param, _req.getMap(), _serverConfig,
-		_url_path, _req.getStrBody(), _req.getVectorBody());
+	Response res_struct(_req.getMap(), _serverConfig,
+		_url_path, _req.getStrBody(), _req.getVectorBody(), _actual_root);
 	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
 	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
-	_res_param.clear();
 	_requestfds.erase(requestfd);
 	close(requestfd);
 }

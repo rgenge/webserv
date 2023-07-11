@@ -33,11 +33,10 @@ class Server : public Socket {
 	private:
 
 		Server();
-		std::map <std::string, std::string>			_res_param;
 		std::map<int, std::vector <unsigned char> >	_requestfds;
 		t_serverConfig								_serverConfig;
-		ServerConfig								_configs;
 		std::string									_url_path;
+		std::string									_actual_root;
 
 		requestStatus	_checkRequestStatus(std::vector<unsigned char> const &_request);
 		size_t			_findSequenceVector(std::vector<unsigned char> const &vector, std::string const sequence);
