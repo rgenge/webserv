@@ -107,7 +107,7 @@ void	ServerManager::_acceptConnecitons(void) {
 		requestfd = _getServerBySocketFd((*it).fd).acceptConnection();
 		std::cout << "Connection accepted!" << std::endl;
 		(*it).revents = 0;
-		_getServerBySocketFd((*it).fd).addRequestfd(requestfd, "");
+		_getServerBySocketFd((*it).fd).addRequestfd(requestfd, std::vector<unsigned char>());
 		_addFdToPoll(requestfd, POLLIN | POLLOUT);
 		_requestFds.insert(requestfd);
 		it = _pollFdsMaster.begin();

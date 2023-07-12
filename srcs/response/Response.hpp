@@ -33,12 +33,11 @@ class Response
 		// POST
 		std::string 						_boundary;
 		std::string							_fileType;
-		std::string							_postBodyStr;
+		std::string							&_strBody;
 		std::map <std::string, std::string>	_vars;
 		std::map <std::string, std::string>	_boundaryHeaders;
-		std::map <std::string, std::string>	_postHeaders;
-		std::vector<unsigned char>			_postBody;
-		std::vector<unsigned char>			&_requestData;
+		std::vector<unsigned char>			_vectorBoundaryBody;
+		std::vector<unsigned char>			&_vectorBody;
 		std::string							&_actual_root; //GET
 
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
@@ -52,38 +51,33 @@ class Response
 		bool		checkRequest();
 
 		// POST
-		void		_methodPost(t_serverConfig &serverConfig);
-		void		_parseRequestData(void);
-		void		_setPostBodyStr(void);
+		void		_methodPost(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
-		void		_parseMultipartFormData(t_serverConfig &serverConfig);
+		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);
-		void		_removeHeaderSpaces(std::string &multipart);
+		void		_removeHeaderSpaces(std::string &header);
 		void		_setHeaders(void);
-		void		_processBoundaryHeaders(t_serverConfig &serverConfig);
-		void		_handleBoundaryPart(t_serverConfig &serverConfig);
-		void		_handleImputFile(std::string &contentDisposition, t_serverConfig &serverConfig);
-		void		_setPostBodyVector(void);
+		void		_processBoundaryHeaders(void);
+		void		_handleBoundaryPart(void);
+		void		_handleImputFile(std::string &contentDisposition);
+		void		_setBoundaryBody(void);
 		std::string	_handleLastSlash(std::string &Route);
-		std::string	_getUploadDir(t_serverConfig &serverConfig);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &originalFileName);
-		std::string	_setStringHeaders(void);
-		int			_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
+		size_t		_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:
 		Response(std::map<std::string, std::string>& _req_parsed_,
-		t_serverConfig&_serverConfig__, std::string& _url_path_,
-		std::vector<unsigned char> &requestData, std::string& _actual_root_);
+		t_serverConfig&_serverConfig__, std::string& _url_path_, std::string &strBody,
+		std::vector<unsigned char> &vectorBody, std::string& _actual_root_);
 		~Response();
 		void		init ();
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
-
 };
 #endif
