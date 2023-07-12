@@ -17,7 +17,19 @@ void	Response::printHeader(std::string status_code, std::string message,
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
-	_response.append("\r\n");
+	_response.append("\r\n"); // retirar esse caso for testar cookie
+
+	/*Teste com cookies*/
+	// std::string cookie = "Set-Cookie: " + _req_parsed["Cookie"];
+	// std::string oldStr = ";";
+	// std::string newStr = "\r\nSet-Cookie:";
+	// for(size_t pos = 0; (pos = cookie.find(oldStr, pos)) != std::string::npos;) {
+	// 	cookie.replace(pos, oldStr.length(), newStr);
+	// 	pos += newStr.length();
+	// }
+	// _response.append(cookie);
+	// _response.append("\r\n");
+	// std::cout << _response << std::endl;
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -747,13 +759,21 @@ void	Response::init()
 	/*Iniciando o server com os dados do path selecionado*/
 	std::string url;
 	std::string _clean_address;
-
+	int flag = 0;
 	url = _req_parsed["Path"].substr(0,_req_parsed["Path"].find('/', 1));
 	if (_req_parsed["Path"] != url)
 		_clean_address =  _req_parsed["Path"].substr(_req_parsed["Path"].find
 			('/', 1));
-//	if (_actual_root != "" && _actual_root == _configs.getRoot())
-//		std::cout << "";
+	_configs = ServerConfig(_serverConfig, _serverConfig.routes[_url_path]);
+	std::cout <<"Actual Root:"<< _actual_root<< std::endl;
+	std::cout <<"Url path :"<<  _url_path<< std::endl;
+	std::cout << "_configs.getRoot() "<<  _configs.getRoot() << std::endl;
+	if (_actual_root != "" && _configs.getRoot() == _actual_root && access (((_actual_root).c_str()), F_OK) != -1 && _configs.getIndex() != _url_path)
+	{
+		flag = 1;
+		_url_path = _req_parsed["Path"];
+	}
+	std::cout << "flag : " << flag << std::endl;
 	if (_serverConfig.routes.find(url) != _serverConfig.routes.end())
 	{
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[url]);
@@ -766,17 +786,22 @@ void	Response::init()
 	}
 	else if (_serverConfig.routes.find(_url_path) != _serverConfig.routes.end())
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_url_path]);
-	_actual_root = _configs.getRoot() + _clean_address;
-	//	std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	//	std::cout << "url: "<<  url << std::endl;
+	if (flag == 0)
+		_actual_root = _configs.getRoot() + _clean_address;
+	else if (flag == 1 && access (((_actual_root + _url_path).c_str()), F_OK) != -1)
+		_actual_root = _actual_root + _url_path;
+	else
+		_actual_root = _actual_root + _clean_address;
+	std::cout <<"\nActual Root:"<< _actual_root<< std::endl;
+	std::cout << "url: "<<  url << std::endl;
 	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
 	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
 	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
 	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
 	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
 	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	// std::cout <<"Url path :"<<  _url_path<< std::endl;
+//	 std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
+	 std::cout <<"Url path :"<<  _url_path<< std::endl;
 	/*checa se o método solicitado está incluso no location*/
 	if (checkRequest())
 		return ;
