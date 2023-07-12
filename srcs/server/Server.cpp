@@ -53,15 +53,16 @@ requestStatus	Server::_checkRequestStatus(std::vector<unsigned char> const &_req
 	size_t						bodyPosition;
 	std::string					contentValue;
 	std::vector<unsigned char>	body;
+	int							endHeaderDelimiter = 4;
 
 	contentLengthIndex = _findSequenceVector(_request, "Content-Length: ");
 	if (contentLengthIndex == std::string::npos)
 		return (DONE);
-	contentLengthIndex += 15;
+	contentLengthIndex += 16;
 	for (size_t i = contentLengthIndex; std::isdigit(static_cast<int>(_request[i])); i++)
 		contentValue += _request[i];
 	contentLength = std::atoi(contentValue.c_str());
-	bodyPosition = _findSequenceVector(_request, DCRLF) + 4;
+	bodyPosition = _findSequenceVector(_request, DCRLF) + endHeaderDelimiter;
 	for (size_t i = bodyPosition; i < _request.size(); i++)
 		body.push_back(_request[i]);
 	if (body.size() != contentLength)

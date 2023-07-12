@@ -646,9 +646,9 @@ void	Response::init()
 	// for (size_t i = 0; i < _vectorBody.size(); i++)
 	// 	std::cout << _vectorBody[i];
 	// std::cout << std::endl;
-
 	// std::cout << "_strBody RESPONSE:" << std::endl;
 	// std::cout << _strBody << std::endl;
+
 
 	if (checkRequest())
 		return ;
