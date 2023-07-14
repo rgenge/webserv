@@ -12,11 +12,42 @@ _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(
 void	Response::printHeader(std::string status_code, std::string message,
 	std::string http_version)
 {
+	std::time_t result = std::time(NULL);
+	result = result + (1 * 60 * 60);
+	std::string timeString = std::asctime(std::localtime(&result));
 	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
+	if (_req_parsed["Query"] != "")
+	{
+		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+	}
+		_response.append("Set-Cookie: HttpOnly=true\r\n");
+		_response.append("Set-Cookie: Secure=true\r\n");
+		_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
+		_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
+		_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
 	_response.append("\r\n");
+	//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
+	/*Teste com cookies*/
+	// if (_req_parsed["Cookie"] != "")
+	// {
+	// 	std::string cookie = "Set-Cookie: " + _req_parsed["Cookie"];
+	// 	std::string oldStr = ";";
+	// 	std::string newStr = "\r\nSet-Cookie:";
+	// 	for(size_t pos = 0; (pos = cookie.find(oldStr, pos)) !=
+	// 		std::string::npos;) {
+	// 		cookie.replace(pos, oldStr.length(), newStr);
+	// 		pos += newStr.length();
+	// 	}
+	// 	_response.append(cookie);
+	// 	_response.append("\r\n\r\n");
+	// }
+	// else
+	// 	_response.append("\r\n");
+	std::cout << _response << std::endl;
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -600,9 +631,22 @@ bool	Response::checkRequest()
 	}
 	return (false);
 }
+
+void	Response::getCookie()
+{
+	std::string name;
+	size_t start =  _req_parsed["Cookie"].find("name=");
+	size_t end =  _req_parsed["Cookie"].find(";", start);
+	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	std::ofstream WriteFile("index/file.txt");
+	WriteFile << name;
+}
+
 void	Response::init()
 {
 	/*Iniciando o server com os dados do path selecionado*/
+	if (_req_parsed["Cookie"] != "")
+		getCookie();
 	std::string url;
 	std::string _clean_address;
 	url = _req_parsed["Path"].substr(0,_req_parsed["Path"].find('/', 1));
