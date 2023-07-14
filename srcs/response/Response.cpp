@@ -298,46 +298,41 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 	return ;
 }
 
-void Response::_parseUrlEncodedParams(void)
+void Response::_parseUrlEncodedParams(std::string &body)
 {
-	std::string	&params = this->_strBody;
-
-	size_t separatorPos = params.find('=');
+	size_t separatorPos = body.find('=');
 	if (separatorPos == std::string::npos)
 		throw std::runtime_error("error 400??? invalid application/x-www-form-urlencoded format");
-	_removeBreakLinesAndCR (params);
-	_replaceHexPercentWithAscii(params);
+	_removeBreakLinesAndCR (body);
+	_replaceHexPercentWithAscii(body);
 	size_t pos = 0;
 	while (true)
 	{
-		separatorPos = params.find('=', pos);
+		separatorPos = body.find('=', pos);
 		if (separatorPos == std::string::npos)
             break ;
-		std::string	key = params.substr(pos, separatorPos - pos);
-		params.erase(pos, separatorPos + 1);
+		std::string	key = body.substr(pos, separatorPos - pos);
+		body.erase(pos, separatorPos + 1);
 
-		size_t ampersandPos = params.find('&', pos);
-		if (ampersandPos == std::string::npos && params.size() == 0)
+		size_t ampersandPos = body.find('&', pos);
+		if (ampersandPos == std::string::npos && body.size() == 0)
             break ;
 		else if (ampersandPos == std::string::npos)
-			ampersandPos = params.size();
-		std::string	value = params.substr(pos, ampersandPos - pos);
-		params.erase(pos, ampersandPos + 1);
+			ampersandPos = body.size();
+		std::string	value = body.substr(pos, ampersandPos - pos);
+		body.erase(pos, ampersandPos + 1);
 
 		this->_vars[key] = value;
 	}
-	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
 	return ;
 }
 
-void	Response::_parseTextPlain(void)
+void	Response::_parseTextPlain(std::string &body)
 {
 	// ver se é mesmo necessário chamar essa função nesse caso
 	// _removeBreakLinesAndCR(textPlain);
 
-	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
+	(void)body;
 	return ;
 }
 
@@ -532,7 +527,6 @@ void	Response::_handleImputFile(std::string &contentDisposition)
 	for (size_t i = 0; i < this->_vectorBoundaryBody.size(); i++)
 		file << this->_vectorBoundaryBody[i];
 	file.close();
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
 	return ;
 }
 
@@ -547,6 +541,8 @@ void	Response::_processBoundaryHeaders(void)
 	}
 	else
 		throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+	this->_boundaryHeaders.clear();
+	this->_vectorBoundaryBody.clear();
 	return ;
 }
 
@@ -559,7 +555,8 @@ void	Response::_handleBoundaryPart(void)
 void	Response::_parseMultipartFormData(void)
 {
 	_setBoundary();
-	_handleBoundaryPart();
+	while (_findSequence(this->_vectorBody, this->_boundary) != std::string::npos)
+		_handleBoundaryPart();
 	return ;
 }
 
@@ -568,13 +565,15 @@ void	Response::_methodPost(void)
 	if (this->_req_parsed["Transfer-Encoding"] == "chunked")
 		_parseChunk();
 	if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-		_parseUrlEncodedParams();
+		_parseUrlEncodedParams(this->_strBody);
 	else if (this->_req_parsed["Content-Type"] == "text/plain")
-		_parseTextPlain();
+		_parseTextPlain(this->_strBody);
 	else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
 		_parseMultipartFormData();
 	else
 		std::cerr << "ERROR: " << this->_req_parsed["Content-Type"] << std::endl;
+	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
+	printHeader ("200", "OK", this->_req_parsed["Version"]);
 	return ;
 }
 
