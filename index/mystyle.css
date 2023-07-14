@@ -6,3 +6,7 @@ body {
 	color: rgb(76, 184, 126);
 	margin-left: 20px;
   }
+  embed {
+	background-color: rgb(81, 201, 241);
+	color: rgb(76, 184, 126);
+  }

@@ -68,6 +68,17 @@ void	Request::_setStrBody(void)
 	return ;
 }
 
+void Request::get_query()
+{
+	std::string path = this->_headers["Path"];
+	std::cout << path << std::endl;
+	size_t i = path.find_first_of("?", 0);
+	if (i == std::string::npos)
+		return ;
+	this->_headers.insert(make_pair("Query", path.substr(i + 1, path.size() - i)));
+	this->_headers["Path"] = path.substr(0, i);
+}
+
 void	Request::_parse(void)
 {
 	std::string		s;
@@ -123,6 +134,7 @@ void	Request::_parse(void)
 			s.erase(0, pos + delim.length());
 		}
 	}
+	get_query();
 	_setStrBody();
 	return ;
 }

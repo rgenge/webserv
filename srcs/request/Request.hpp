@@ -31,6 +31,7 @@ class Request
 		Request(std::vector<unsigned char> &requestData);
 		~Request();
 		void								checkRequest();
+		void								get_query();
 		std::map<std::string, std::string>	&getMap();
 		std::string							&getStrBody();
 		std::vector<unsigned char>			&getVectorBody();
