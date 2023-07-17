@@ -49,10 +49,10 @@ std::string	Request::_setStringHeaders(void)
 			}
 		}
 		else
-			throw std::runtime_error("invalid request format '_setStringheaders'");
+			this->_headers["Path"] = "Bad Request";
 	}
 	else
-		throw std::runtime_error("invalid request format '_setStringheaders'");
+		this->_headers["Path"] = "Bad Request";
 	return (headers);
 }
 

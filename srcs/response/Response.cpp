@@ -611,13 +611,29 @@ void	Response::_methodPost(void)
 
 bool	Response::checkRequest()
 {
-	if (_req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
+	if (_req_parsed["Path"] == "Bad Request")
+	{
+		std::cerr << "Error 400 Bad Request" << std::endl;
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+		return (true);
+	}
+	if ( _req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
 		"HTTP/1.0" && _req_parsed["Version"] != "HTTP/1.1" &&
 			_req_parsed["Version"] != "HTTP/2.0")
 	{
-		std::cerr << "Error 505 Http Version not supported" << std::endl;
-		_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
+		if (_req_parsed["Version"].substr(0, 4) == "HTTP/")
+		{
+			std::cerr << "Error 505 Http Version not supported" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
 			getErrorPage(ERROR_505));
+		}
+		else
+		{
+			std::cerr << "Error 400 Bad Request" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+		}
 		return (true);
 	}
 	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
