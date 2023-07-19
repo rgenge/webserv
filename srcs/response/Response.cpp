@@ -12,11 +12,26 @@ _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(
 void	Response::printHeader(std::string status_code, std::string message,
 	std::string http_version)
 {
+	std::time_t result = std::time(NULL);
+	result = result + (1 * 60 * 60);
+	std::string timeString = std::asctime(std::localtime(&result));
 	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
 		i != _res_map.end(); i++)
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
+	if (_req_parsed["Query"] != "")
+	{
+		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+	}
+	_response.append("Set-Cookie: HttpOnly=true\r\n");
+	_response.append("Set-Cookie: Secure=true\r\n");
+	_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
+	_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
+	_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
+	_response.append(_body);
 	_response.append("\r\n");
+	//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -579,13 +594,22 @@ void	Response::_methodPost(void)
 
 bool	Response::checkRequest()
 {
-	if (_req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
+	if ( _req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
 		"HTTP/1.0" && _req_parsed["Version"] != "HTTP/1.1" &&
 			_req_parsed["Version"] != "HTTP/2.0")
 	{
-		std::cerr << "Error 505 Http Version not supported" << std::endl;
-		_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
+		if (_req_parsed["Version"].substr(0, 4) == "HTTP/")
+		{
+			std::cerr << "Error 505 Http Version not supported" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
 			getErrorPage(ERROR_505));
+		}
+		else
+		{
+			std::cerr << "Error 400 Bad Request" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+		}
 		return (true);
 	}
 	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
@@ -599,33 +623,44 @@ bool	Response::checkRequest()
 	}
 	return (false);
 }
+
+void	Response::getCookie()
+{
+	std::string name;
+	size_t start =  _req_parsed["Cookie"].find("name=");
+	size_t end =  _req_parsed["Cookie"].find(";", start);
+	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	std::ofstream WriteFile("index/file.txt");
+	WriteFile << name;
+}
+
 void	Response::init()
 {
 	/*Iniciando o server com os dados do path selecionado*/
+	if (_req_parsed["Cookie"] != "")
+		getCookie();
 	std::string url;
 	std::string _clean_address;
-
 	url = _req_parsed["Path"].substr(0,_req_parsed["Path"].find('/', 1));
 	if (_req_parsed["Path"] != url)
 		_clean_address =  _req_parsed["Path"].substr(_req_parsed["Path"].find
 			('/', 1));
-//	if (_actual_root != "" && _actual_root == _configs.getRoot())
-//		std::cout << "";
 	if (_serverConfig.routes.find(url) != _serverConfig.routes.end())
-	{
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[url]);
-		_url_path = _req_parsed["Path"];
-	}
-	else if (_serverConfig.routes.find(url) == _serverConfig.routes.end())
-	{
-		_configs = ServerConfig(_serverConfig);
-		_url_path = _req_parsed["Path"];
-	}
-	else if (_serverConfig.routes.find(_url_path) != _serverConfig.routes.end())
+	else if (access (((_actual_root + "/" + _configs.getIndex()).c_str()),
+		F_OK) != -1 && _serverConfig.routes.find(_url_path) != _serverConfig.
+			routes.end() && url != "/")
 		_configs = ServerConfig(_serverConfig, _serverConfig.routes[_url_path]);
-	_actual_root = _configs.getRoot() + _clean_address;
-	//	std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	//	std::cout << "url: "<<  url << std::endl;
+	else
+		_configs = ServerConfig(_serverConfig);
+	_url_path = _req_parsed["Path"];
+	/*Checa se o arquivo esta no url ou se é um GET proveniente de pagina html*/
+	if (_serverConfig.routes.find(url) != _serverConfig.routes.end())
+		_actual_root = _configs.getRoot() + _clean_address;
+	else
+		_actual_root = _configs.getRoot() + _req_parsed["Path"];
+	// std::cout <<"Actual Root:"<< _actual_root<< std::endl;
+	// std::cout << "url: "<<  url << std::endl;
 	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
 	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
 	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
@@ -647,8 +682,6 @@ void	Response::init()
 	// std::cout << std::endl;
 	// std::cout << "_strBody RESPONSE:" << std::endl;
 	// std::cout << _strBody << std::endl;
-
-
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")

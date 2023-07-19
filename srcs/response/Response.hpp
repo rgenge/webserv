@@ -16,6 +16,7 @@
 # include <iostream>
 # include <string>
 # include <sys/stat.h>
+# include <cstddef>
 
 class Response
 {
@@ -49,6 +50,7 @@ class Response
 		std::string	sizetToString(std::string text);
 		void		printError(std::string codigo, std::string message);
 		bool		checkRequest();
+		void		getCookie();
 
 		// POST
 		void		_methodPost(void);
