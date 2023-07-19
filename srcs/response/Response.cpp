@@ -24,30 +24,14 @@ void	Response::printHeader(std::string status_code, std::string message,
 		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
 		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
 	}
-		_response.append("Set-Cookie: HttpOnly=true\r\n");
-		_response.append("Set-Cookie: Secure=true\r\n");
-		_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
-		_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
-		_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
+	_response.append("Set-Cookie: HttpOnly=true\r\n");
+	_response.append("Set-Cookie: Secure=true\r\n");
+	_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
+	_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
+	_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
+	_response.append(_body);
 	_response.append("\r\n");
 	//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
-	/*Teste com cookies*/
-	// if (_req_parsed["Cookie"] != "")
-	// {
-	// 	std::string cookie = "Set-Cookie: " + _req_parsed["Cookie"];
-	// 	std::string oldStr = ";";
-	// 	std::string newStr = "\r\nSet-Cookie:";
-	// 	for(size_t pos = 0; (pos = cookie.find(oldStr, pos)) !=
-	// 		std::string::npos;) {
-	// 		cookie.replace(pos, oldStr.length(), newStr);
-	// 		pos += newStr.length();
-	// 	}
-	// 	_response.append(cookie);
-	// 	_response.append("\r\n\r\n");
-	// }
-	// else
-	// 	_response.append("\r\n");
-	std::cout << _response << std::endl;
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -611,13 +595,6 @@ void	Response::_methodPost(void)
 
 bool	Response::checkRequest()
 {
-	if (_req_parsed["Path"] == "Bad Request")
-	{
-		std::cerr << "Error 400 Bad Request" << std::endl;
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-			getErrorPage(ERROR_400));
-		return (true);
-	}
 	if ( _req_parsed["Version"] != "HTTP/0.9" && _req_parsed["Version"] !=
 		"HTTP/1.0" && _req_parsed["Version"] != "HTTP/1.1" &&
 			_req_parsed["Version"] != "HTTP/2.0")
@@ -683,8 +660,8 @@ void	Response::init()
 		_actual_root = _configs.getRoot() + _clean_address;
 	else
 		_actual_root = _configs.getRoot() + _req_parsed["Path"];
-	//	std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	//	std::cout << "url: "<<  url << std::endl;
+	// std::cout <<"Actual Root:"<< _actual_root<< std::endl;
+	// std::cout << "url: "<<  url << std::endl;
 	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
 	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
 	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;

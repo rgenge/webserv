@@ -49,10 +49,10 @@ std::string	Request::_setStringHeaders(void)
 			}
 		}
 		else
-			this->_headers["Path"] = "Bad Request";
+			this->_headers["Version"] = "Bad Request";
 	}
 	else
-		this->_headers["Path"] = "Bad Request";
+		this->_headers["Version"] = "Bad Request";
 	return (headers);
 }
 
