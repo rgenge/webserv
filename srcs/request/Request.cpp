@@ -49,10 +49,10 @@ std::string	Request::_setStringHeaders(void)
 			}
 		}
 		else
-			throw std::runtime_error("invalid request format '_setStringheaders'");
+			this->_headers["Version"] = "Bad Request";
 	}
 	else
-		throw std::runtime_error("invalid request format '_setStringheaders'");
+		this->_headers["Version"] = "Bad Request";
 	return (headers);
 }
 
@@ -66,6 +66,17 @@ void	Request::_setStrBody(void)
 	for (size_t i = 0; i < this->_requestData.size(); i++)
 		this->_strBody += this->_requestData[i];
 	return ;
+}
+
+void Request::get_query()
+{
+	std::string path = this->_headers["Path"];
+	std::cout << path << std::endl;
+	size_t i = path.find_first_of("?", 0);
+	if (i == std::string::npos)
+		return ;
+	this->_headers.insert(make_pair("Query", path.substr(i + 1, path.size() - i)));
+	this->_headers["Path"] = path.substr(0, i);
 }
 
 void	Request::_parse(void)
@@ -123,6 +134,7 @@ void	Request::_parse(void)
 			s.erase(0, pos + delim.length());
 		}
 	}
+	get_query();
 	_setStrBody();
 	return ;
 }

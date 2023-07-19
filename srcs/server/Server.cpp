@@ -107,7 +107,6 @@ void	Server::respondRequest(int requestfd) {
 	res_struct.init();
 	/*response recebe o header e body da resposta e escreve no fd*/
 	response = res_struct.getResponse();
-	response += res_struct.getBody();
 	write(requestfd, response.c_str(), response.length());
 	_requestfds.erase(requestfd);
 	close(requestfd);
