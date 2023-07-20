@@ -148,6 +148,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		CgiHandler	cgi_init;
 		std::string	cgi_body;
 		_body = cgi_init.cgiHandler(_full_path);
+		_response.append(_body);
+		_response.append("\r\n");
 		return;
 	}
 	/*Checa se diretório não for acessivel */
@@ -628,9 +630,14 @@ bool	Response::checkRequest()
 void	Response::getCookie()
 {
 	std::string name;
-	size_t start =  _req_parsed["Cookie"].find("name=");
-	size_t end =  _req_parsed["Cookie"].find(";", start);
-	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	if ( _req_parsed["Cookie"].find("name=") != std::string::npos)
+	{
+		size_t start =  _req_parsed["Cookie"].find("name=");
+		size_t end =  _req_parsed["Cookie"].find(";", start);
+		name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	}
+		else
+			name = "Enter a query name='your name';
 	std::ofstream WriteFile("index/file.txt");
 	WriteFile << name;
 }
