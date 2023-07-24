@@ -188,7 +188,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		int content = atoi(_res_map["Content-Length"].c_str());
 		if (content <= 0)
 		{
-			std::cerr << "ContentL Length Required" << std::endl;
+			std::cerr << "Content Length Required" << std::endl;
 			_response = ErrorResponse::getErrorResponse(ERROR_411, _configs.
 				getErrorPage(ERROR_411));
 			return ;
@@ -637,9 +637,30 @@ void	Response::getCookie()
 		name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
 	}
 		else
-			name = "Enter a query name='your name';
+			name = "Enter a query name='your name'";
 	std::ofstream WriteFile("index/file.txt");
 	WriteFile << name;
+}
+
+bool	Response::headerCheck(void)
+{
+	std::ostringstream ss;
+	ss << _configs.getPort();
+	std::string port = ss.str();
+	if (_req_parsed["Host"] != "127.0.0.1:" + port)
+	{
+		std::cout << _req_parsed["Host"] << std::endl;
+		std::cout << "127.0.0.1:" << port << std::endl;
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	if (_req_parsed[""] != "")
+	{
+		std::cout << _req_parsed["Host"] << std::endl;
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	return (false);
 }
 
 void	Response::init()
@@ -690,6 +711,7 @@ void	Response::init()
 	// std::cout << std::endl;
 	// std::cout << "_strBody RESPONSE:" << std::endl;
 	// std::cout << _strBody << std::endl;
+	headerCheck();
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")

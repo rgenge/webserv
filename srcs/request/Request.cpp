@@ -71,7 +71,6 @@ void	Request::_setStrBody(void)
 void Request::get_query()
 {
 	std::string path = this->_headers["Path"];
-	std::cout << path << std::endl;
 	size_t i = path.find_first_of("?", 0);
 	if (i == std::string::npos)
 		return ;
@@ -134,6 +133,10 @@ void	Request::_parse(void)
 			s.erase(0, pos + delim.length());
 		}
 	}
+	std::map<std::string, std::string>::iterator it = this->_headers.begin();
+	std::cout << it->first << ": " << it->second << std::endl;
+	while (++it != this->_headers.end())
+		std::cout << it->first << ": " << it->second << std::endl;
 	get_query();
 	_setStrBody();
 	return ;
