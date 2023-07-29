@@ -102,6 +102,11 @@ void	Request::_parse(void)
 		{
 			size_t pos2 = 0;
 			std::string delim2 = ": ";
+			if (token.find(" :") != std::string::npos)
+			{
+				this->_headers["Version"] = "Bad Request";
+				return;
+			}
 			while((pos2 = token.find(delim2)) != std::string ::npos)
 			{
 				sub = token.substr(0, pos2);
@@ -133,10 +138,10 @@ void	Request::_parse(void)
 			s.erase(0, pos + delim.length());
 		}
 	}
-	std::map<std::string, std::string>::iterator it = this->_headers.begin();
-	std::cout << it->first << ": " << it->second << std::endl;
-	while (++it != this->_headers.end())
-		std::cout << it->first << ": " << it->second << std::endl;
+//	std::map<std::string, std::string>::iterator it = this->_headers.begin();
+//	std::cout << it->first << ": " << it->second << std::endl;
+//	while (++it != this->_headers.end())
+//		std::cout << it->first << ": " << it->second << std::endl;
 	get_query();
 	_setStrBody();
 	return ;

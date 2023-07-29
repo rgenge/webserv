@@ -145,12 +145,22 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		CgiHandler	cgi_init;
-		std::string	cgi_body;
-		_body = cgi_init.cgiHandler(_full_path);
-		_response.append(_body);
-		_response.append("\r\n");
-		return;
+		if (!_configs.getCgi().empty() && _configs.getCgi()[0] == "php")
+		{
+			CgiHandler	cgi_init;
+			std::string	cgi_body;
+			_body = cgi_init.cgiHandler(_full_path);
+			_response.append(_body);
+			_response.append("\r\n");
+			return;
+		}
+		else
+		{
+			std::cerr << "Forbidden" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+			return ;
+		}
 	}
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -196,8 +206,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		if((content)/1000 > _configs.getBodySizeLimit())
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
-			_response = ErrorResponse::getErrorResponse(ERROR_414, _configs.
-				getErrorPage(ERROR_414));
+			_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
+				getErrorPage(ERROR_413));
 			return ;
 		}
 		printHeader ("200", "OK", _req_parsed["Version"]);
@@ -647,10 +657,16 @@ bool	Response::headerCheck(void)
 	std::ostringstream ss;
 	ss << _configs.getPort();
 	std::string port = ss.str();
-	if (_req_parsed["Host"] != "127.0.0.1:" + port)
+	if (_req_parsed["Host"] != "127.0.0.1:" + port &&
+		_req_parsed["Host"] != "localhost:" + port)
 	{
 		std::cout << _req_parsed["Host"] << std::endl;
 		std::cout << "127.0.0.1:" << port << std::endl;
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	if (_req_parsed["Content-Length"] != "")
+	{
 		_req_parsed["Version"] = "Bad Request";
 		return (true);
 	}
