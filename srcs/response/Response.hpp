@@ -54,6 +54,7 @@ class Response
 
 		// POST
 		void		_methodPost(void);
+		void		_isNotCGI(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(std::string &body);
 		void		_removeBreakLinesAndCR(std::string &str);
@@ -69,7 +70,7 @@ class Response
 		void		_setBoundaryBody(void);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
-		std::string	_generateFileName(std::string const &originalFileName);
+		std::string	_generateFileName(std::string const &type, std::string const &originalFileName);
 		size_t		_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:

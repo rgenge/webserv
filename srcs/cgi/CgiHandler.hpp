@@ -15,9 +15,8 @@ class	CgiHandler
 		CgiHandler(CgiHandler const &src);
 		~CgiHandler(void);
 		CgiHandler							&operator=(CgiHandler const &rhs);
-		std::string							cgiHandler(std::string path);
+		std::string							cgiHandler(std::string const filename, std::string path, std::map<std::string, std::string> &envpMap);
 	private:
-		void								_getEnv(void);
 		void								_convertEnvFormat(void);
 		void								_clearEnvp(void);
 		void								_openPipe(void);
@@ -25,9 +24,10 @@ class	CgiHandler
 		void								_parent(void);
 		void								_execCgi(void);
 
-		std::map<std::string, std::string>	_tempEnv;
+		std::map<std::string, std::string>	_envpMap;
 		std::string							_cgiResult;
-		std::string							_path;
+		std::string							_bodyPath;
+		std::string							_scriptPath;
 		pid_t								_pid;
 		char								**_envp;
 		int									_pipeFd[2];

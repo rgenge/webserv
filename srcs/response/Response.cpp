@@ -147,7 +147,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	{
 		CgiHandler	cgi_init;
 		std::string	cgi_body;
-		_body = cgi_init.cgiHandler(_full_path);
+		_body = cgi_init.cgiHandler("", _full_path, this->_req_parsed);
 		return;
 	}
 	/*Checa se diretório não for acessivel */
@@ -344,10 +344,27 @@ void Response::_parseUrlEncodedParams(std::string &body)
 
 void	Response::_parseTextPlain(std::string &body)
 {
-	// ver se é mesmo necessário chamar essa função nesse caso
-	// _removeBreakLinesAndCR(textPlain);
+	std::ofstream	file;
+	std::string		pathBody;
 
-	(void)body;
+	if (body.size() == 0)
+		throw std::runtime_error("error: empty body");
+	pathBody = "../" + _generateFileName("temp_file_", "");
+
+	file.open(pathBody.c_str(), std::ios::in | std::ios::out | std::ios::trunc);
+	if (!file.is_open())
+		throw std::runtime_error("error: open() (_parseTextPlain)");
+	file.write(body.c_str(), body.size());
+	file.close();
+	CgiHandler	cgi;
+	std::string	cgiResult;
+	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
+	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
+		this->_url_path.erase(0, 1);
+	cgiResult = cgi.cgiHandler(pathBody, this->_url_path, this->_req_parsed);
+	std::cout << "Resultado:\n" << cgiResult << std::endl;
+	printHeader ("200", "OK", _req_parsed["Version"]);
+	this->_req_parsed.clear();
 	return ;
 }
 
@@ -479,14 +496,14 @@ std::string	Response::_originalFileName(std::string &contentDisposition)
 	return (originalFileName);
 }
 
-std::string	Response::_generateFileName(std::string const &originalFileName)
+std::string	Response::_generateFileName(std::string const &type, std::string const &originalFileName)
 {
 	static int	sequenceNumber = 0;
 	std::time_t	currentTime;
 	std::stringstream	fileName;
 
 	currentTime = std::time(0);
-	fileName << "file_" << currentTime << sequenceNumber << originalFileName;
+	fileName << type << currentTime << sequenceNumber << originalFileName;
 	sequenceNumber++;
 	return (fileName.str());
 }
@@ -531,7 +548,7 @@ void	Response::_handleImputFile(std::string &contentDisposition)
 	pos = _configs.getUploadPath().size() - 1;
 	if (_configs.getUploadPath().find('/', pos) == std::string::npos)
 		fileName += '/';
-	originalFileName = _generateFileName(originalFileName);
+	originalFileName = _generateFileName("file_", originalFileName);
 	originalFileName += _originalFileName(contentDisposition);
 	fileName += originalFileName;
 
@@ -575,18 +592,78 @@ void	Response::_parseMultipartFormData(void)
 	return ;
 }
 
+void	Response::_isNotCGI(void)
+{
+	int				err;
+	std::string		fileName;
+	std::string		originalFileName;
+	std::ofstream	file;
+	struct stat		st;
+
+	if (stat("uploads", &st) != 0)
+	{
+		if (errno == ENOENT)
+		{
+			if ((err = mkdir("uploads", 0777)) == 0)
+				std::cout << "uploads deu certo" << std::endl;
+			else
+				std::cout << "uploads não deu certo: err: " << err << std::endl;
+		}
+		else
+			throw std::runtime_error("an error occurred (uploads) 'isNotCGI'");
+	}
+	if (stat("uploads/others", &st) != 0)
+	{
+		if (errno == ENOENT)
+		{
+			if ((err = mkdir("./uploads/others", 0777)) == 0)
+				std::cout << "others deu certo" << std::endl;
+			else
+				std::cout << "others não deu certo: err: " << err << std::endl;
+		}
+		else
+			throw std::runtime_error("an error occurred (others/uploads) 'isNotCGI'");
+	}
+
+	if (_configs.getUploadPath() == "")
+		fileName =  "./uploads/others/";
+	else
+	{
+		fileName += _configs.getUploadPath();
+		if (_configs.getUploadPath()[_configs.getUploadPath().size() - 1] != '/')
+			fileName += '/';
+	}
+
+	originalFileName = "_" + _url_path.substr(_url_path.find_last_of('/') + 1, _url_path.size());
+	fileName += _generateFileName("file_", originalFileName); 
+	std::cout << "filename: " << fileName << std::endl;
+	
+	file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
+	for (size_t i = 0; i < this->_vectorBody.size(); i++)
+	{
+		std::cout << this->_vectorBody[i];
+		file << this->_vectorBody[i];
+	}
+	return ;
+}
+
 void	Response::_methodPost(void)
 {
-	if (this->_req_parsed["Transfer-Encoding"] == "chunked")
-		_parseChunk();
-	if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-		_parseUrlEncodedParams(this->_strBody);
-	else if (this->_req_parsed["Content-Type"] == "text/plain")
-		_parseTextPlain(this->_strBody);
-	else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
-		_parseMultipartFormData();
+	if ((_url_path.find("/cgi")) == std::string::npos)
+		_isNotCGI();
 	else
-		std::cerr << "ERROR: " << this->_req_parsed["Content-Type"] << std::endl;
+	{	
+		if (this->_req_parsed["Transfer-Encoding"] == "chunked")
+		_parseChunk();
+		if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
+			_parseUrlEncodedParams(this->_strBody);
+		else if (this->_req_parsed["Content-Type"] == "text/plain")
+			_parseTextPlain(this->_strBody);
+		else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
+			_parseMultipartFormData();
+		else
+			std::cerr << "ERROR: " << this->_req_parsed["Content-Type"] << std::endl;
+	}
 	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
 	printHeader ("200", "OK", this->_req_parsed["Version"]);
 	return ;
@@ -612,15 +689,15 @@ bool	Response::checkRequest()
 		}
 		return (true);
 	}
-	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
-		(_req_parsed["Method"]) == _configs.
-		getHttpMethods().end())
-	{
-		std::cerr << "Error 405 invalid method" << std::endl;
-		_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
-			getErrorPage(ERROR_405));
-		return (true);
-	}
+	// if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
+	// 	(_req_parsed["Method"]) == _configs.
+	// 	getHttpMethods().end())
+	// {
+	// 	std::cerr << "Error 405 invalid method" << std::endl;
+	// 	_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
+	// 		getErrorPage(ERROR_405));
+	// 	return (true);
+	// }
 	return (false);
 }
 

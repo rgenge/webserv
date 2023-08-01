@@ -46,30 +46,15 @@ void	CgiHandler::_clearEnvp(void)
 	return ;
 }
 
-void	CgiHandler::_getEnv(void)
-{
-	// aqui pegarei as variáveis de ambiente que o script cgi pode precisar
-	// talvez nem seja necessário e já venha pronto
-	// por enquanto, estou criando um map temporário
-
-	this->_tempEnv["METHOD"] = "GET";
-    this->_tempEnv["HTTP_USER_AGENT"] = "Mozilla/5.0";
-    this->_tempEnv["REMOTE_ADDR"] = "127.0.0.1";
-    this->_tempEnv["CUSTOM_VAR1"] = "value1";
-    this->_tempEnv["CUSTOM_VAR2"] = "value2";
-
-	return ;
-}
-
 void	CgiHandler::_convertEnvFormat(void)
 {
 	// aqui vou converter o map em um char** para que o execve possa usar no 3º argumento
-	int	size = this->_tempEnv.size() + 1;
+	int	size = this->_envpMap.size() + 1;
 	this->_envp = new char *[size];
 
 	int	i = 0;
 	std::map<std::string, std::string>::iterator it;
-	for (it = this->_tempEnv.begin(); it != this->_tempEnv.end(); it++)
+	for (it = this->_envpMap.begin(); it != this->_envpMap.end(); it++)
 	{
 		std::string arg = it->first + "=" + it->second;
 		size = arg.size() + 1;
@@ -97,7 +82,7 @@ void	CgiHandler::_child(void)
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
 	const char	*path = "/usr/bin/php";
-	const char	*scriptPath = _path.c_str();
+	const char	*scriptPath = _scriptPath.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),
 		const_cast<char *>(scriptPath),
@@ -158,10 +143,15 @@ void	CgiHandler::_execCgi(void)
 	return ;
 }
 
-std::string	CgiHandler::cgiHandler(std::string path)
+std::string	CgiHandler::cgiHandler(std::string const bodyPath, std::string scriptPath, std::map<std::string, std::string> &envpMap)
 {
-	_path = path;
-	_getEnv();
+	_scriptPath = scriptPath;
+	_bodyPath = bodyPath;
+	this->_envpMap = envpMap;
+	this->_envpMap["Filename"] = this->_bodyPath;
+	// std::map<std::string, std::string>::iterator	it;
+	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
+	// 	std::cout << it->first << it->second << std::endl;
 	_convertEnvFormat();
 	_execCgi();
 	return (_cgiResult);
