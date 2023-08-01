@@ -301,13 +301,21 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 				std::istringstream	iss(hexStr);
 				iss >> std::hex >> value;
 				if (iss.fail())
-					throw std::runtime_error("failed to convert hex to ASCII");
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+					getErrorPage(ERROR_400));
+					throw std::runtime_error("400 Bad Request (failed to convert hex to ASCII)");
+				}
 				std::string asciiChar;
 				asciiChar.push_back(static_cast<char>(value));
 				params.replace(percentPos, 3, asciiChar);
 			}
 			else
-				throw std::runtime_error("invalid parameters format");
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+				getErrorPage(ERROR_400));
+				throw std::runtime_error("400 Bad Request (invalid parameters format)");
+			}
 		}
 	}
 	return ;
@@ -317,7 +325,11 @@ void Response::_parseUrlEncodedParams(std::string &body)
 {
 	size_t separatorPos = body.find('=');
 	if (separatorPos == std::string::npos)
-		throw std::runtime_error("error 400??? invalid application/x-www-form-urlencoded format");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (body application/x-www-form-urlencoded format)");
+	}
 	_removeBreakLinesAndCR (body);
 	_replaceHexPercentWithAscii(body);
 	size_t pos = 0;
@@ -348,12 +360,20 @@ void	Response::_parseTextPlain(std::string &body)
 	std::string		pathBody;
 
 	if (body.size() == 0)
-		throw std::runtime_error("error: empty body");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_parseTextPlain/empty body)");
+	}
 	pathBody = "../" + _generateFileName("temp_file_", "");
 
 	file.open(pathBody.c_str(), std::ios::in | std::ios::out | std::ios::trunc);
 	if (!file.is_open())
-		throw std::runtime_error("error: open() (_parseTextPlain)");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_parseTextPlain/open())");
+	}
 	file.write(body.c_str(), body.size());
 	file.close();
 	CgiHandler	cgi;
@@ -376,7 +396,11 @@ void	Response::_setBoundary(void)
 	if ((boundaryPos = contentType.find("---")) != std::string::npos)
 		this->_boundary = contentType.substr(boundaryPos, contentType.size() - boundaryPos);
 	else
-		throw std::runtime_error("boundary not found");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (boundary not found)");
+	}
 	return ;
 }
 
@@ -401,7 +425,11 @@ void	Response::_removeHeaderSpaces(std::string &header)
 		header = tempHeader;
 	}
 	else
-		throw std::runtime_error("invalid multipart/formdata 'endHeaderPos'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata/endHeaderPos)");
+	}
 
 	return ;
 }
@@ -439,9 +467,9 @@ void	Response::_setHeaders(void)
 		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + npos + this->_boundary.size() + 2);
 	else
 	{
-		std::cerr << "headers error: " << std::endl << headers << std::endl;
-		std::cerr << "boundary: " << this->_boundary << std::endl;
-		throw std::runtime_error("invalid multipart/formdata '_setHeaders'");
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders')");
 	}
 	npos = _findSequence(this->_vectorBody, "\r\n\r\n");
 	for (size_t i = 0; i < (npos + endHeader); i++)
@@ -462,8 +490,11 @@ void	Response::_setHeaders(void)
 				headers.erase(0, headerValue.size());
 			}
 			else
-				throw std::runtime_error("invalid multipart/formdata 'npos'");
-
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+				getErrorPage(ERROR_400));
+				throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders/npos')");
+			}
 			this->_boundaryHeaders[headerKey] = headerValue;
 			if ((headers.size() >= 4) && (headers.substr(0, 4) == "\r\n\r\n"))
 			{
@@ -474,7 +505,11 @@ void	Response::_setHeaders(void)
 				headers.erase(0, 2);
 		}
 		else
-			throw std::runtime_error("invalid multipart/formdata 'npos'");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders/npos')");
+		}
 	}
 	return ;
 }
@@ -492,7 +527,11 @@ std::string	Response::_originalFileName(std::string &contentDisposition)
 			originalFileName += contentDisposition[i++];
 	}
 	else
-		throw std::runtime_error("invalid multipart/formdata '_fileExtension'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_originalFileName()/_fileExtension)");
+	}
 	return (originalFileName);
 }
 
@@ -508,18 +547,6 @@ std::string	Response::_generateFileName(std::string const &type, std::string con
 	return (fileName.str());
 }
 
-// std::string	Response::_handleLastSlash(std::string &Route)
-// {
-// 	std::string	alternativeRoute;
-
-// 	if (Route[Route.size() - 1] != '/')
-// 		alternativeRoute = Route + '/';
-// 	else
-// 		alternativeRoute = Route.substr(0, Route.size() - 1);
-// 	std::cout << "alternative: " << alternativeRoute << std::endl;
-// 	return (alternativeRoute);
-// }
-
 void	Response::_setBoundaryBody(void)
 {
 	size_t npos;
@@ -534,7 +561,11 @@ void	Response::_setBoundaryBody(void)
 		}
 	}
 	else
-		throw std::runtime_error("invalid request format '_setBoundaryBody'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_setBoundaryBody)");
+	}
 	return ;
 }
 
@@ -554,7 +585,11 @@ void	Response::_handleImputFile(std::string &contentDisposition)
 
 	file.open(fileName.c_str(), std::ios::out);
 	if (!file.is_open())
-		throw std::runtime_error("open file error '_handleImputFile'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_handleImputFile/open)");
+	}
 	_setBoundaryBody();
 	for (size_t i = 0; i < this->_vectorBoundaryBody.size(); i++)
 		file << this->_vectorBoundaryBody[i];
@@ -569,10 +604,18 @@ void	Response::_processBoundaryHeaders(void)
 		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
 			_handleImputFile(this->_boundaryHeaders["Content-Disposition"]);
 		else
-			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_processBoundaryHeaders')");
+		}
 	}
 	else
-		throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_processBoundaryHeaders')");
+	}
 	this->_boundaryHeaders.clear();
 	this->_vectorBoundaryBody.clear();
 	return ;
@@ -604,25 +647,49 @@ void	Response::_isNotCGI(void)
 	{
 		if (errno == ENOENT)
 		{
-			if ((err = mkdir("uploads", 0777)) == 0)
-				std::cout << "uploads deu certo" << std::endl;
-			else
-				std::cout << "uploads não deu certo: err: " << err << std::endl;
+			if ((err = mkdir("uploads", 0777)) != 0)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+		else if (errno == EACCES)
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+			getErrorPage(ERROR_403));
+			throw std::runtime_error("403 Forbidden (uploads) 'isNotCGI'");
 		}
 		else
-			throw std::runtime_error("an error occurred (uploads) 'isNotCGI'");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+			getErrorPage(ERROR_500));
+			throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+		}
 	}
 	if (stat("uploads/others", &st) != 0)
 	{
 		if (errno == ENOENT)
 		{
-			if ((err = mkdir("./uploads/others", 0777)) == 0)
-				std::cout << "others deu certo" << std::endl;
-			else
-				std::cout << "others não deu certo: err: " << err << std::endl;
+			if ((err = mkdir("./uploads/others", 0777)) != 0)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
+			}
+		}
+		else if (errno == EACCES)
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+			getErrorPage(ERROR_403));
+			throw std::runtime_error("403 Forbidden (others) 'isNotCGI'");
 		}
 		else
-			throw std::runtime_error("an error occurred (others/uploads) 'isNotCGI'");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+			getErrorPage(ERROR_500));
+			throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
+		}
 	}
 
 	if (_configs.getUploadPath() == "")
@@ -649,23 +716,45 @@ void	Response::_isNotCGI(void)
 
 void	Response::_methodPost(void)
 {
-	if ((_url_path.find("/cgi")) == std::string::npos)
-		_isNotCGI();
-	else
-	{	
-		if (this->_req_parsed["Transfer-Encoding"] == "chunked")
-		_parseChunk();
-		if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-			_parseUrlEncodedParams(this->_strBody);
-		else if (this->_req_parsed["Content-Type"] == "text/plain")
-			_parseTextPlain(this->_strBody);
-		else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
-			_parseMultipartFormData();
+	try
+	{
+		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
+		&& (this->_req_parsed["Content-Type"] != "text/plain")
+		&& (this->_req_parsed["Content-Type"] != "multipart/form-data"))
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (" + this->_req_parsed["Content-Type"] + ")");
+		}
+		else if (((_url_path.find("/cgi")) == std::string::npos)
+		&& (this->_req_parsed["Content-Type"] == "text/plain"))
+			_isNotCGI();
+		else if ((_url_path.find("/cgi") == std::string::npos)
+		&& (this->_req_parsed["Content-Type"] != "text/plain"))
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (content-type invalid whithout CGI)");
+		}
 		else
-			std::cerr << "ERROR: " << this->_req_parsed["Content-Type"] << std::endl;
+		{	
+			if (this->_req_parsed["Transfer-Encoding"] == "chunked")
+			_parseChunk();
+			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
+				_parseUrlEncodedParams(this->_strBody);
+			else if (this->_req_parsed["Content-Type"] == "text/plain")
+				_parseTextPlain(this->_strBody);
+			else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
+				_parseMultipartFormData();
+		}
+		// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
+		printHeader ("200", "OK", this->_req_parsed["Version"]);	
 	}
-	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
+	catch (std::exception &e)
+	{
+		std::cerr << "post error: \n" << e.what() << std::endl;
+	}
+
 	return ;
 }
 
