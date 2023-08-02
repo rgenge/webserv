@@ -145,9 +145,9 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		CgiHandler	cgi_init;
+		CgiHandler	cgi_init("", _full_path, this->_req_parsed, _response, _configs);
 		std::string	cgi_body;
-		_body = cgi_init.cgiHandler("", _full_path, this->_req_parsed);
+		_body = cgi_init.cgiHandler();
 		return;
 	}
 	/*Checa se diretório não for acessivel */
@@ -354,7 +354,7 @@ void Response::_parseUrlEncodedParams(std::string &body)
 	return ;
 }
 
-void	Response::_parseTextPlain(std::string &body)
+std::string	Response::_createTempBodyFile(std::string &body)
 {
 	std::ofstream	file;
 	std::string		pathBody;
@@ -376,13 +376,27 @@ void	Response::_parseTextPlain(std::string &body)
 	}
 	file.write(body.c_str(), body.size());
 	file.close();
-	CgiHandler	cgi;
+	return (pathBody);
+}
+
+void	Response::_sendDataToHandlerCGI(std::string &pathBody)
+{
+	CgiHandler	cgi(pathBody, this->_url_path, this->_req_parsed, _response, _configs);
 	std::string	cgiResult;
 	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
 	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
 		this->_url_path.erase(0, 1);
-	cgiResult = cgi.cgiHandler(pathBody, this->_url_path, this->_req_parsed);
+	cgiResult = cgi.cgiHandler();
 	std::cout << "Resultado:\n" << cgiResult << std::endl;
+	return ;
+}
+
+void	Response::_parseTextPlain(std::string &body)
+{
+	std::string	pathBody;
+
+	pathBody = _createTempBodyFile(body);
+	_sendDataToHandlerCGI(pathBody);
 	printHeader ("200", "OK", _req_parsed["Version"]);
 	this->_req_parsed.clear();
 	return ;

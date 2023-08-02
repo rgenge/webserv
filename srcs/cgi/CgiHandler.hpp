@@ -6,16 +6,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include "ErrorResponse.hpp"
+#include "ServerConfig.hpp"
 #include <map>
 
 class	CgiHandler
 {
 	public:
-		CgiHandler(void);
+		CgiHandler(std::string bodyPath, std::string &scriptPath,
+		std::map<std::string, std::string> &envpMap, std::string &response,
+		ServerConfig &_configs);
 		CgiHandler(CgiHandler const &src);
 		~CgiHandler(void);
 		CgiHandler							&operator=(CgiHandler const &rhs);
-		std::string							cgiHandler(std::string const filename, std::string path, std::map<std::string, std::string> &envpMap);
+		std::string							cgiHandler(void);
 	private:
 		void								_convertEnvFormat(void);
 		void								_clearEnvp(void);
@@ -24,10 +28,12 @@ class	CgiHandler
 		void								_parent(void);
 		void								_execCgi(void);
 
-		std::map<std::string, std::string>	_envpMap;
+		ServerConfig						&_configs;
+		std::map<std::string, std::string>	&_envpMap;
 		std::string							_cgiResult;
 		std::string							_bodyPath;
-		std::string							_scriptPath;
+		std::string							&_scriptPath;
+		std::string							&_response;
 		pid_t								_pid;
 		char								**_envp;
 		int									_pipeFd[2];

@@ -68,6 +68,8 @@ class Response
 		void		_handleBoundaryPart(void);
 		void		_handleImputFile(std::string &contentDisposition);
 		void		_setBoundaryBody(void);
+		void		_sendDataToHandlerCGI(std::string &pathBody);
+		std::string	_createTempBodyFile(std::string &body);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &type, std::string const &originalFileName);

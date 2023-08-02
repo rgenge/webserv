@@ -1,6 +1,8 @@
 #include "CgiHandler.hpp"
 
-CgiHandler::CgiHandler(void)
+CgiHandler::CgiHandler(std::string bodyPath, std::string &scriptPath,
+std::map<std::string, std::string> &envpMap, std::string &response, ServerConfig &configs):
+_configs(configs), _envpMap(envpMap), _bodyPath(bodyPath), _scriptPath(scriptPath), _response(response)
 {
 	_envp = NULL;
     _pipeFd[0] = 0;
@@ -10,7 +12,8 @@ CgiHandler::CgiHandler(void)
 	return ;
 }
 
-CgiHandler::CgiHandler(CgiHandler const &src)
+CgiHandler::CgiHandler(CgiHandler const &src): _configs(src._configs), _envpMap(src._envpMap),
+_bodyPath(src._bodyPath), _scriptPath(src._scriptPath), _response(src._response)
 {
 	*this = src;
 	return ;
@@ -71,7 +74,11 @@ void	CgiHandler::_openPipe(void)
 	if (pipe(this->_pipeFd) == -1)
 	{
 		_clearEnvp();
-		throw std::runtime_error("pipe function");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+			getErrorPage(ERROR_500));
+			throw std::runtime_error("500 Internal Server Error (_openPipe/pipe)");
+		}
 	}
 	return ;
 }
@@ -93,21 +100,27 @@ void	CgiHandler::_child(void)
 	{
 		close(this->_pipeFd[1]);
 		_clearEnvp();
-		throw std::runtime_error("failed to execute interpreter");
+		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+		getErrorPage(ERROR_403));
+		throw std::runtime_error("403 Forbidden (_child/path)");
 	}
 
 	if (access(scriptPath, X_OK) == -1)
 	{
 		close(this->_pipeFd[1]);
 		_clearEnvp();
-		throw std::runtime_error("failed to execute script CGI");
+		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+		getErrorPage(ERROR_403));
+		throw std::runtime_error("403 Forbidden (_child/scriptPath)");
 	}
 
 	if (execve(path, execArgs, this->_envp) == -1)
 	{
 		close(this->_pipeFd[1]);
 		_clearEnvp();
-		throw std::runtime_error("execve function");
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_child/execve)");
 	}
 	close(this->_pipeFd[1]);
 	return ;
@@ -134,7 +147,9 @@ void	CgiHandler::_execCgi(void)
 	if (this->_pid == -1)
 	{
 		_clearEnvp();
-		throw std::runtime_error("fork function");
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_execCgi/fork)");
 	}
 	else if (this->_pid == 0)
 		_child();
@@ -143,11 +158,8 @@ void	CgiHandler::_execCgi(void)
 	return ;
 }
 
-std::string	CgiHandler::cgiHandler(std::string const bodyPath, std::string scriptPath, std::map<std::string, std::string> &envpMap)
+std::string	CgiHandler::cgiHandler(void)
 {
-	_scriptPath = scriptPath;
-	_bodyPath = bodyPath;
-	this->_envpMap = envpMap;
 	this->_envpMap["Filename"] = this->_bodyPath;
 	// std::map<std::string, std::string>::iterator	it;
 	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
