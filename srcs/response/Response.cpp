@@ -323,6 +323,7 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 
 void Response::_parseUrlEncodedParams(std::string &body)
 {
+	std::string	pathBody;
 	size_t separatorPos = body.find('=');
 	if (separatorPos == std::string::npos)
 	{
@@ -332,25 +333,11 @@ void Response::_parseUrlEncodedParams(std::string &body)
 	}
 	_removeBreakLinesAndCR (body);
 	_replaceHexPercentWithAscii(body);
-	size_t pos = 0;
-	while (true)
-	{
-		separatorPos = body.find('=', pos);
-		if (separatorPos == std::string::npos)
-            break ;
-		std::string	key = body.substr(pos, separatorPos - pos);
-		body.erase(pos, separatorPos + 1);
 
-		size_t ampersandPos = body.find('&', pos);
-		if (ampersandPos == std::string::npos && body.size() == 0)
-            break ;
-		else if (ampersandPos == std::string::npos)
-			ampersandPos = body.size();
-		std::string	value = body.substr(pos, ampersandPos - pos);
-		body.erase(pos, ampersandPos + 1);
-
-		this->_vars[key] = value;
-	}
+	pathBody = _createTempBodyFile(body);
+	_sendDataToHandlerCGI(pathBody);
+	printHeader ("200", "OK", _req_parsed["Version"]);
+	this->_req_parsed.clear();
 	return ;
 }
 
