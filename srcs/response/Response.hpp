@@ -36,8 +36,6 @@ class Response
 		std::string							_fileType;
 		std::string							&_strBody;
 		std::map <std::string, std::string>	_vars;
-		std::map <std::string, std::string>	_boundaryHeaders;
-		std::vector<unsigned char>			_vectorBoundaryBody;
 		std::vector<unsigned char>			&_vectorBody;
 		std::string							&_actual_root; //GET
 
@@ -60,16 +58,14 @@ class Response
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
 		void		_parseMultipartFormData(void);
-		void		_parseTextPlain(std::string &body);
+		void		_parseTextPlain(void);
 		void		_setBoundary(void);
 		void		_removeHeaderSpaces(std::string &header);
-		void		_setHeaders(void);
 		void		_processBoundaryHeaders(void);
-		void		_handleBoundaryPart(void);
-		void		_handleImputFile(std::string &contentDisposition);
+		void		_handleBoundaryFiles(void);
+		void		_handleImputFile(void);
 		void		_setBoundaryBody(void);
-		void		_sendDataToHandlerCGI(std::string &pathBody);
-		std::string	_createTempBodyFile(std::string &body);
+		void		_sendDataToHandlerCGI(void);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &type, std::string const &originalFileName);

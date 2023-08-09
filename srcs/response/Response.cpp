@@ -6,6 +6,7 @@ std::string&_url_path_, std::string &strBody, std::vector<unsigned char> &vector
 _req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
 _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(_actual_root_)
 {
+	this->_strBody = "";
 }
 
 /*Salva a resposta e imprimi no terminal*/
@@ -323,7 +324,6 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 
 void Response::_parseUrlEncodedParams(std::string &body)
 {
-	std::string	pathBody;
 	size_t separatorPos = body.find('=');
 	if (separatorPos == std::string::npos)
 	{
@@ -333,42 +333,28 @@ void Response::_parseUrlEncodedParams(std::string &body)
 	}
 	_removeBreakLinesAndCR (body);
 	_replaceHexPercentWithAscii(body);
-
-	pathBody = _createTempBodyFile(body);
-	_sendDataToHandlerCGI(pathBody);
+	_sendDataToHandlerCGI();
 	printHeader ("200", "OK", _req_parsed["Version"]);
 	this->_req_parsed.clear();
 	return ;
 }
 
-std::string	Response::_createTempBodyFile(std::string &body)
+void	Response::_sendDataToHandlerCGI(void)
 {
 	std::ofstream	file;
-	std::string		pathBody;
+	std::string		fileName;
 
-	if (body.size() == 0)
-	{
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (_parseTextPlain/empty body)");
-	}
-	pathBody = "../" + _generateFileName("temp_file_", "");
-
-	file.open(pathBody.c_str(), std::ios::in | std::ios::out | std::ios::trunc);
+	fileName = _generateFileName("temp_", "_cgi");
+	file.open(fileName.c_str(), std::ofstream::in | std::ofstream::trunc);
 	if (!file.is_open())
 	{
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (_parseTextPlain/open())");
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (open/_handleBoundaryFiles)");
 	}
-	file.write(body.c_str(), body.size());
+	file.write(this->_strBody.c_str(), this->_strBody.size());
 	file.close();
-	return (pathBody);
-}
-
-void	Response::_sendDataToHandlerCGI(std::string &pathBody)
-{
-	CgiHandler	cgi(pathBody, this->_url_path, this->_req_parsed, _response, _configs);
+	CgiHandler	cgi(fileName, this->_url_path, this->_req_parsed, _response, _configs);
 	std::string	cgiResult;
 	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
 	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
@@ -378,12 +364,9 @@ void	Response::_sendDataToHandlerCGI(std::string &pathBody)
 	return ;
 }
 
-void	Response::_parseTextPlain(std::string &body)
+void	Response::_parseTextPlain(void)
 {
-	std::string	pathBody;
-
-	pathBody = _createTempBodyFile(body);
-	_sendDataToHandlerCGI(pathBody);
+	_sendDataToHandlerCGI();
 	printHeader ("200", "OK", _req_parsed["Version"]);
 	this->_req_parsed.clear();
 	return ;
@@ -395,7 +378,7 @@ void	Response::_setBoundary(void)
 
 	size_t boundaryPos;
 	if ((boundaryPos = contentType.find("---")) != std::string::npos)
-		this->_boundary = contentType.substr(boundaryPos, contentType.size() - boundaryPos);
+		this->_boundary += contentType.substr(boundaryPos, contentType.size() - boundaryPos);
 	else
 	{
 		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
@@ -458,72 +441,15 @@ size_t	Response::_findSequence(std::vector<unsigned char> &vector, std::string c
 	return (i - j);
 }
 
-void	Response::_setHeaders(void)
-{
-	size_t		npos;
-	size_t		endHeader = 4;
-	std::string	headers, headerKey, headerValue;
-
-	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
-		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + npos + this->_boundary.size() + 2);
-	else
-	{
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders')");
-	}
-	npos = _findSequence(this->_vectorBody, "\r\n\r\n");
-	for (size_t i = 0; i < (npos + endHeader); i++)
-	{
-		headers += this->_vectorBody[0];
-		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
-	}
-	_removeHeaderSpaces(headers);
-	while (true)
-	{
-		if ((npos = headers.find(':')) != std::string::npos)
-		{
-			headerKey = headers.substr(0, npos);
-			headers.erase(0, headerKey.size() + 1);
-			if ((npos = headers.find("\r\n")) != std::string::npos)
-			{
-				headerValue = headers.substr(0, npos);
-				headers.erase(0, headerValue.size());
-			}
-			else
-			{
-				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-				getErrorPage(ERROR_400));
-				throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders/npos')");
-			}
-			this->_boundaryHeaders[headerKey] = headerValue;
-			if ((headers.size() >= 4) && (headers.substr(0, 4) == "\r\n\r\n"))
-			{
-				headers.erase(0, 4);
-				return ;
-			}
-			else
-				headers.erase(0, 2);
-		}
-		else
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-			getErrorPage(ERROR_400));
-			throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_setHeaders/npos')");
-		}
-	}
-	return ;
-}
-
 std::string	Response::_originalFileName(std::string &contentDisposition)
 {
 	std::string	originalFileName = "_";
 	std::string	fieldFileName = "filename=\"";
 
-	size_t	fileNamePos;
-	if ((fileNamePos = contentDisposition.find(fieldFileName)) != std::string::npos)
+	size_t	npos;
+	if ((npos = contentDisposition.find(fieldFileName)) != std::string::npos)
 	{
-		int	i = fileNamePos + fieldFileName.size();
+		int	i = npos + fieldFileName.size();
 		while ((contentDisposition[i]) && (contentDisposition[i] != '\"'))
 			originalFileName += contentDisposition[i++];
 	}
@@ -548,91 +474,107 @@ std::string	Response::_generateFileName(std::string const &type, std::string con
 	return (fileName.str());
 }
 
-void	Response::_setBoundaryBody(void)
+void	Response::_handleBoundaryFiles(void)
 {
-	size_t npos;
-	size_t	boundaryStart = 2;
+	std::string	carriageReturn = "\r\n\r\n";
+	std::string	headers;
+	std::string	boundaryEnd = this->_boundary + "--";
+	size_t		boundaryStart = 2;
+	size_t		npos;
 
-	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
+	this->_strBody.clear();
+	while (this->_strBody.find(boundaryEnd) == std::string::npos)
 	{
-		for (size_t i = 0; i < (npos - boundaryStart); i++)
-		{
-			this->_vectorBoundaryBody.push_back(this->_vectorBody[0]);
-			this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
-		}
-	}
-	else
-	{
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_setBoundaryBody)");
-	}
-	return ;
-}
-
-void	Response::_handleImputFile(std::string &contentDisposition)
-{
-	size_t			pos;
-	std::ofstream	file;
-	std::string		originalFileName;
-	std::string		fileName = _configs.getUploadPath();
-
-	pos = _configs.getUploadPath().size() - 1;
-	if (_configs.getUploadPath().find('/', pos) == std::string::npos)
-		fileName += '/';
-	originalFileName = _generateFileName("file_", originalFileName);
-	originalFileName += _originalFileName(contentDisposition);
-	fileName += originalFileName;
-
-	file.open(fileName.c_str(), std::ios::out);
-	if (!file.is_open())
-	{
-		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
-		getErrorPage(ERROR_500));
-		throw std::runtime_error("500 Internal Server Error (_handleImputFile/open)");
-	}
-	_setBoundaryBody();
-	for (size_t i = 0; i < this->_vectorBoundaryBody.size(); i++)
-		file << this->_vectorBoundaryBody[i];
-	file.close();
-	return ;
-}
-
-void	Response::_processBoundaryHeaders(void)
-{
-	if (this->_boundaryHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
-	{
-		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_boundaryHeaders["Content-Disposition"]);
-		else
+		if (this->_vectorBody.size() == 0)
+			return ;
+		if ((npos = _findSequence(this->_vectorBody, this->_boundary)) == std::string::npos)
 		{
 			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
 			getErrorPage(ERROR_400));
-			throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_processBoundaryHeaders')");
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleBoundaryFiles)");
+		}
+		if ((npos = _findSequence(this->_vectorBody, carriageReturn)) == std::string::npos)
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata (carriageReturn/_handleBoundaryFiles)");
+		}
+		for (size_t i = 0; i < (npos + carriageReturn.size()); i++)
+		{
+			headers += this->_vectorBody[0];
+			this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
+		}
+		// É um arquivo
+		if (headers.find("; filename=") != std::string::npos)
+		{
+			std::ofstream	file;
+			std::string		fileName;
+
+			this->_strBody += headers;
+			fileName = _generateFileName("temp_", _originalFileName(headers));
+			headers.clear();
+			if ((npos = _findSequence(this->_vectorBody, this->_boundary)) == std::string::npos)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+				getErrorPage(ERROR_400));
+				throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleBoundaryFiles)");
+			}
+			file.open(fileName.c_str(), std::ofstream::in | std::ofstream::trunc);
+			if (!file.is_open())
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (open/_handleBoundaryFiles)");
+			}
+			for (size_t i = 0; i < (npos - boundaryStart); i++)
+			{
+				file << this->_vectorBody[0];
+				this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
+			}
+			this->_strBody += "./" + fileName + '\n';
+		}
+		// Não é um arquivo
+		else
+		{
+			this->_strBody += headers;
+			headers.clear();
+			if ((npos = _findSequence(this->_vectorBody, this->_boundary)) == std::string::npos)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+				getErrorPage(ERROR_400));
+				throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleBoundaryFiles)");
+			}
+			for (size_t i = 0; i < (npos - boundaryStart); i++)
+			{
+				this->_strBody += this->_vectorBody[0];
+				this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
+			}
+		}
+		if ((npos = _findSequence(this->_vectorBody, this->_boundary + "\r\n")) == std::string::npos)
+		{
+			for (size_t i = 0; i < this->_vectorBody.size(); i++)
+				this->_strBody += this->_vectorBody[i];
+			this->_vectorBody.clear();
 		}
 	}
-	else
-	{
-		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (invalid multipart/formdata '_processBoundaryHeaders')");
-	}
-	this->_boundaryHeaders.clear();
-	this->_vectorBoundaryBody.clear();
-	return ;
-}
 
-void	Response::_handleBoundaryPart(void)
-{
-	_setHeaders();
-	_processBoundaryHeaders();
+	_sendDataToHandlerCGI();
+	printHeader ("200", "OK", _req_parsed["Version"]);
+	this->_req_parsed.clear();
+	return ;
+
+	// std::cout << "TESTE STRING\n" << _strBody << std::endl;
+	// std::cout << "TESTE VECTOR" << std::endl;
+	// for (size_t i = 0; i < this->_vectorBody.size(); i++)
+	// 	std::cout << this->_vectorBody[i];
+
+	return ;
 }
 
 void	Response::_parseMultipartFormData(void)
 {
 	_setBoundary();
-	while (_findSequence(this->_vectorBody, this->_boundary) != std::string::npos)
-		_handleBoundaryPart();
+	_handleBoundaryFiles();
 	return ;
 }
 
@@ -721,7 +663,7 @@ void	Response::_methodPost(void)
 	{
 		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
 		&& (this->_req_parsed["Content-Type"] != "text/plain")
-		&& (this->_req_parsed["Content-Type"] != "multipart/form-data"))
+		&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
 		{
 			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
 			getErrorPage(ERROR_400));
@@ -744,7 +686,7 @@ void	Response::_methodPost(void)
 			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
 				_parseUrlEncodedParams(this->_strBody);
 			else if (this->_req_parsed["Content-Type"] == "text/plain")
-				_parseTextPlain(this->_strBody);
+				_parseTextPlain();
 			else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
 				_parseMultipartFormData();
 		}

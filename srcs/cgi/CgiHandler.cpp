@@ -160,10 +160,10 @@ void	CgiHandler::_execCgi(void)
 
 std::string	CgiHandler::cgiHandler(void)
 {
-	this->_envpMap["Filename"] = this->_bodyPath;
 	// std::map<std::string, std::string>::iterator	it;
 	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
 	// 	std::cout << it->first << it->second << std::endl;
+	this->_envpMap["Body-Path"] = this->_bodyPath;
 	_convertEnvFormat();
 	_execCgi();
 	return (_cgiResult);
