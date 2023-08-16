@@ -599,59 +599,90 @@ void	Response::_isNotCGI(void)
 	std::string		fileName;
 	std::string		originalFileName;
 	std::ofstream	file;
+	std::string		uploadPath;
 	struct stat		st;
 
-	if (stat("uploads", &st) != 0)
+	if (_configs.getUploadPath().size() > 0)
 	{
-		if (errno == ENOENT)
+		if (stat(_configs.getUploadPath().c_str(), &st) != 0)
 		{
-			if ((err = mkdir("uploads", 0777)) != 0)
+			if (errno == ENOENT)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (isNotCGI/ENOENT)");
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (isNotCGI/EACCES)");
+			}
+			else
 			{
 				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
 				getErrorPage(ERROR_500));
 				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
 			}
 		}
-		else if (errno == EACCES)
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
-			getErrorPage(ERROR_403));
-			throw std::runtime_error("403 Forbidden (uploads) 'isNotCGI'");
-		}
 		else
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
-			getErrorPage(ERROR_500));
-			throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
-		}
+			uploadPath = _configs.getUploadPath();
 	}
-	if (stat("uploads/others", &st) != 0)
+	else
 	{
-		if (errno == ENOENT)
+		if (stat("uploads", &st) != 0)
 		{
-			if ((err = mkdir("./uploads/others", 0777)) != 0)
+			if (errno == ENOENT)
+			{
+				if ((err = mkdir("uploads", 0777)) != 0)
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+					getErrorPage(ERROR_500));
+					throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+				}
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (uploads) 'isNotCGI'");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+		if (stat("uploads/others", &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				if ((err = mkdir("./uploads/others", 0777)) != 0)
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+					getErrorPage(ERROR_500));
+					throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
+				}
+				uploadPath = "./uploads/others";
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (others) 'isNotCGI'");
+			}
+			else
 			{
 				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
 				getErrorPage(ERROR_500));
 				throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
 			}
 		}
-		else if (errno == EACCES)
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
-			getErrorPage(ERROR_403));
-			throw std::runtime_error("403 Forbidden (others) 'isNotCGI'");
-		}
-		else
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
-			getErrorPage(ERROR_500));
-			throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
-		}
 	}
 
 	if (_configs.getUploadPath() == "")
-		fileName =  "./uploads/others/";
+		fileName =  uploadPath;
 	else
 	{
 		fileName += _configs.getUploadPath();
@@ -696,6 +727,37 @@ void	Response::_checkCgiRequest(void)
 	return ;
 }
 
+void	Response::_checkUploadPath(void)
+{
+	struct stat		st;
+
+	if (_configs.getUploadPath().size() > 0)
+	{
+		if (stat(_configs.getUploadPath().c_str(), &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (_checkUploadPath/ENOENT)");
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (_checkUploadPath/EACCES)");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+	}
+	return ;
+}
+
 void	Response::_methodPost(void)
 {
 	try
@@ -723,6 +785,7 @@ void	Response::_methodPost(void)
 		else
 		{
 			_checkCgiRequest();
+			_checkUploadPath();
 			if (this->_req_parsed["Transfer-Encoding"] == "chunked")
 				_parseChunk();
 			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")

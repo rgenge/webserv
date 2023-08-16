@@ -54,6 +54,7 @@ class Response
 		void		_methodPost(void);
 		void		_isNotCGI(void);
 		void		_checkCgiRequest(void);
+		void		_checkUploadPath(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
