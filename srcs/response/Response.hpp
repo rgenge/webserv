@@ -54,9 +54,10 @@ class Response
 		void		_methodPost(void);
 		void		_isNotCGI(void);
 		void		_parseChunk(void);
-		void		_parseUrlEncodedParams(std::string &body);
+		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
+		void		_replacePlusWithSpace(std::string &params);
 		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);

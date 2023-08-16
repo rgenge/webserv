@@ -6,7 +6,7 @@ std::string&_url_path_, std::string &strBody, std::vector<unsigned char> &vector
 _req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
 _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(_actual_root_)
 {
-	this->_strBody = "";
+	return ;
 }
 
 /*Salva a resposta e imprimi no terminal*/
@@ -288,15 +288,15 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 	int	pos = 0;
 	while (true)
 	{
-		size_t	percentPos = params.find('%', pos);
-		if (percentPos == std::string::npos)
+		size_t	npos = params.find('%', pos);
+		if (npos == std::string::npos)
             break ;
 		else
 		{
-			if ((params.size() - percentPos) > 2)
+			if ((params.size() - npos) > 2)
 			{
 				std::string hexStr;
-				hexStr = params.substr(percentPos + 1, 2);
+				hexStr = params.substr(npos + 1, 2);
 
 				int	value;
 				std::istringstream	iss(hexStr);
@@ -309,7 +309,7 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 				}
 				std::string asciiChar;
 				asciiChar.push_back(static_cast<char>(value));
-				params.replace(percentPos, 3, asciiChar);
+				params.replace(npos, 3, asciiChar);
 			}
 			else
 			{
@@ -322,17 +322,32 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 	return ;
 }
 
-void Response::_parseUrlEncodedParams(std::string &body)
+void Response::_replacePlusWithSpace(std::string &params)
 {
-	size_t separatorPos = body.find('=');
+	int	pos = 0;
+	while (true)
+	{
+		size_t	npos = params.find('+', pos);
+		if (npos == std::string::npos)
+            break ;
+		else
+			params.replace(npos, 1, " ");
+	}
+	return ;
+}
+
+void Response::_parseUrlEncodedParams(void)
+{
+	size_t separatorPos = this->_strBody.find('=');
 	if (separatorPos == std::string::npos)
 	{
 		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
 		getErrorPage(ERROR_400));
-		throw std::runtime_error("400 Bad Request (body application/x-www-form-urlencoded format)");
+		throw std::runtime_error("400 Bad Request (this->_strBody application/x-www-form-urlencoded format)");
 	}
-	_removeBreakLinesAndCR (body);
-	_replaceHexPercentWithAscii(body);
+	_removeBreakLinesAndCR (this->_strBody);
+	_replaceHexPercentWithAscii(this->_strBody);
+	_replacePlusWithSpace(this->_strBody);
 	_sendDataToHandlerCGI();
 	printHeader ("200", "OK", _req_parsed["Version"]);
 	this->_req_parsed.clear();
@@ -360,7 +375,7 @@ void	Response::_sendDataToHandlerCGI(void)
 	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
 		this->_url_path.erase(0, 1);
 	cgiResult = cgi.cgiHandler();
-	std::cout << "Resultado:\n" << cgiResult << std::endl;
+	std::cout << "Resultado do CGI:\n" << cgiResult << std::endl;
 	return ;
 }
 
@@ -675,6 +690,8 @@ void	Response::_methodPost(void)
 		else if ((_url_path.find("/cgi") == std::string::npos)
 		&& (this->_req_parsed["Content-Type"] != "text/plain"))
 		{
+			std::cerr << this->_req_parsed["Content-Type"] << std::endl;
+			std::cerr << "body:\n" << this->_strBody << std::endl;
 			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
 			getErrorPage(ERROR_400));
 			throw std::runtime_error("400 Bad Request (content-type invalid whithout CGI)");
@@ -684,7 +701,7 @@ void	Response::_methodPost(void)
 			if (this->_req_parsed["Transfer-Encoding"] == "chunked")
 			_parseChunk();
 			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-				_parseUrlEncodedParams(this->_strBody);
+				_parseUrlEncodedParams();
 			else if (this->_req_parsed["Content-Type"] == "text/plain")
 				_parseTextPlain();
 			else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
@@ -790,7 +807,7 @@ void	Response::init()
 	// 	std::cout << _vectorBody[i];
 	// std::cout << std::endl;
 	// std::cout << "_strBody RESPONSE:" << std::endl;
-	// std::cout << _strBody << std::endl;
+	std::cout << _strBody << std::endl;
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")
