@@ -14,8 +14,8 @@ class	CgiHandler
 {
 	public:
 		CgiHandler(std::string bodyPath, std::string &scriptPath,
-		std::map<std::string, std::string> &envpMap, std::string &response,
-		ServerConfig &_configs);
+		std::string interpreterPath, std::map<std::string, std::string> &envpMap,
+		std::string &response, ServerConfig &_configs);
 		CgiHandler(CgiHandler const &src);
 		~CgiHandler(void);
 		CgiHandler							&operator=(CgiHandler const &rhs);
@@ -33,6 +33,7 @@ class	CgiHandler
 		std::string							_cgiResult;
 		std::string							_bodyPath;
 		std::string							&_scriptPath;
+		std::string							_interpreterPath;
 		std::string							&_response;
 		pid_t								_pid;
 		char								**_envp;

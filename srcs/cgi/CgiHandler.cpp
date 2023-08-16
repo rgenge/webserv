@@ -1,8 +1,9 @@
 #include "CgiHandler.hpp"
 
-CgiHandler::CgiHandler(std::string bodyPath, std::string &scriptPath,
+CgiHandler::CgiHandler(std::string bodyPath, std::string &scriptPath, std::string interpreterPath,
 std::map<std::string, std::string> &envpMap, std::string &response, ServerConfig &configs):
-_configs(configs), _envpMap(envpMap), _bodyPath(bodyPath), _scriptPath(scriptPath), _response(response)
+_configs(configs), _envpMap(envpMap), _bodyPath(bodyPath), _scriptPath(scriptPath),
+_interpreterPath(interpreterPath), _response(response)
 {
 	_envp = NULL;
     _pipeFd[0] = 0;
@@ -13,7 +14,8 @@ _configs(configs), _envpMap(envpMap), _bodyPath(bodyPath), _scriptPath(scriptPat
 }
 
 CgiHandler::CgiHandler(CgiHandler const &src): _configs(src._configs), _envpMap(src._envpMap),
-_bodyPath(src._bodyPath), _scriptPath(src._scriptPath), _response(src._response)
+_bodyPath(src._bodyPath), _scriptPath(src._scriptPath), _interpreterPath(src._interpreterPath),
+_response(src._response)
 {
 	*this = src;
 	return ;
@@ -88,7 +90,7 @@ void	CgiHandler::_child(void)
 	close(this->_pipeFd[0]);
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
-	const char	*path = "/usr/bin/php";
+	const char	*path = _interpreterPath.c_str();
 	const char	*scriptPath = _scriptPath.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),

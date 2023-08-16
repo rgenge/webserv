@@ -146,7 +146,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		CgiHandler	cgi_init("", _full_path, this->_req_parsed, _response, _configs);
+		CgiHandler	cgi_init("", _full_path, _configs.getCgi()[1], this->_req_parsed, _response, _configs);
 		std::string	cgi_body;
 		_body = cgi_init.cgiHandler();
 		return;
@@ -369,11 +369,11 @@ void	Response::_sendDataToHandlerCGI(void)
 	}
 	file.write(this->_strBody.c_str(), this->_strBody.size());
 	file.close();
-	CgiHandler	cgi(fileName, this->_url_path, this->_req_parsed, _response, _configs);
-	std::string	cgiResult;
 	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
 	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
 		this->_url_path.erase(0, 1);
+	CgiHandler	cgi(fileName, this->_url_path, _configs.getCgi()[1], this->_req_parsed, _response, _configs);
+	std::string	cgiResult;
 	cgiResult = cgi.cgiHandler();
 	std::cout << "Resultado do CGI:\n" << cgiResult << std::endl;
 	return ;
@@ -672,6 +672,30 @@ void	Response::_isNotCGI(void)
 	return ;
 }
 
+void	Response::_checkCgiRequest(void)
+{
+	if (_configs.getCgi().size() != 2)
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_checkCgiRequest / getCgi size)");
+	}
+	else if (_url_path.size() < _configs.getCgi()[0].size())
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_checkCgiRequest / url/suffix getCgi size)");
+	}
+	else if (_url_path.compare((_url_path.size() - _configs.getCgi()[0].size()),
+	_configs.getCgi()[0].size(), _configs.getCgi()[0]) != 0)
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost / suffix getCgi and url are different)");
+	}
+	return ;
+}
+
 void	Response::_methodPost(void)
 {
 	try
@@ -697,9 +721,10 @@ void	Response::_methodPost(void)
 			throw std::runtime_error("400 Bad Request (content-type invalid whithout CGI)");
 		}
 		else
-		{	
+		{
+			_checkCgiRequest();
 			if (this->_req_parsed["Transfer-Encoding"] == "chunked")
-			_parseChunk();
+				_parseChunk();
 			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
 				_parseUrlEncodedParams();
 			else if (this->_req_parsed["Content-Type"] == "text/plain")
@@ -707,7 +732,7 @@ void	Response::_methodPost(void)
 			else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
 				_parseMultipartFormData();
 		}
-		// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
+		// resposta padrão do POST por enquanto
 		printHeader ("200", "OK", this->_req_parsed["Version"]);	
 	}
 	catch (std::exception &e)
