@@ -35,6 +35,8 @@ class Response
 		std::string 						_boundary;
 		std::string							_fileType;
 		std::string							&_strBody;
+		std::string							_phpSuffix;
+		std::string							_pythonSuffix;
 		std::map <std::string, std::string>	_vars;
 		std::vector<unsigned char>			&_vectorBody;
 		std::string							&_actual_root; //GET
