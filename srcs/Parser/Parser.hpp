@@ -69,7 +69,7 @@ class Parser {
 		std::string	_getRouteName(t_linesIterator &it) const;
 		void	_parseMethods(std::istringstream &lineStream, t_route &route);
 		void	_parseDirList(std::istringstream &lineStream, t_route &route);
-		void	_parseCgi(std::istringstream &lineStream, std::vector<std::string> &cgi);
+		void	_parseCgi(std::istringstream &lineStream, std::map<std::string, std::string> &cgi);
 
 		// === Parse util functions ===
 

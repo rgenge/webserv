@@ -77,8 +77,8 @@ const std::string	&ServerConfig::getIndex(void) const {
 	return (this->_index);
 }
 
-const std::vector<std::string>	&ServerConfig::getCgi(void) const {
-	return (this->_cgi);
+const std::string	&ServerConfig::getCgi(std::string const &key) const {
+	return (this->_cgi.at(key));
 }
 
 const std::set<std::string>	&ServerConfig::getServerNames(void) const {
