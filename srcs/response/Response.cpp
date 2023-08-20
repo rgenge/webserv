@@ -8,6 +8,7 @@ _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(
 {
 	_phpSuffix = "";
 	_pythonSuffix = "";
+	_suffix = "";
 	return ;
 }
 
@@ -148,7 +149,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		CgiHandler	cgi_init("", _full_path, "", this->_req_parsed, _response, _configs);
+		CgiHandler	cgi_init("", _full_path, _suffix, this->_req_parsed, _response, _configs);
 		std::string	cgi_body;
 		_body = cgi_init.cgiHandler();
 		return;
@@ -374,7 +375,7 @@ void	Response::_sendDataToHandlerCGI(void)
 	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
 	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
 		this->_url_path.erase(0, 1);
-	CgiHandler	cgi(fileName, this->_url_path, "", this->_req_parsed, _response, _configs);
+	CgiHandler	cgi(fileName, this->_url_path, _suffix, this->_req_parsed, _response, _configs);
 	std::string	cgiResult;
 	cgiResult = cgi.cgiHandler();
 	std::cout << "Resultado do CGI:\n" << cgiResult << std::endl;
@@ -736,6 +737,11 @@ void	Response::_checkCgiRequest(void)
 		getErrorPage(ERROR_400));
 		throw std::runtime_error("400 Bad Request (_methodPost / suffix getCgi and url are different)");
 	}
+
+	if (_url_path.compare((_url_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) == 0)
+		_suffix = _phpSuffix;
+	else
+		_suffix = _pythonSuffix;
 
 	return ;
 }
