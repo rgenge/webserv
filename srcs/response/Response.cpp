@@ -378,6 +378,9 @@ void	Response::_sendDataToHandlerCGI(void)
 	CgiHandler	cgi(fileName, this->_url_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
 	std::string	cgiResult;
 	cgiResult = cgi.cgiHandler();
+	remove(fileName.c_str());
+
+	// _response = cgiResult;
 	std::cout << "Resultado do CGI:\n" << cgiResult << std::endl;
 	return ;
 }
