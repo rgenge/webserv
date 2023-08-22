@@ -55,6 +55,7 @@ class Response
 
 		// POST
 		void		_methodPost(void);
+		void		_handleMultipart(std::string &fileName);
 		void		_isNotCGI(void);
 		void		_checkCgiRequest(void);
 		void		_checkUploadPath(void);
