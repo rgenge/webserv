@@ -657,6 +657,7 @@ bool	Response::headerCheck(void)
 	std::ostringstream ss;
 	ss << _configs.getPort();
 	std::string port = ss.str();
+	/*Checagens de alguns Bad Requests mais comuns*/
 	if (_req_parsed["Host"] != "127.0.0.1:" + port &&
 		_req_parsed["Host"] != "localhost:" + port)
 	{
@@ -704,29 +705,6 @@ void	Response::init()
 		_actual_root = _configs.getRoot() + _clean_address;
 	else
 		_actual_root = _configs.getRoot() + _req_parsed["Path"];
-	// std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	// std::cout << "url: "<<  url << std::endl;
-	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
-	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
-	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	// std::cout <<"Url path :"<<  _url_path<< std::endl;
-	/*checa se o método solicitado está incluso no location*/
-
-	// std::cout << "headers RESPONSE:" << std::endl;
-	// std::map<std::string, std::string>::iterator it;
-	// for (it = this->_req_parsed.begin(); it != this->_req_parsed.end(); it++)
-	// 	std::cout << it->first << "=" << it->second << std::endl;
-	// std::cout << std::endl;
-	// std::cout << "_vectorBody RESPONSE:" << std::endl;
-	// for (size_t i = 0; i < _vectorBody.size(); i++)
-	// 	std::cout << _vectorBody[i];
-	// std::cout << std::endl;
-	// std::cout << "_strBody RESPONSE:" << std::endl;
-	// std::cout << _strBody << std::endl;
 	headerCheck();
 	if (checkRequest())
 		return ;
