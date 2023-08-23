@@ -15,7 +15,6 @@
 class Request
 {
 	private:
-//		std::string							_request;
 		std::vector<unsigned char>			&_requestData;
 		std::string							_body;
 		std::string							_strBody;

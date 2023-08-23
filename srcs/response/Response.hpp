@@ -87,5 +87,6 @@ class Response
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
+		bool		headerCheck();
 };
 #endif

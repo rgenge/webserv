@@ -149,10 +149,22 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		CgiHandler	cgi_init("", _full_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
-		std::string	cgi_body;
-		_body = cgi_init.cgiHandler();
-		return;
+		if (!_configs.getCgi().empty() && _configs.getCgi()[0] == "php")
+		{
+			CgiHandler	cgi_init;
+			std::string	cgi_body;
+			_body = cgi_init.cgiHandler(_full_path);
+			_response.append(_body);
+			_response.append("\r\n");
+			return;
+		}
+		else
+		{
+			std::cerr << "Forbidden" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+			return ;
+		}
 	}
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -190,7 +202,7 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		int content = atoi(_res_map["Content-Length"].c_str());
 		if (content <= 0)
 		{
-			std::cerr << "ContentL Length Required" << std::endl;
+			std::cerr << "Content Length Required" << std::endl;
 			_response = ErrorResponse::getErrorResponse(ERROR_411, _configs.
 				getErrorPage(ERROR_411));
 			return ;
@@ -198,8 +210,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		if((content)/1000 > _configs.getBodySizeLimit())
 		{
 			std::cerr << "Body size limit exceeded" << std::endl;
-			_response = ErrorResponse::getErrorResponse(ERROR_414, _configs.
-				getErrorPage(ERROR_414));
+			_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
+				getErrorPage(ERROR_413));
 			return ;
 		}
 		printHeader ("200", "OK", _req_parsed["Version"]);
@@ -931,11 +943,44 @@ bool	Response::checkRequest()
 void	Response::getCookie()
 {
 	std::string name;
-	size_t start =  _req_parsed["Cookie"].find("name=");
-	size_t end =  _req_parsed["Cookie"].find(";", start);
-	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	if ( _req_parsed["Cookie"].find("name=") != std::string::npos)
+	{
+		size_t start =  _req_parsed["Cookie"].find("name=");
+		size_t end =  _req_parsed["Cookie"].find(";", start);
+		name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	}
+		else
+			name = "Enter a query name='your name'";
 	std::ofstream WriteFile("index/file.txt");
 	WriteFile << name;
+}
+
+bool	Response::headerCheck(void)
+{
+	std::ostringstream ss;
+	ss << _configs.getPort();
+	std::string port = ss.str();
+	/*Checagens de alguns Bad Requests mais comuns*/
+	if (_req_parsed["Host"] != "127.0.0.1:" + port &&
+		_req_parsed["Host"] != "localhost:" + port)
+	{
+		std::cout << _req_parsed["Host"] << std::endl;
+		std::cout << "127.0.0.1:" << port << std::endl;
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	if (_req_parsed["Content-Length"] != "")
+	{
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	if (_req_parsed[""] != "")
+	{
+		std::cout << _req_parsed["Host"] << std::endl;
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	return (false);
 }
 
 void	Response::init()
@@ -963,29 +1008,7 @@ void	Response::init()
 		_actual_root = _configs.getRoot() + _clean_address;
 	else
 		_actual_root = _configs.getRoot() + _req_parsed["Path"];
-	// std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	// std::cout << "url: "<<  url << std::endl;
-	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
-	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
-	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	// std::cout <<"Url path :"<<  _url_path<< std::endl;
-	/*checa se o método solicitado está incluso no location*/
-
-	// std::cout << "headers RESPONSE:" << std::endl;
-	// std::map<std::string, std::string>::iterator it;
-	// for (it = this->_req_parsed.begin(); it != this->_req_parsed.end(); it++)
-	// 	std::cout << it->first << "=" << it->second << std::endl;
-	// std::cout << std::endl;
-	// std::cout << "_vectorBody RESPONSE:" << std::endl;
-	// for (size_t i = 0; i < _vectorBody.size(); i++)
-	// 	std::cout << _vectorBody[i];
-	// std::cout << std::endl;
-	// std::cout << "_strBody RESPONSE:" << std::endl;
-	// std::cout << _strBody << std::endl;
+	headerCheck();
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")
