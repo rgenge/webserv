@@ -9,11 +9,14 @@ void	printContainers(T containers) {
 	std::cout << std::endl;
 }
 
-void	printErrorPages(std::map<int, std::string> errorPages) {
-	for (std::map<int, std::string>::iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+template<typename T>
+void	printMapContainer(T map) {
+	for (typename T::iterator it = map.begin(); it != map.end(); ++it) {
 		std::cout << it->first << "\t" << it->second << std::endl;
 	}
 }
+
+
 
 void	printRoutes(t_serverConfig serverConfig) {
 	t_route	route;
@@ -25,7 +28,8 @@ void	printRoutes(t_serverConfig serverConfig) {
 		std::cout << "\tindex: " << route.index << std::endl;
 		std::cout << "\troot: " << route.root << std::endl;
 		std::cout << "\tdirList: " << route.dirList << std::endl;
-		std::cout << "\tcgi: " << route.cgi[0] << "\t" << route.cgi[1] << std::endl;
+		std::cout << "\tcgi: ";
+		printMapContainer(route.cgi);
 		std::cout << "\tuploadPath: " << route.uploadPath << std::endl;
 		std::cout << "\tredirect: " << route.redirect << std::endl;
 	}
@@ -39,10 +43,12 @@ void	showServerConfigs(std::queue<t_serverConfig> serverConfigs) {
 		std::cout << "Port: " << config.port << std::endl;
 		std::cout << "root: " << config.root << std::endl;
 		std::cout << "index: " << config.index << std::endl;
+		std::cout << "\tcgi: ";
+		printMapContainer(config.cgi);
 		std::cout << "serverNames: ";
 		printContainers< std::set<std::string> >(config.serverNames);
 		std::cout << "ErrorPages: ";
-		printErrorPages(config.errorPages);
+		printMapContainer(config.errorPages);
 		std::cout << "BodySizeLimit: " << config.bodySizeLimit << std::endl;
 		printRoutes(config);
 	}

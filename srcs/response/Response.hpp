@@ -35,9 +35,10 @@ class Response
 		std::string 						_boundary;
 		std::string							_fileType;
 		std::string							&_strBody;
+		std::string							_phpSuffix;
+		std::string							_pythonSuffix;
+		std::string							_suffix;
 		std::map <std::string, std::string>	_vars;
-		std::map <std::string, std::string>	_boundaryHeaders;
-		std::vector<unsigned char>			_vectorBoundaryBody;
 		std::vector<unsigned char>			&_vectorBody;
 		std::string							&_actual_root; //GET
 
@@ -54,22 +55,27 @@ class Response
 
 		// POST
 		void		_methodPost(void);
+		void		_handleMultipart(std::string &fileName);
+		void		_isNotCGI(void);
+		void		_checkCgiRequest(void);
+		void		_checkUploadPath(void);
 		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
+		void		_replacePlusWithSpace(std::string &params);
 		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);
 		void		_removeHeaderSpaces(std::string &header);
-		void		_setHeaders(void);
 		void		_processBoundaryHeaders(void);
-		void		_handleBoundaryPart(void);
-		void		_handleImputFile(std::string &contentDisposition);
+		void		_handleBoundaryFiles(void);
+		void		_handleImputFile(void);
 		void		_setBoundaryBody(void);
+		void		_sendDataToHandlerCGI(void);
 		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
-		std::string	_generateFileName(std::string const &originalFileName);
+		std::string	_generateFileName(std::string const &type, std::string const &originalFileName);
 		size_t		_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
 
 	public:

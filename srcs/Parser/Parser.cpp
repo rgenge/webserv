@@ -258,21 +258,24 @@ void	Parser::_parseDirList(std::istringstream &lineStream, t_route &route) {
 		route.dirList = false;
 }
 
-void	Parser::_parseCgi(std::istringstream &lineStream, std::vector<std::string> &cgi)
+void	Parser::_parseCgi(std::istringstream &lineStream, std::map<std::string, std::string> &cgi)
 {
 	std::string	token;
+	std::string	key;
+	std::string	value;
 
 	lineStream >> token;
 	if (token.empty())
 		throw Parser::ParserException("missing cgi arguments");
-	cgi.push_back(token);
+	key = token;
 	lineStream >> token;
 	if (!lineStream)
 		throw Parser::ParserException("cgi is missing second argument");
-	cgi.push_back(token);
+	value = token;
 	lineStream >> token;
 	if (lineStream)
 		throw Parser::ParserException("cgi accepts only two arguments");
+	cgi[key] = value;
 }
 
 void	Parser::_readConfigFile(void) {
