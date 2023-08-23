@@ -88,6 +88,7 @@ requestStatus	Server::getRequest(int requestfd) {
 	}
 	else
 	{
+		// std::cout << "bytesRead: " << bytesRead << std::endl;
 		for (int i = 0; i < bytesRead; i++)
 		{
 			this->_requestfds[requestfd].push_back(static_cast<unsigned char>(_request[i]));

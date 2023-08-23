@@ -163,6 +163,7 @@ void	CgiHandler::_execCgi(void)
 std::string	CgiHandler::cgiHandler(void)
 {
 	// std::map<std::string, std::string>::iterator	it;
+	// std::cout << "mapa que chega no cgi" << std::endl;
 	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
 	// 	std::cout << it->first << it->second << std::endl;
 	this->_envpMap["Body-Path"] = this->_bodyPath;
