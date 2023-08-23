@@ -149,22 +149,19 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	/*CGI funciona mas sem verificar input do server*/
 	if (_full_path.find(".php") != std::string::npos)
 	{
-		if (!_configs.getCgi().empty() && _configs.getCgi()[0] == "php")
-		{
-			CgiHandler	cgi_init;
-			std::string	cgi_body;
-			_body = cgi_init.cgiHandler(_full_path);
-			_response.append(_body);
-			_response.append("\r\n");
-			return;
-		}
-		else
+		_checkCgiRequest();
+		if (_suffix == "")
 		{
 			std::cerr << "Forbidden" << std::endl;
 			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
 				getErrorPage(ERROR_403));
 			return ;
 		}
+		CgiHandler	cgi_init("", this->_url_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
+		std::string	cgiResult;
+		_body = cgi_init.cgiHandler();
+		_response.append(_body);
+		_response.append("\r\n");
 	}
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
