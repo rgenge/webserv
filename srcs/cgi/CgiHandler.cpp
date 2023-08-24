@@ -90,7 +90,7 @@ void	CgiHandler::_child(void)
 	close(this->_pipeFd[0]);
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
-	const char	*path = _interpreterPath.c_str();
+	const char	*path = "/usr/bin/php";
 	const char	*scriptPath = _scriptPath.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),

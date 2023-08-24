@@ -21,8 +21,9 @@ void	Response::printHeader(std::string status_code, std::string message,
 	std::string timeString = std::asctime(std::localtime(&result));
 	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
 	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
-		i != _res_map.end(); i++)
+		i != _res_map.end(); i++){
 		_response.append((*i).first + ": " + (*i).second + "\r\n");
+		std::cout << ((*i).first + ": " + (*i).second + "\r\n");}
 	if (_req_parsed["Query"] != "")
 	{
 		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
@@ -157,11 +158,12 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 				getErrorPage(ERROR_403));
 			return ;
 		}
-		CgiHandler	cgi_init("", this->_url_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
+		CgiHandler	cgi_init("",  _full_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
 		std::string	cgiResult;
 		_body = cgi_init.cgiHandler();
 		_response.append(_body);
 		_response.append("\r\n");
+		return ;
 	}
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -775,7 +777,7 @@ void	Response::_isNotCGI(void)
 	else
 	{
 		originalFileName = "_" + _url_path.substr(_url_path.find_last_of('/') + 1, _url_path.size());
-		fileName += _generateFileName("file_", originalFileName); 	
+		fileName += _generateFileName("file_", originalFileName);
 		file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
 		for (size_t i = 0; i < this->_vectorBody.size(); i++)
 			file << this->_vectorBody[i];
@@ -786,7 +788,7 @@ void	Response::_isNotCGI(void)
 void	Response::_checkCgiRequest(void)
 {
 	try
-	{	
+	{
 		if (_configs.getCgi(".php") != "")
 			_phpSuffix = ".php";
 	}
