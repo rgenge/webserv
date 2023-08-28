@@ -64,16 +64,9 @@ class Response
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);
 		void		_replacePlusWithSpace(std::string &params);
-		void		_parseMultipartFormData(void);
 		void		_parseTextPlain(void);
 		void		_setBoundary(void);
-		void		_removeHeaderSpaces(std::string &header);
-		void		_processBoundaryHeaders(void);
-		void		_handleBoundaryFiles(void);
-		void		_handleImputFile(void);
-		void		_setBoundaryBody(void);
 		void		_sendDataToHandlerCGI(void);
-		std::string	_handleLastSlash(std::string &Route);
 		std::string	_originalFileName(std::string &contentDisposition);
 		std::string	_generateFileName(std::string const &type, std::string const &originalFileName);
 		size_t		_findSequence(std::vector<unsigned char> &vector, std::string const sequence);
