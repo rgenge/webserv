@@ -49,7 +49,6 @@ class Response
 		void		methodDelete(std::map <std::string, std::string>_req_parsed);
 		int			dirCheck(std::string dir);
 		std::string	sizetToString(std::string text);
-		void		printError(std::string codigo, std::string message);
 		bool		checkRequest();
 		void		getCookie();
 
