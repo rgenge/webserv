@@ -391,8 +391,13 @@ void	Response::_sendDataToHandlerCGI(void)
 	cgiResult = cgi.cgiHandler();
 	remove(fileName.c_str());
 
-	// _response = cgiResult;
-	std::cout << "Resultado do CGI:\n" << cgiResult << std::endl;
+	if (cgiResult.find("HTTP/1.1 200 OK\r\n") != 0)
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_sendDataToHandlerCGI/response result)");
+	}
+	_response = cgiResult;
 	return ;
 }
 

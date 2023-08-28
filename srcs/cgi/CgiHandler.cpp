@@ -87,10 +87,12 @@ void	CgiHandler::_openPipe(void)
 
 void	CgiHandler::_child(void)
 {
+	int	stdoutBackup = dup(STDOUT_FILENO);
+
 	close(this->_pipeFd[0]);
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
-	const char	*path = "/usr/bin/php";
+	const char	*path = _interpreterPath.c_str();
 	const char	*scriptPath = _scriptPath.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),
@@ -101,6 +103,7 @@ void	CgiHandler::_child(void)
 	if (access(path, X_OK) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
 		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
 		getErrorPage(ERROR_403));
@@ -110,6 +113,7 @@ void	CgiHandler::_child(void)
 	if (access(scriptPath, X_OK) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
 		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
 		getErrorPage(ERROR_403));
@@ -119,6 +123,7 @@ void	CgiHandler::_child(void)
 	if (execve(path, execArgs, this->_envp) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
 		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
 		getErrorPage(ERROR_500));
@@ -165,7 +170,7 @@ std::string	CgiHandler::cgiHandler(void)
 	// std::map<std::string, std::string>::iterator	it;
 	// std::cout << "mapa que chega no cgi" << std::endl;
 	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
-	// 	std::cout << it->first << it->second << std::endl;
+	// 	std::cout << it->first << "====" << it->second << std::endl;
 	this->_envpMap["Body-Path"] = this->_bodyPath;
 	_convertEnvFormat();
 	_execCgi();
