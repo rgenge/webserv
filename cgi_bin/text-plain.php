@@ -1,15 +1,10 @@
 <?php
 
-// Abre o arquivo
 if (isset($_SERVER["Body-Path"]) && $_SERVER["Body-Path"] != "") {
     $file = fopen($_SERVER["Body-Path"], "r");
-    
-    // Lê o primeiro caractere do arquivo
-    $option = fgetc($file);
-    
+    // // Lê o primeiro caractere do arquivo
+    // $option = fgetc($file);    
     $text = strtoupper(fread($file, filesize($_SERVER["Body-Path"])));
-    
-    // Fecha o arquivo
     fclose($file);
 }
 

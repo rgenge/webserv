@@ -16,27 +16,30 @@ _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(
 void	Response::printHeader(std::string status_code, std::string message,
 	std::string http_version)
 {
-	std::time_t result = std::time(NULL);
-	result = result + (1 * 60 * 60);
-	std::string timeString = std::asctime(std::localtime(&result));
-	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
-	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
-		i != _res_map.end(); i++){
-		_response.append((*i).first + ": " + (*i).second + "\r\n");
-		std::cout << ((*i).first + ": " + (*i).second + "\r\n");}
-	if (_req_parsed["Query"] != "")
+	if (_response == "")
 	{
-		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
-		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		std::time_t result = std::time(NULL);
+		result = result + (1 * 60 * 60);
+		std::string timeString = std::asctime(std::localtime(&result));
+		_response.append(http_version + " " + status_code + " " + message +  "\r\n");
+		for (std::map<std::string, std::string>::iterator i = _res_map.begin();
+			i != _res_map.end(); i++){
+			_response.append((*i).first + ": " + (*i).second + "\r\n");
+			std::cout << ((*i).first + ": " + (*i).second + "\r\n");}
+		if (_req_parsed["Query"] != "")
+		{
+			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		}
+		_response.append("Set-Cookie: HttpOnly=true\r\n");
+		_response.append("Set-Cookie: Secure=true\r\n");
+		_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
+		_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
+		_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
+		_response.append(_body);
+		_response.append("\r\n");
+		//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
 	}
-	_response.append("Set-Cookie: HttpOnly=true\r\n");
-	_response.append("Set-Cookie: Secure=true\r\n");
-	_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
-	_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
-	_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
-	_response.append(_body);
-	_response.append("\r\n");
-	//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -391,13 +394,35 @@ void	Response::_sendDataToHandlerCGI(void)
 	cgiResult = cgi.cgiHandler();
 	remove(fileName.c_str());
 
-	if (cgiResult.find("HTTP/1.1 200 OK\r\n") != 0)
+	if (cgiResult.size() <= 12 || !isdigit(cgiResult[9])
+	|| !isdigit(cgiResult[10]) || !isdigit(cgiResult[11]))
 	{
-		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
-		getErrorPage(ERROR_500));
-		throw std::runtime_error("500 Internal Server Error (_sendDataToHandlerCGI/response result)");
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_sendDataToHandlerCGI/status code)");
 	}
-	_response = cgiResult;
+	size_t	npos;
+	if ((npos = cgiResult.find("Content-Length: ")) != std::string::npos)
+	{
+		std::string strLength;
+		size_t		numLength;
+		size_t		carriageReturn;
+
+		carriageReturn = cgiResult.find("\r\n\r\n");
+		for (size_t i = npos + 16; isdigit(cgiResult[i]); i++)
+			strLength += cgiResult[i];
+		numLength = atoi(strLength.c_str());
+		if (strLength == "" || cgiResult.size() < (numLength + carriageReturn + 4))
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (_sendDataToHandlerCGI/Content-length)");
+		}
+		for (size_t i = 0; (i < cgiResult.size()) && (i < (numLength + carriageReturn + 4)); i++)
+			_response += cgiResult[i];
+	}
+	else
+		_response = cgiResult;
 	return ;
 }
 
