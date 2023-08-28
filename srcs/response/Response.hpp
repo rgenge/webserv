@@ -58,7 +58,6 @@ class Response
 		void		_isNotCGI(void);
 		void		_checkCgiRequest(void);
 		void		_checkUploadPath(void);
-		void		_parseChunk(void);
 		void		_parseUrlEncodedParams(void);
 		void		_removeBreakLinesAndCR(std::string &str);
 		void		_replaceHexPercentWithAscii(std::string &params);

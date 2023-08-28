@@ -283,11 +283,6 @@ std::string	intToString (int num)
 	return temp.str();
 }
 
-void Response::_parseChunk(void)
-{
-	return ;
-}
-
 void Response::_removeBreakLinesAndCR(std::string &str)
 {
 	std::string	temp;
