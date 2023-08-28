@@ -773,8 +773,6 @@ void	Response::_methodPost(void)
 		{
 			_checkCgiRequest();
 			_checkUploadPath();
-			if (this->_req_parsed["Transfer-Encoding"] == "chunked")
-				_parseChunk();
 			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
 				_parseUrlEncodedParams();
 			else if (this->_req_parsed["Content-Type"] == "text/plain")
