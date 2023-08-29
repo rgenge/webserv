@@ -380,9 +380,9 @@ void	Response::_sendDataToHandlerCGI(void)
 	file.write(this->_strBody.c_str(), this->_strBody.size());
 	file.close();
 	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
-	if ((this->_url_path.size() > 1) && (this->_url_path[0] == '/'))
-		this->_url_path.erase(0, 1);
-	CgiHandler	cgi(fileName, this->_url_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
+	if ((this->_full_path.size() > 1) && (this->_full_path[0] == '/'))
+		this->_full_path.erase(0, 1);
+	CgiHandler	cgi(fileName, this->_full_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
 	std::string	cgiResult;
 	cgiResult = cgi.cgiHandler();
 	remove(fileName.c_str());
@@ -700,16 +700,16 @@ void	Response::_checkCgiRequest(void)
 		throw std::runtime_error("500 Internal Server Error (_checkCgiRequest)");
 	}
 	else if (((_phpSuffix == "")
-	|| (_url_path.compare((_url_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) != 0))
+	|| (_full_path.compare((_full_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) != 0))
 	&& ((_pythonSuffix == "")
-	|| (_url_path.compare((_url_path.size() - _pythonSuffix.size()), _pythonSuffix.size(), _pythonSuffix) != 0)))
+	|| (_full_path.compare((_full_path.size() - _pythonSuffix.size()), _pythonSuffix.size(), _pythonSuffix) != 0)))
 	{
 		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
 		getErrorPage(ERROR_400));
 		throw std::runtime_error("400 Bad Request (_methodPost / suffix getCgi and url are different)");
 	}
 
-	if (_url_path.compare((_url_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) == 0)
+	if (_full_path.compare((_full_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) == 0)
 		_suffix = _phpSuffix;
 	else
 		_suffix = _pythonSuffix;
@@ -751,6 +751,13 @@ void	Response::_methodPost(void)
 {
 	try
 	{
+		std::string	root = _configs.getRoot();
+		std::string	url = _req_parsed["Path"];
+		if (root.size() > 0 && root[root.size() - 1] != '/')
+			root += "/";
+		if (url.size() > 0 && url[0] == '/')
+			url.erase(0, 1);
+		_full_path = root + url;
 		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
 		&& (this->_req_parsed["Content-Type"] != "text/plain")
 		&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
@@ -759,10 +766,10 @@ void	Response::_methodPost(void)
 			getErrorPage(ERROR_400));
 			throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + ")");
 		}
-		else if (((_url_path.find("/cgi")) == std::string::npos)
+		else if (((_full_path.find("/cgi")) == std::string::npos)
 		&& (this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded"))
 			_isNotCGI();
-		else if ((_url_path.find("/cgi") == std::string::npos)
+		else if ((_full_path.find("/cgi") == std::string::npos)
 		&& (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded"))
 		{
 			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
