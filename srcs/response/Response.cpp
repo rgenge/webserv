@@ -675,6 +675,7 @@ void	Response::_isNotCGI(void)
 		for (size_t i = 0; i < this->_vectorBody.size(); i++)
 			file << this->_vectorBody[i];
 	}
+	printHeader ("200", "OK", _req_parsed["Version"]);
 	return ;
 }
 
