@@ -151,8 +151,8 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	if(_url_path.find("//") != std::string::npos)
 		_url_path.replace(_url_path.find("//"), 2, "/");
 	/*CGI funciona mas sem verificar input do server*/
-	if ((_full_path.find(".php") != std::string::npos)
-	|| _full_path.find(".py") != std::string::npos)
+	if (((_full_path.rfind(".php")) == _full_path.size() - 4)
+	|| ((_full_path.rfind(".py")) == _full_path.size() - 3))
 	{
 		_checkCgiRequest();
 		if (_suffix == "")

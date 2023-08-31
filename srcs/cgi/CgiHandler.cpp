@@ -107,7 +107,7 @@ void	CgiHandler::_child(void)
 		_clearEnvp();
 		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
 		getErrorPage(ERROR_403));
-		throw std::runtime_error("403 Forbidden (_child/path)");
+		throw std::runtime_error("403 Forbidden (_child/path = " + _interpreterPath + ")");
 	}
 
 	if (access(scriptPath, X_OK) == -1)
@@ -117,7 +117,7 @@ void	CgiHandler::_child(void)
 		_clearEnvp();
 		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
 		getErrorPage(ERROR_403));
-		throw std::runtime_error("403 Forbidden (_child/scriptPath)");
+		throw std::runtime_error("403 Forbidden (_child/scriptPath = " + _scriptPath + ")");
 	}
 
 	if (execve(path, execArgs, this->_envp) == -1)
