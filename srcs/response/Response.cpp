@@ -760,7 +760,14 @@ void	Response::_methodPost(void)
 		if (url.size() > 0 && url[0] == '/')
 			url.erase(0, 1);
 		_full_path = root + url;
-		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
+		if((_vectorBody.size() / 1000) > _configs.getBodySizeLimit())
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
+			getErrorPage(ERROR_413));
+			throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
+			return ;
+		}
+		else if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
 		&& (this->_req_parsed["Content-Type"] != "text/plain")
 		&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
 		{
