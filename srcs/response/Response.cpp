@@ -672,8 +672,7 @@ void	Response::_isNotCGI(void)
 		originalFileName = "_" + _url_path.substr(_url_path.find_last_of('/') + 1, _url_path.size());
 		fileName += _generateFileName("file_", originalFileName);
 		file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
-		for (size_t i = 0; i < this->_vectorBody.size(); i++)
-			file << this->_vectorBody[i];
+		file.write(reinterpret_cast<char *>(_vectorBody.data()), _vectorBody.size());
 	}
 	printHeader ("200", "OK", _req_parsed["Version"]);
 	return ;
@@ -760,14 +759,13 @@ void	Response::_methodPost(void)
 		if (url.size() > 0 && url[0] == '/')
 			url.erase(0, 1);
 		_full_path = root + url;
-		if((_vectorBody.size() / 1000) > _configs.getBodySizeLimit())
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
-			getErrorPage(ERROR_413));
-			throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
-			return ;
-		}
-		else if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
+		// if((_vectorBody.size() / 1000) > static_cast<size_t>(_configs.getBodySizeLimit()))
+		// {
+		// 	_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
+		// 	getErrorPage(ERROR_413));
+		// 	throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
+		// }
+		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
 		&& (this->_req_parsed["Content-Type"] != "text/plain")
 		&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
 		{
