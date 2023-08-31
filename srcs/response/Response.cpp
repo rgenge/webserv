@@ -766,10 +766,12 @@ void	Response::_methodPost(void)
 			getErrorPage(ERROR_400));
 			throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + ")");
 		}
-		else if (((_full_path.find("/cgi")) == std::string::npos)
+		else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+		&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
 		&& (this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded"))
 			_isNotCGI();
-		else if ((_full_path.find("/cgi") == std::string::npos)
+		else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+		&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
 		&& (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded"))
 		{
 			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
@@ -820,15 +822,15 @@ bool	Response::checkRequest()
 		}
 		return (true);
 	}
-	// if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
-	// 	(_req_parsed["Method"]) == _configs.
-	// 	getHttpMethods().end())
-	// {
-	// 	std::cerr << "Error 405 invalid method" << std::endl;
-	// 	_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
-	// 		getErrorPage(ERROR_405));
-	// 	return (true);
-	// }
+	if (!_configs.getHttpMethods().empty() && _configs.getHttpMethods().find
+		(_req_parsed["Method"]) == _configs.
+		getHttpMethods().end())
+	{
+		std::cerr << "Error 405 invalid method" << std::endl;
+		_response = ErrorResponse::getErrorResponse(ERROR_405, _configs.
+			getErrorPage(ERROR_405));
+		return (true);
+	}
 	return (false);
 }
 
@@ -858,11 +860,6 @@ bool	Response::headerCheck(void)
 	{
 		std::cout << _req_parsed["Host"] << std::endl;
 		std::cout << "127.0.0.1:" << port << std::endl;
-		_req_parsed["Version"] = "Bad Request";
-		return (true);
-	}
-	if (_req_parsed["Content-Length"] != "")
-	{
 		_req_parsed["Version"] = "Bad Request";
 		return (true);
 	}
