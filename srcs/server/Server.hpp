@@ -33,7 +33,7 @@ class Server : public Socket {
 		static std::map<int, std::vector <unsigned char> >	requestComplete;
 		static bool											endChunk;
 		static bool											isChunk;
-		static bool											isContinue;
+		static bool											firstChunk;
 	private:
 
 		Server();

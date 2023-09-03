@@ -550,11 +550,8 @@ void	Response::_handleMultipart(std::string &fileName)
 
 		fileName += _generateFileName("file_", _originalFileName(headers));
 		file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
-		for (size_t i = 0; i < (npos - boundaryStart); i++)
-		{
-			file << this->_vectorBody[0];
-			this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
-		}
+		file.write(reinterpret_cast<char *>(_vectorBody.data()), (npos - boundaryStart));
+		_vectorBody.clear();
 	}
 	// is not a file
 	else

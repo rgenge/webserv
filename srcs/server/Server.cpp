@@ -4,7 +4,7 @@
 std::map<int, std::vector<unsigned char> >	Server::requestComplete;
 bool										Server::endChunk = false;
 bool										Server::isChunk = false;
-bool										Server::isContinue = false;
+bool										Server::firstChunk = true;
 
 Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
 }
@@ -98,36 +98,36 @@ requestStatus	Server::_parseChunk(int requestfd)
 				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
 				this->_requestfds[requestfd].begin() + 1);
 			}
-			// delete hexadecimal chunk
-			if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+			if ((npos = _findSequenceVector(this->requestComplete[requestfd], "Expect: 100-continue")) != std::string::npos)
 			{
-				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
-				this->_requestfds[requestfd].begin() + npos + 2);
-			}
-			else
-			{
-				if ((npos = _findSequenceVector(this->requestComplete[requestfd], "Expect: 100-continue")) != std::string::npos)
-				{
-					isContinue = true;
-					std::string	responseChunk = "HTTP/1.1 100 Continue\r\n\r\n";
-					write(requestfd, responseChunk.c_str(), responseChunk.length());
-					return (PROCESSING);
-				}
-				return (ERROR);
+				this->_requestfds[requestfd].clear();
+				std::string	responseChunk = "HTTP/1.1 100 Continue\r\n\r\n";
+				write(requestfd, responseChunk.c_str(), responseChunk.length());
+				return (PROCESSING);
 			}
 		}
 		else
+		{
+			this->_requestfds[requestfd].clear();
 			return (ERROR);
+		}
 	}
-	// copy body
-	if (((isContinue == true)
-	&& (npos = _findSequenceVector(this->requestComplete[requestfd], "Expect: 100-continue")) != std::string::npos))
+	if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
 	{
-		isContinue = false;
-		if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+		if (firstChunk == true)
 		{
 			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
 			this->_requestfds[requestfd].begin() + npos + 2);
+			firstChunk = false;
+		}
+		else
+		{
+			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+			this->_requestfds[requestfd].begin() + npos + 2);
+			size_t npos2;
+			if ((npos2 = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+				this->_requestfds[requestfd].begin() + npos2 + 2);
 		}
 	}
 	for (size_t i = 0; i < this->_requestfds[requestfd].size(); i++)
@@ -174,22 +174,39 @@ requestStatus	Server::getRequest(int requestfd) {
 				return (status);
 			}
 			else
+			{
+				_requestfds[requestfd].clear();
 				return (status);
+			}
 		}
 		else
 		{
-			for (int i = 0; i < bytesRead; i++)
+			for (size_t i = 0; i < _requestfds[requestfd].size(); i++)
 				requestComplete[requestfd].push_back(_requestfds[requestfd][i]);
-			endChunk = true;
+			if (_findSequenceVector(_requestfds[requestfd], "Expect: 100-continue") != std::string::npos)
+			{
+				std::string	responseChunk = "HTTP/1.1 100 Continue\r\n\r\n";
+				write(requestfd, responseChunk.c_str(), responseChunk.length());
+				_requestfds[requestfd].clear();
+				return (PROCESSING);
+			}
+			else
+			{
+				_requestfds[requestfd].clear();
+				endChunk = true;
+			}
 		}
 	}
-	return (_checkRequestStatus(_requestfds[requestfd]));
+	return (_checkRequestStatus(requestComplete[requestfd]));
 }
 
 void	Server::respondRequest(int requestfd) {
-	std::string	response;
 	if (endChunk == true)
 	{
+		// for (size_t i = 0; i < requestComplete[requestfd].size(); i++)
+		// 	std::cout << requestComplete[requestfd][i];
+		// std::cout << "\nsize: " << requestComplete[requestfd].size() << std::endl;
+		std::string	response;
 		/*Parseamento do request e salva um map comtudo e o body do request*/
 		Request _req(requestComplete[requestfd]);
 		/*Iniciando o response*/
