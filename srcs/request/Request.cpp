@@ -139,40 +139,6 @@ void	Request::_parse(void)
 	return ;
 }
 
-/*Checa o tamanho do chunk e retorno o valor em decimal pra conversão*/
-// size_t Request::_heximalConverter(std::string input)
-// {
-// 	std::stringstream convert;
-// 	size_t ret = 0;
-// 	convert << std::hex << input;
-// 	convert >> ret;
-// 	return ret;
-// }
-
-// // /*Faz o parseamento do chunk e gera um body tirando todos os \r\n */
-// void Request::_parseChunk(void)
-// {
-// 	std::size_t	size = 1;
-// 	std::string	size_buf, buf;
-// 	std::string	line = this->_strBody.substr(2, this->_strBody.size());
-// 	size_t i = 0;
-// 	size_t j = 0;
-// 	while (i < (line.size() - 2))
-// 	{
-// 		while (line[i] != '\r' && line[i + 1] != '\n')
-// 			i++;
-// 		size_buf = line.substr(j, i - j);
-// 		size = _heximalConverter(size_buf);
-// 		if (size == 0)
-// 			break;
-// 		j = i + 2;
-// 		buf = line.substr(j, size);
-// 		_body = _body + buf;
-// 		j = j + size + 2;
-// 		i = j--;
-// 	}
-// }
-
 Request::~Request()
 {
 }

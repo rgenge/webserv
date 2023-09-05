@@ -605,6 +605,12 @@ bool	Response::checkRequest()
 			_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
 			getErrorPage(ERROR_505));
 		}
+		else if(_req_parsed["Version"].substr(0, 3) == "404")
+		{
+			std::cerr << "Error 404 Not Found" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_404, _configs.
+			getErrorPage(ERROR_404));
+		}
 		else
 		{
 			std::cerr << "Error 400 Bad Request" << std::endl;
@@ -631,9 +637,40 @@ void	Response::getCookie()
 	size_t start =  _req_parsed["Cookie"].find("name=");
 	size_t end =  _req_parsed["Cookie"].find(";", start);
 	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
-	std::ofstream WriteFile("index/file.txt");
-	WriteFile << name;
+	if (_req_parsed["Cookie"].find("name=") != std::string::npos)
+	{
+		std::ofstream WriteFile("index/file.txt");
+		WriteFile << name;
+	}
 }
+
+bool	Response::headerCheck(void)
+{
+	std::ostringstream ss;
+	ss << _configs.getPort();
+	std::string port = ss.str();
+	/*Checagens de alguns Bad Requests mais comuns*/
+	if (_req_parsed["Host"] != "127.0.0.1:" + port &&
+		_req_parsed["Host"] != "localhost:" + port)
+	{
+
+		std::cout << _req_parsed["Host"] << std::endl;
+		std::cout << "127.0.0.1:" << port << std::endl;
+
+		if (_serverConfig.serverNames.find(_req_parsed["Host"]) != _serverConfig.serverNames.end())
+			return(false);
+		_req_parsed["Version"] = "404";
+		return (true);
+	}
+	if (_req_parsed[""] != "")
+	{
+		_req_parsed["Version"] = "Bad Request";
+		return (true);
+	}
+	return (false);
+}
+
+
 
 void	Response::init()
 {
@@ -660,29 +697,7 @@ void	Response::init()
 		_actual_root = _configs.getRoot() + _clean_address;
 	else
 		_actual_root = _configs.getRoot() + _req_parsed["Path"];
-	// std::cout <<"Actual Root:"<< _actual_root<< std::endl;
-	// std::cout << "url: "<<  url << std::endl;
-	// std::cout <<"Root:"<< _configs.getRoot()<< std::endl;
-	// std::cout <<"Autoindex:"<< _configs.getDirList() << std::endl;
-	// std::cout <<"Indexx:"<< _configs.getIndex()<< std::endl;
-	// std::cout <<"LimitSize:"<< _configs.getBodySizeLimit()<< std::endl;
-	// std::cout <<"Redirect:"<< _configs.getRedirect() << std::endl;
-	// std::cout <<"UploadPath:"<< _configs.getUploadPath() << std::endl;
-	// std::cout <<"Req_parsed_path"<< _req_parsed["Path"]<< std::endl;
-	// std::cout <<"Url path :"<<  _url_path<< std::endl;
-	/*checa se o método solicitado está incluso no location*/
-
-	// std::cout << "headers RESPONSE:" << std::endl;
-	// std::map<std::string, std::string>::iterator it;
-	// for (it = this->_req_parsed.begin(); it != this->_req_parsed.end(); it++)
-	// 	std::cout << it->first << "=" << it->second << std::endl;
-	// std::cout << std::endl;
-	// std::cout << "_vectorBody RESPONSE:" << std::endl;
-	// for (size_t i = 0; i < _vectorBody.size(); i++)
-	// 	std::cout << _vectorBody[i];
-	// std::cout << std::endl;
-	// std::cout << "_strBody RESPONSE:" << std::endl;
-	// std::cout << _strBody << std::endl;
+	headerCheck();
 	if (checkRequest())
 		return ;
 	if (_req_parsed["Method"] == "GET")

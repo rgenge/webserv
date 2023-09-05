@@ -39,8 +39,9 @@ class Response
 		std::map <std::string, std::string>	_boundaryHeaders;
 		std::vector<unsigned char>			_vectorBoundaryBody;
 		std::vector<unsigned char>			&_vectorBody;
-		std::string							&_actual_root; //GET
-
+		std::string							&_actual_root;
+		
+		//GET
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string message,
 			std::string http_version);
@@ -81,5 +82,6 @@ class Response
 		std::string	getResponse();
 		std::string	getType();
 		std::string	getBody();
+		bool		headerCheck();
 };
 #endif
