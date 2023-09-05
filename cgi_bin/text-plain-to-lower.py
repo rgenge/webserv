@@ -4,9 +4,11 @@ if "Body-Path" in os.environ and os.environ["Body-Path"] != "":
 	if "Content-Type" in os.environ and os.environ["Content-Type"] == "text/plain":
 		file_path = os.environ["Body-Path"]
 		with open(file_path, "r") as file:
-			text = file.read()
+			textUpper = file.read()
 else:
-    text = ""
+    textUpper = ""
+
+text = textUpper.lower()
 
 htmlContent = """<!DOCTYPE html>
 <html>
