@@ -1,11 +1,13 @@
 <?php
 
 if (isset($_SERVER["Body-Path"]) && $_SERVER["Body-Path"] != "") {
-    $file = fopen($_SERVER["Body-Path"], "r");
-    // // Lê o primeiro caractere do arquivo
-    // $option = fgetc($file);    
-    $text = strtoupper(fread($file, filesize($_SERVER["Body-Path"])));
-    fclose($file);
+    if (isset($_SERVER["Content-Type"]) && $_SERVER["Content-Type"] == "text/plain") {
+        $file = fopen($_SERVER["Body-Path"], "r");    
+        $text = strtoupper(fread($file, filesize($_SERVER["Body-Path"])));
+        fclose($file);
+    }
+    else
+        $text = "";
 }
 
 $htmlContent = "<!DOCTYPE html>\r\n";

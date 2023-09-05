@@ -1,9 +1,13 @@
 <?php
 
 if (isset($_SERVER["Body-Path"]) && $_SERVER["Body-Path"] != "") {
-    $file = fopen($_SERVER["Body-Path"], "r");   
-    $text = fread($file, filesize($_SERVER["Body-Path"]));
-    fclose($file);
+    if (isset($_SERVER["Content-Type"]) && $_SERVER["Content-Type"] == "application/x-www-form-urlencoded") {
+        $file = fopen($_SERVER["Body-Path"], "r");   
+        $text = fread($file, filesize($_SERVER["Body-Path"]));
+        fclose($file);
+    }
+    else
+        $text = "";
 }
 
 $name = "";
@@ -44,7 +48,7 @@ if ($name != "" && $nickname != "" && $email != "") {
     $response .= "\r\n";
     $response .= $htmlContent;
 } else {
-    $htmlContent .= '<!DOCTYPE html>' . "\r\n";
+    $htmlContent = '<!DOCTYPE html>' . "\r\n";
     $htmlContent .= '<html lang="en">' . "\r\n";
     $htmlContent .= '<head>' . "\r\n";
     $htmlContent .= '	<meta charset="UTF-8">' . "\r\n";
