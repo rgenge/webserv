@@ -798,6 +798,12 @@ bool	Response::checkRequest()
 			_response = ErrorResponse::getErrorResponse(ERROR_505, _configs.
 			getErrorPage(ERROR_505));
 		}
+		else if(_req_parsed["Version"].substr(0, 3) == "404")
+		{
+			std::cerr << "Error 404 Not Found" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_404, _configs.
+			getErrorPage(ERROR_404));
+		}
 		else
 		{
 			std::cerr << "Error 400 Bad Request" << std::endl;
@@ -821,16 +827,14 @@ bool	Response::checkRequest()
 void	Response::getCookie()
 {
 	std::string name;
-	if ( _req_parsed["Cookie"].find("name=") != std::string::npos)
+	size_t start =  _req_parsed["Cookie"].find("name=");
+	size_t end =  _req_parsed["Cookie"].find(";", start);
+	name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+	if (_req_parsed["Cookie"].find("name=") != std::string::npos)
 	{
-		size_t start =  _req_parsed["Cookie"].find("name=");
-		size_t end =  _req_parsed["Cookie"].find(";", start);
-		name = _req_parsed["Cookie"].substr(start + 5, end - start -5);
+		std::ofstream WriteFile("index/file.txt");
+		WriteFile << name;
 	}
-		else
-			name = "Enter a query name='your name'";
-	std::ofstream WriteFile("index/file.txt");
-	WriteFile << name;
 }
 
 bool	Response::headerCheck(void)
@@ -842,19 +846,24 @@ bool	Response::headerCheck(void)
 	if (_req_parsed["Host"] != "127.0.0.1:" + port &&
 		_req_parsed["Host"] != "localhost:" + port)
 	{
+
 		std::cout << _req_parsed["Host"] << std::endl;
 		std::cout << "127.0.0.1:" << port << std::endl;
-		_req_parsed["Version"] = "Bad Request";
+
+		if (_serverConfig.serverNames.find(_req_parsed["Host"]) != _serverConfig.serverNames.end())
+			return(false);
+		_req_parsed["Version"] = "404";
 		return (true);
 	}
 	if (_req_parsed[""] != "")
 	{
-		std::cout << _req_parsed["Host"] << std::endl;
 		_req_parsed["Version"] = "Bad Request";
 		return (true);
 	}
 	return (false);
 }
+
+
 
 void	Response::init()
 {

@@ -40,8 +40,9 @@ class Response
 		std::string							_suffix;
 		std::map <std::string, std::string>	_vars;
 		std::vector<unsigned char>			&_vectorBody;
-		std::string							&_actual_root; //GET
-
+		std::string							&_actual_root;
+		
+		//GET
 		void		methodGet(std::map <std::string, std::string> _req_parsed);
 		void		printHeader(std::string status_code, std::string message,
 			std::string http_version);
