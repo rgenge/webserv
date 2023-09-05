@@ -210,13 +210,6 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 				getErrorPage(ERROR_411));
 			return ;
 		}
-		if((content)/1000 > _configs.getBodySizeLimit())
-		{
-			std::cerr << "Body size limit exceeded" << std::endl;
-			_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
-				getErrorPage(ERROR_413));
-			return ;
-		}
 		printHeader ("200", "OK", _req_parsed["Version"]);
 		page.close();
 	}
@@ -754,12 +747,6 @@ void	Response::_methodPost(void)
 	if (url.size() > 0 && url[0] == '/')
 		url.erase(0, 1);
 	_full_path = root + url;
-	// if((_vectorBody.size() / 1000) > static_cast<size_t>(_configs.getBodySizeLimit()))
-	// {
-	// 	_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
-	// 	getErrorPage(ERROR_413));
-	// 	throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
-	// }
 	if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
 	&& (this->_req_parsed["Content-Type"] != "text/plain")
 	&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))

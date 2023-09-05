@@ -165,7 +165,7 @@ requestStatus	Server::getRequest(int requestfd) {
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
-		_respondInternalServerError(requestfd); // check
+		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
 	}
@@ -215,13 +215,19 @@ requestStatus	Server::getRequest(int requestfd) {
 void	Server::respondRequest(int requestfd) {
 	if (endChunk == true)
 	{
-		// for (size_t i = 0; i < requestComplete[requestfd].size(); i++)
-		// 	std::cout << requestComplete[requestfd][i];
-		// std::cout << "\nsize: " << requestComplete[requestfd].size() << std::endl;
 		std::string	response;
 		/*Parseamento do request e salva um map comtudo e o body do request*/
 		Request _req(requestComplete[requestfd]);
 		/*Iniciando o response*/
+		if((static_cast<int>(_req.getVectorBody().size()) / 1000) > _serverConfig.bodySizeLimit)
+		{
+			std::cerr << "error: Body size limit exceeded" << std::endl;
+			_requestfds.erase(requestfd);
+			requestComplete.erase(requestfd);
+			close(requestfd);
+			_respondInternalServerError(requestfd);
+			return ;
+		}
 		Response res_struct(_req.getMap(), _serverConfig,
 			_url_path, _req.getStrBody(), _req.getVectorBody(), _actual_root);
 		res_struct.init();
