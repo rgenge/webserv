@@ -114,7 +114,7 @@ requestStatus	Server::_parseChunk(int requestfd)
 	}
 	if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
 	{
-		if (firstChunk == true)
+		if ((firstChunk == true) || npos < 7)
 		{
 			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
 			this->_requestfds[requestfd].begin() + npos + 2);
@@ -140,6 +140,10 @@ requestStatus	Server::_parseChunk(int requestfd)
 			}
 			else
 				this->_requestfds[requestfd][npos + 1] = '\n';
+			if (((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+			&& _requestfds[requestfd].size() == npos + 2)
+				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+				this->_requestfds[requestfd].begin() + npos + 2);
 		}
 	}
 	for (size_t i = 0; i < this->_requestfds[requestfd].size(); i++)
