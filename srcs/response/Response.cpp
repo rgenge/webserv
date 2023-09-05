@@ -747,60 +747,53 @@ void	Response::_checkUploadPath(void)
 
 void	Response::_methodPost(void)
 {
-	try
+	std::string	root = _configs.getRoot();
+	std::string	url = _req_parsed["Path"];
+	if (root.size() > 0 && root[root.size() - 1] != '/')
+		root += "/";
+	if (url.size() > 0 && url[0] == '/')
+		url.erase(0, 1);
+	_full_path = root + url;
+	// if((_vectorBody.size() / 1000) > static_cast<size_t>(_configs.getBodySizeLimit()))
+	// {
+	// 	_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
+	// 	getErrorPage(ERROR_413));
+	// 	throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
+	// }
+	if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
+	&& (this->_req_parsed["Content-Type"] != "text/plain")
+	&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
 	{
-		std::string	root = _configs.getRoot();
-		std::string	url = _req_parsed["Path"];
-		if (root.size() > 0 && root[root.size() - 1] != '/')
-			root += "/";
-		if (url.size() > 0 && url[0] == '/')
-			url.erase(0, 1);
-		_full_path = root + url;
-		// if((_vectorBody.size() / 1000) > static_cast<size_t>(_configs.getBodySizeLimit()))
-		// {
-		// 	_response = ErrorResponse::getErrorResponse(ERROR_413, _configs.
-		// 	getErrorPage(ERROR_413));
-		// 	throw std::runtime_error("413 Body size limit exceeded (_methodPost/size = " + _vectorBody.size());
-		// }
-		if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
-		&& (this->_req_parsed["Content-Type"] != "text/plain")
-		&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-			getErrorPage(ERROR_400));
-			throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + ")");
-		}
-		else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
-		&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
-		&& (this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded"))
-			_isNotCGI();
-		else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
-		&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
-		&& (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded"))
-		{
-			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-			getErrorPage(ERROR_400));
-			throw std::runtime_error("400 Bad Request (_methodPost/content-type invalid whithout CGI)");
-		}
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + ")");
+	}
+	else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+	&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
+	&& (this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded"))
+		_isNotCGI();
+	else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+	&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
+	&& (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded"))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost/content-type invalid whithout CGI)");
+	}
+	else
+	{
+		_checkCgiRequest();
+		_checkUploadPath();
+		if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
+			_parseUrlEncodedParams();
+		else if (this->_req_parsed["Content-Type"] == "text/plain")
+			_parseTextPlain();
 		else
 		{
-			_checkCgiRequest();
-			_checkUploadPath();
-			if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-				_parseUrlEncodedParams();
-			else if (this->_req_parsed["Content-Type"] == "text/plain")
-				_parseTextPlain();
-			else
-			{
-				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
-				getErrorPage(ERROR_400));
-				throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + " is not allowed with CGI)");
-			}
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + " is not allowed with CGI)");
 		}
-	}
-	catch (std::exception &e)
-	{
-		std::cerr << "error: " << e.what() << std::endl;
 	}
 
 	return ;
@@ -904,12 +897,19 @@ void	Response::init()
 	headerCheck();
 	if (checkRequest())
 		return ;
-	if (_req_parsed["Method"] == "GET")
-		methodGet(_req_parsed);
-	if (_req_parsed["Method"] == "DELETE")
-		methodDelete(_req_parsed);
-	if (this->_req_parsed["Method"] == "POST")
-		_methodPost();
+	try
+	{
+		if (_req_parsed["Method"] == "GET")
+			methodGet(_req_parsed);
+		if (_req_parsed["Method"] == "DELETE")
+			methodDelete(_req_parsed);
+		if (this->_req_parsed["Method"] == "POST")
+			_methodPost();
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << "error: " << e.what() << std::endl;
+	}
 }
 
 Response::~Response()
