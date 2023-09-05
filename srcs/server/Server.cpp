@@ -158,6 +158,9 @@ requestStatus	Server::getRequest(int requestfd) {
 	if (bytesRead < 0) {
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
+		endChunk = false;
+		isChunk = false;
+		firstChunk = true;
 		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
@@ -165,6 +168,9 @@ requestStatus	Server::getRequest(int requestfd) {
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
+		endChunk = false;
+		isChunk = false;
+		firstChunk = true;
 		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
@@ -181,6 +187,9 @@ requestStatus	Server::getRequest(int requestfd) {
 			{
 				_requestfds.erase(requestfd);
 				requestComplete.erase(requestfd);
+				endChunk = false;
+				isChunk = false;
+				firstChunk = true;
 				_respondInternalServerError(requestfd);
 				close(requestfd);
 				return (status);
@@ -224,6 +233,9 @@ void	Server::respondRequest(int requestfd) {
 			std::cerr << "error: Body size limit exceeded" << std::endl;
 			_requestfds.erase(requestfd);
 			requestComplete.erase(requestfd);
+			endChunk = false;
+			isChunk = false;
+			firstChunk = true;
 			close(requestfd);
 			_respondInternalServerError(requestfd);
 			return ;
@@ -236,6 +248,9 @@ void	Server::respondRequest(int requestfd) {
 		write(requestfd, response.c_str(), response.length());
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
+		endChunk = false;
+		isChunk = false;
+		firstChunk = true;
 		close(requestfd);
 	}
 }
