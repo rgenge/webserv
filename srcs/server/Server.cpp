@@ -122,12 +122,24 @@ requestStatus	Server::_parseChunk(int requestfd)
 		}
 		else
 		{
-			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
-			this->_requestfds[requestfd].begin() + npos + 2);
 			size_t npos2;
+			this->_requestfds[requestfd][npos + 1] = 'a';
 			if ((npos2 = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
-				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
-				this->_requestfds[requestfd].begin() + npos2 + 2);
+			{
+				std::string	hex = "abcdef";
+				for (size_t i = npos + 2; i < npos2; i++)
+				{
+					if ((isdigit(_requestfds[requestfd][i]) == 0) && (hex.find(_requestfds[requestfd][i]) == std::string::npos))
+						this->_requestfds[requestfd][npos + 1] = '\n';
+				}
+				if (this->_requestfds[requestfd][npos + 1] != '\n')
+				{
+					this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+					this->_requestfds[requestfd].begin() + npos2 + 2);
+				}
+			}
+			else
+				this->_requestfds[requestfd][npos + 1] = '\n';
 		}
 	}
 	for (size_t i = 0; i < this->_requestfds[requestfd].size(); i++)
