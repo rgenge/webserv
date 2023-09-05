@@ -2,11 +2,11 @@
 #include "ErrorResponse.hpp"
 
 std::map<int, std::vector<unsigned char> >	Server::requestComplete;
-bool										Server::endChunk = false;
-bool										Server::isChunk = false;
-bool										Server::firstChunk = true;
 
 Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
+	_endChunk = false;
+	_isChunk = false;
+	_firstChunk = true;
 }
 
 Server::~Server() {
@@ -79,11 +79,11 @@ requestStatus	Server::_parseChunk(int requestfd)
 {
 	size_t				npos;
 
-	isChunk = true;
+	_isChunk = true;
 	if (((npos = _findSequenceVector(this->_requestfds[requestfd], "0\r\n\r\n")) != std::string::npos)
 	&& (npos + 5 == this->_requestfds[requestfd].size()))
 	{
-		endChunk = true;
+		_endChunk = true;
 		this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
 		this->_requestfds[requestfd].begin() + npos + 1);
 	}
@@ -114,11 +114,11 @@ requestStatus	Server::_parseChunk(int requestfd)
 	}
 	if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
 	{
-		if ((firstChunk == true) || npos < 7)
+		if ((_firstChunk == true) || npos < 7)
 		{
 			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
 			this->_requestfds[requestfd].begin() + npos + 2);
-			firstChunk = false;
+			_firstChunk = false;
 		}
 		else
 		{
@@ -149,7 +149,7 @@ requestStatus	Server::_parseChunk(int requestfd)
 	for (size_t i = 0; i < this->_requestfds[requestfd].size(); i++)
 		this->requestComplete[requestfd].push_back(this->_requestfds[requestfd][i]);
 	this->_requestfds[requestfd].clear();
-	if (endChunk == true)
+	if (_endChunk == true)
 		return (DONE);
 	return (PROCESSING);
 }
@@ -162,9 +162,9 @@ requestStatus	Server::getRequest(int requestfd) {
 	if (bytesRead < 0) {
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
-		endChunk = false;
-		isChunk = false;
-		firstChunk = true;
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
 		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
@@ -172,9 +172,9 @@ requestStatus	Server::getRequest(int requestfd) {
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
-		endChunk = false;
-		isChunk = false;
-		firstChunk = true;
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
 		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
@@ -183,7 +183,7 @@ requestStatus	Server::getRequest(int requestfd) {
 	{
 		for (int i = 0; i < bytesRead; i++)
 			this->_requestfds[requestfd].push_back(static_cast<unsigned char>(_request[i]));
-		if ((isChunk == true)
+		if ((_isChunk == true)
 		|| ((_findSequenceVector(this->_requestfds[requestfd], "Transfer-Encoding: chunked") != std::string::npos)))
 		{
 			enum requestStatus status = _parseChunk(requestfd);
@@ -191,9 +191,9 @@ requestStatus	Server::getRequest(int requestfd) {
 			{
 				_requestfds.erase(requestfd);
 				requestComplete.erase(requestfd);
-				endChunk = false;
-				isChunk = false;
-				firstChunk = true;
+				_endChunk = false;
+				_isChunk = false;
+				_firstChunk = true;
 				_respondInternalServerError(requestfd);
 				close(requestfd);
 				return (status);
@@ -218,7 +218,7 @@ requestStatus	Server::getRequest(int requestfd) {
 			else
 			{
 				_requestfds[requestfd].clear();
-				endChunk = true;
+				_endChunk = true;
 			}
 		}
 	}
@@ -226,7 +226,7 @@ requestStatus	Server::getRequest(int requestfd) {
 }
 
 void	Server::respondRequest(int requestfd) {
-	if (endChunk == true)
+	if (_endChunk == true)
 	{
 		std::string	response;
 		/*Parseamento do request e salva um map comtudo e o body do request*/
@@ -237,9 +237,9 @@ void	Server::respondRequest(int requestfd) {
 			std::cerr << "error: Body size limit exceeded" << std::endl;
 			_requestfds.erase(requestfd);
 			requestComplete.erase(requestfd);
-			endChunk = false;
-			isChunk = false;
-			firstChunk = true;
+			_endChunk = false;
+			_isChunk = false;
+			_firstChunk = true;
 			close(requestfd);
 			_respondInternalServerError(requestfd);
 			return ;
@@ -252,9 +252,9 @@ void	Server::respondRequest(int requestfd) {
 		write(requestfd, response.c_str(), response.length());
 		_requestfds.erase(requestfd);
 		requestComplete.erase(requestfd);
-		endChunk = false;
-		isChunk = false;
-		firstChunk = true;
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
 		close(requestfd);
 	}
 }

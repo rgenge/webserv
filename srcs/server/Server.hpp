@@ -31,9 +31,6 @@ class Server : public Socket {
 		void				addRequestfd(int requestfd, std::vector<unsigned char> requestMessage);
 
 		static std::map<int, std::vector <unsigned char> >	requestComplete;
-		static bool											endChunk;
-		static bool											isChunk;
-		static bool											firstChunk;
 	private:
 
 		Server();
@@ -41,6 +38,9 @@ class Server : public Socket {
 		t_serverConfig								_serverConfig;
 		std::string									_url_path;
 		std::string									_actual_root;
+		bool										_endChunk;
+		bool										_isChunk;
+		bool										_firstChunk;
 
 		requestStatus	_checkRequestStatus(std::vector<unsigned char> const &_request);
 		requestStatus	_parseChunk(int requestfd);
