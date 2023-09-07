@@ -1,7 +1,12 @@
 #include "Server.hpp"
 #include "ErrorResponse.hpp"
 
+std::map<int, std::vector<unsigned char> >	Server::requestComplete;
+
 Server::Server(t_serverConfig const &config) : Socket(10, config.port), _serverConfig(config) {
+	_endChunk = false;
+	_isChunk = false;
+	_firstChunk = true;
 }
 
 Server::~Server() {
@@ -70,46 +75,188 @@ requestStatus	Server::_checkRequestStatus(std::vector<unsigned char> const &_req
 	return (DONE);
 }
 
+requestStatus	Server::_parseChunk(int requestfd)
+{
+	size_t				npos;
+
+	_isChunk = true;
+	if (((npos = _findSequenceVector(this->_requestfds[requestfd], "0\r\n\r\n")) != std::string::npos)
+	&& (npos + 5 == this->_requestfds[requestfd].size()))
+	{
+		_endChunk = true;
+		this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+		this->_requestfds[requestfd].begin() + npos + 1);
+	}
+	if (_findSequenceVector(this->_requestfds[requestfd], "Transfer-Encoding: chunked") != std::string::npos)
+	{
+		if ((npos = _findSequenceVector(this->_requestfds[requestfd], DCRLF)) != std::string::npos)
+		{
+			// copy headers
+			for (size_t i = 0; i < (npos + 4); i++)
+			{
+				this->requestComplete[requestfd].push_back(this->_requestfds[requestfd][0]);
+				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
+				this->_requestfds[requestfd].begin() + 1);
+			}
+			if ((npos = _findSequenceVector(this->requestComplete[requestfd], "Expect: 100-continue")) != std::string::npos)
+			{
+				this->_requestfds[requestfd].clear();
+				std::string	responseChunk = "HTTP/1.1 100 Continue\r\n\r\n";
+				write(requestfd, responseChunk.c_str(), responseChunk.length());
+				return (PROCESSING);
+			}
+		}
+		else
+		{
+			this->_requestfds[requestfd].clear();
+			return (ERROR);
+		}
+	}
+	if ((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+	{
+		if ((_firstChunk == true) || npos < 7)
+		{
+			this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin(),
+			this->_requestfds[requestfd].begin() + npos + 2);
+			_firstChunk = false;
+		}
+		else
+		{
+			size_t npos2;
+			this->_requestfds[requestfd][npos + 1] = 'a';
+			if ((npos2 = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+			{
+				std::string	hex = "abcdef";
+				for (size_t i = npos + 2; i < npos2; i++)
+				{
+					if ((isdigit(_requestfds[requestfd][i]) == 0) && (hex.find(_requestfds[requestfd][i]) == std::string::npos))
+						this->_requestfds[requestfd][npos + 1] = '\n';
+				}
+				if (this->_requestfds[requestfd][npos + 1] != '\n')
+				{
+					this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+					this->_requestfds[requestfd].begin() + npos2 + 2);
+				}
+			}
+			else
+				this->_requestfds[requestfd][npos + 1] = '\n';
+			if (((npos = _findSequenceVector(this->_requestfds[requestfd], "\r\n")) != std::string::npos)
+			&& _requestfds[requestfd].size() == npos + 2)
+				this->_requestfds[requestfd].erase(this->_requestfds[requestfd].begin() + npos,
+				this->_requestfds[requestfd].begin() + npos + 2);
+		}
+	}
+	for (size_t i = 0; i < this->_requestfds[requestfd].size(); i++)
+		this->requestComplete[requestfd].push_back(this->_requestfds[requestfd][i]);
+	this->_requestfds[requestfd].clear();
+	if (_endChunk == true)
+		return (DONE);
+	return (PROCESSING);
+}
+
 requestStatus	Server::getRequest(int requestfd) {
-	int	bytesRead;
+	int		bytesRead;
 	char	_request[10000] = {0};
 
 	bytesRead = read(requestfd, _request, 8000);
 	if (bytesRead < 0) {
 		_requestfds.erase(requestfd);
+		requestComplete.erase(requestfd);
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
 		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
 	}
 	if (bytesRead == 0) {
 		_requestfds.erase(requestfd);
+		requestComplete.erase(requestfd);
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
+		_respondInternalServerError(requestfd);
 		close(requestfd);
 		return (ERROR);
 	}
 	else
 	{
 		for (int i = 0; i < bytesRead; i++)
-		{
 			this->_requestfds[requestfd].push_back(static_cast<unsigned char>(_request[i]));
-			// std::cout << _request[i];
+		if ((_isChunk == true)
+		|| ((_findSequenceVector(this->_requestfds[requestfd], "Transfer-Encoding: chunked") != std::string::npos)))
+		{
+			enum requestStatus status = _parseChunk(requestfd);
+			if (status == ERROR)
+			{
+				_requestfds.erase(requestfd);
+				requestComplete.erase(requestfd);
+				_endChunk = false;
+				_isChunk = false;
+				_firstChunk = true;
+				_respondInternalServerError(requestfd);
+				close(requestfd);
+				return (status);
+			}
+			else
+			{
+				_requestfds[requestfd].clear();
+				return (status);
+			}
+		}
+		else
+		{
+			for (size_t i = 0; i < _requestfds[requestfd].size(); i++)
+				requestComplete[requestfd].push_back(_requestfds[requestfd][i]);
+			if (_findSequenceVector(_requestfds[requestfd], "Expect: 100-continue") != std::string::npos)
+			{
+				std::string	responseChunk = "HTTP/1.1 100 Continue\r\n\r\n";
+				write(requestfd, responseChunk.c_str(), responseChunk.length());
+				_requestfds[requestfd].clear();
+				return (PROCESSING);
+			}
+			else
+			{
+				_requestfds[requestfd].clear();
+				_endChunk = true;
+			}
 		}
 	}
-	return (_checkRequestStatus(this->_requestfds[requestfd]));
+	return (_checkRequestStatus(requestComplete[requestfd]));
 }
 
 void	Server::respondRequest(int requestfd) {
-	std::string	response;
-	/*Parseamento do request e salva um map comtudo e o body do request*/
-	Request _req(_requestfds[requestfd]);
-	/*Iniciando o response*/
-	Response res_struct(_req.getMap(), _serverConfig,
-		_url_path, _req.getStrBody(), _req.getVectorBody(), _actual_root);
-	res_struct.init();
-	/*response recebe o header e body da resposta e escreve no fd*/
-	response = res_struct.getResponse();
-	write(requestfd, response.c_str(), response.length());
-	_requestfds.erase(requestfd);
-	close(requestfd);
+	if (_endChunk == true)
+	{
+		std::string	response;
+		/*Parseamento do request e salva um map comtudo e o body do request*/
+		Request _req(requestComplete[requestfd]);
+		/*Iniciando o response*/
+		if((static_cast<int>(_req.getVectorBody().size()) / 1000) > _serverConfig.bodySizeLimit)
+		{
+			std::cerr << "error: Body size limit exceeded" << std::endl;
+			_requestfds.erase(requestfd);
+			requestComplete.erase(requestfd);
+			_endChunk = false;
+			_isChunk = false;
+			_firstChunk = true;
+			close(requestfd);
+			_respondInternalServerError(requestfd);
+			return ;
+		}
+		Response res_struct(_req.getMap(), _serverConfig,
+			_url_path, _req.getStrBody(), _req.getVectorBody(), _actual_root);
+		res_struct.init();
+		/*response recebe o header e body da resposta e escreve no fd*/
+		response = res_struct.getResponse();
+		write(requestfd, response.c_str(), response.length());
+		_requestfds.erase(requestfd);
+		requestComplete.erase(requestfd);
+		_endChunk = false;
+		_isChunk = false;
+		_firstChunk = true;
+		close(requestfd);
+	}
 }
 
 void	Server::_respondInternalServerError(int requestfd) {
@@ -124,4 +271,3 @@ bool	Server::hasRequestFd(int requestfd) {
 		return (true);
 	return (false);
 }
-

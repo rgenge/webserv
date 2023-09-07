@@ -30,6 +30,7 @@ class Server : public Socket {
 		bool				hasRequestFd(int i);
 		void				addRequestfd(int requestfd, std::vector<unsigned char> requestMessage);
 
+		static std::map<int, std::vector <unsigned char> >	requestComplete;
 	private:
 
 		Server();
@@ -37,8 +38,12 @@ class Server : public Socket {
 		t_serverConfig								_serverConfig;
 		std::string									_url_path;
 		std::string									_actual_root;
+		bool										_endChunk;
+		bool										_isChunk;
+		bool										_firstChunk;
 
 		requestStatus	_checkRequestStatus(std::vector<unsigned char> const &_request);
+		requestStatus	_parseChunk(int requestfd);
 		size_t			_findSequenceVector(std::vector<unsigned char> const &vector, std::string const sequence);
 		void			_respondInternalServerError(int requestfd);
 

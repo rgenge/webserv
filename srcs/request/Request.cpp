@@ -4,9 +4,6 @@
 Request::Request(std::vector<unsigned char> &requestData): _requestData(requestData)
 {
 	_parse();
-	// if (this->_requestData.size() > 0 && this->_headers.count("Transfer-Encoding") > 0
-	// && this->_headers["Transfer-Encoding"] == "chunked")
-	// 	_parseChunk();
 }
 
 size_t	_findSequence(std::vector<unsigned char> &vector, std::string const sequence)
@@ -71,7 +68,6 @@ void	Request::_setStrBody(void)
 void Request::get_query()
 {
 	std::string path = this->_headers["Path"];
-	std::cout << path << std::endl;
 	size_t i = path.find_first_of("?", 0);
 	if (i == std::string::npos)
 		return ;
@@ -103,6 +99,11 @@ void	Request::_parse(void)
 		{
 			size_t pos2 = 0;
 			std::string delim2 = ": ";
+			if (token.find(" :") != std::string::npos)
+			{
+				this->_headers["Version"] = "Bad Request";
+				return;
+			}
 			while((pos2 = token.find(delim2)) != std::string ::npos)
 			{
 				sub = token.substr(0, pos2);

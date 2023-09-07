@@ -6,32 +6,40 @@ std::string&_url_path_, std::string &strBody, std::vector<unsigned char> &vector
 _req_parsed(_req_parsed_), _serverConfig (_serverConfig_),
 _url_path(_url_path_), _strBody(strBody), _vectorBody(vectorBody), _actual_root(_actual_root_)
 {
+	_phpSuffix = "";
+	_pythonSuffix = "";
+	_suffix = "";
+	return ;
 }
 
 /*Salva a resposta e imprimi no terminal*/
 void	Response::printHeader(std::string status_code, std::string message,
 	std::string http_version)
 {
-	std::time_t result = std::time(NULL);
-	result = result + (1 * 60 * 60);
-	std::string timeString = std::asctime(std::localtime(&result));
-	_response.append(http_version + " " + status_code + " " + message +  "\r\n");
-	for (std::map<std::string, std::string>::iterator i = _res_map.begin();
-		i != _res_map.end(); i++)
-		_response.append((*i).first + ": " + (*i).second + "\r\n");
-	if (_req_parsed["Query"] != "")
+	if (_response == "")
 	{
-		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
-		_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		std::time_t result = std::time(NULL);
+		result = result + (1 * 60 * 60);
+		std::string timeString = std::asctime(std::localtime(&result));
+		_response.append(http_version + " " + status_code + " " + message +  "\r\n");
+		for (std::map<std::string, std::string>::iterator i = _res_map.begin();
+			i != _res_map.end(); i++){
+			_response.append((*i).first + ": " + (*i).second + "\r\n");
+			std::cout << ((*i).first + ": " + (*i).second + "\r\n");}
+		if (_req_parsed["Query"] != "")
+		{
+			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
+		}
+		_response.append("Set-Cookie: HttpOnly=true\r\n");
+		_response.append("Set-Cookie: Secure=true\r\n");
+		_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
+		_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
+		_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
+		_response.append(_body);
+		_response.append("\r\n");
+		//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
 	}
-	_response.append("Set-Cookie: HttpOnly=true\r\n");
-	_response.append("Set-Cookie: Secure=true\r\n");
-	_response.append("Set-Cookie: Domain=" + _req_parsed["Host"] + "\r\n");
-	_response.append("Set-Cookie: Path=" + _req_parsed["Path"] + "\r\n");
-	_response.append("Set-Cookie: Expires=" + timeString + "\r\n");
-	_response.append(_body);
-	_response.append("\r\n");
-	//	_response.append("\r\n"); // deixar apenas essa linha sem uso de cookie
 }
 
 /*Procura o ultimo "." do path e pega a extensao a partir dele*/
@@ -143,12 +151,23 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 	if(_url_path.find("//") != std::string::npos)
 		_url_path.replace(_url_path.find("//"), 2, "/");
 	/*CGI funciona mas sem verificar input do server*/
-	if (_full_path.find(".php") != std::string::npos)
+	if (((_full_path.rfind(".php")) == _full_path.size() - 4)
+	|| ((_full_path.rfind(".py")) == _full_path.size() - 3))
 	{
-		CgiHandler	cgi_init;
-		std::string	cgi_body;
-		_body = cgi_init.cgiHandler(_full_path);
-		return;
+		_checkCgiRequest();
+		if (_suffix == "")
+		{
+			std::cerr << "Forbidden" << std::endl;
+			_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+			return ;
+		}
+		CgiHandler	cgi_init("",  _full_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
+		std::string	cgiResult;
+		_body = cgi_init.cgiHandler();
+		_response.append(_body);
+		_response.append("\r\n");
+		return ;
 	}
 	/*Checa se diretório não for acessivel */
 	if (access ((const char *)_full_path.c_str(), F_OK) != -1)
@@ -186,16 +205,9 @@ void	Response::methodGet(std::map <std::string, std::string> _req_parsed)
 		int content = atoi(_res_map["Content-Length"].c_str());
 		if (content <= 0)
 		{
-			std::cerr << "ContentL Length Required" << std::endl;
+			std::cerr << "Content Length Required" << std::endl;
 			_response = ErrorResponse::getErrorResponse(ERROR_411, _configs.
 				getErrorPage(ERROR_411));
-			return ;
-		}
-		if((content)/1000 > _configs.getBodySizeLimit())
-		{
-			std::cerr << "Body size limit exceeded" << std::endl;
-			_response = ErrorResponse::getErrorResponse(ERROR_414, _configs.
-				getErrorPage(ERROR_414));
 			return ;
 		}
 		printHeader ("200", "OK", _req_parsed["Version"]);
@@ -265,11 +277,6 @@ std::string	intToString (int num)
 	return temp.str();
 }
 
-void Response::_parseChunk(void)
-{
-	return ;
-}
-
 void Response::_removeBreakLinesAndCR(std::string &str)
 {
 	std::string	temp;
@@ -287,72 +294,128 @@ void Response::_replaceHexPercentWithAscii(std::string &params)
 	int	pos = 0;
 	while (true)
 	{
-		size_t	percentPos = params.find('%', pos);
-		if (percentPos == std::string::npos)
+		size_t	npos = params.find('%', pos);
+		if (npos == std::string::npos)
             break ;
 		else
 		{
-			if ((params.size() - percentPos) > 2)
+			if ((params.size() - npos) > 2)
 			{
 				std::string hexStr;
-				hexStr = params.substr(percentPos + 1, 2);
+				hexStr = params.substr(npos + 1, 2);
 
 				int	value;
 				std::istringstream	iss(hexStr);
 				iss >> std::hex >> value;
 				if (iss.fail())
-					throw std::runtime_error("failed to convert hex to ASCII");
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+					getErrorPage(ERROR_400));
+					throw std::runtime_error("400 Bad Request (failed to convert hex to ASCII)");
+				}
 				std::string asciiChar;
 				asciiChar.push_back(static_cast<char>(value));
-				params.replace(percentPos, 3, asciiChar);
+				params.replace(npos, 3, asciiChar);
 			}
 			else
-				throw std::runtime_error("invalid parameters format");
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+				getErrorPage(ERROR_400));
+				throw std::runtime_error("400 Bad Request (invalid parameters format)");
+			}
 		}
+	}
+	return ;
+}
+
+void Response::_replacePlusWithSpace(std::string &params)
+{
+	int	pos = 0;
+	while (true)
+	{
+		size_t	npos = params.find('+', pos);
+		if (npos == std::string::npos)
+            break ;
+		else
+			params.replace(npos, 1, " ");
 	}
 	return ;
 }
 
 void Response::_parseUrlEncodedParams(void)
 {
-	std::string	&params = this->_strBody;
-
-	size_t separatorPos = params.find('=');
+	size_t separatorPos = this->_strBody.find('=');
 	if (separatorPos == std::string::npos)
-		throw std::runtime_error("error 400??? invalid application/x-www-form-urlencoded format");
-	_removeBreakLinesAndCR (params);
-	_replaceHexPercentWithAscii(params);
-	size_t pos = 0;
-	while (true)
 	{
-		separatorPos = params.find('=', pos);
-		if (separatorPos == std::string::npos)
-            break ;
-		std::string	key = params.substr(pos, separatorPos - pos);
-		params.erase(pos, separatorPos + 1);
-
-		size_t ampersandPos = params.find('&', pos);
-		if (ampersandPos == std::string::npos && params.size() == 0)
-            break ;
-		else if (ampersandPos == std::string::npos)
-			ampersandPos = params.size();
-		std::string	value = params.substr(pos, ampersandPos - pos);
-		params.erase(pos, ampersandPos + 1);
-
-		this->_vars[key] = value;
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (this->_strBody application/x-www-form-urlencoded format)");
 	}
-	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
+	_removeBreakLinesAndCR (this->_strBody);
+	_replaceHexPercentWithAscii(this->_strBody);
+	_replacePlusWithSpace(this->_strBody);
+	_sendDataToHandlerCGI();
+	return ;
+}
+
+void	Response::_sendDataToHandlerCGI(void)
+{
+	std::ofstream	file;
+	std::string		fileName;
+
+	fileName = _generateFileName("temp_", "_cgi");
+	file.open(fileName.c_str(), std::ofstream::in | std::ofstream::trunc);
+	if (!file.is_open())
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (open/_handleBoundaryFiles)");
+	}
+	file.write(this->_strBody.c_str(), this->_strBody.size());
+	file.close();
+	// aqui eu tiro a barra da url para que apenas o caminho relativo seja enviado ao execve
+	if ((this->_full_path.size() > 1) && (this->_full_path[0] == '/'))
+		this->_full_path.erase(0, 1);
+	CgiHandler	cgi(fileName, this->_full_path, _configs.getCgi(_suffix), this->_req_parsed, _response, _configs);
+	std::string	cgiResult;
+	cgiResult = cgi.cgiHandler();
+	remove(fileName.c_str());
+
+	if (cgiResult.size() <= 12 || !isdigit(cgiResult[9])
+	|| !isdigit(cgiResult[10]) || !isdigit(cgiResult[11]))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_sendDataToHandlerCGI/status code)");
+	}
+	size_t	npos;
+	if ((npos = cgiResult.find("Content-Length: ")) != std::string::npos)
+	{
+		std::string strLength;
+		size_t		numLength;
+		size_t		carriageReturn;
+
+		carriageReturn = cgiResult.find("\r\n\r\n");
+		for (size_t i = npos + 16; isdigit(cgiResult[i]); i++)
+			strLength += cgiResult[i];
+		numLength = atoi(strLength.c_str());
+		if (strLength == "" || cgiResult.size() < (numLength + carriageReturn + 4))
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (_sendDataToHandlerCGI/Content-length)");
+		}
+		for (size_t i = 0; (i < cgiResult.size()) && (i < (numLength + carriageReturn + 4)); i++)
+			_response += cgiResult[i];
+	}
+	else
+		_response = cgiResult;
 	return ;
 }
 
 void	Response::_parseTextPlain(void)
 {
-	// ver se é mesmo necessário chamar essa função nesse caso
-	// _removeBreakLinesAndCR(textPlain);
-
-	// Estou deixando assim por enquanto só para que haja uma resposta e não dê algum erro
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
+	_sendDataToHandlerCGI();
 	return ;
 }
 
@@ -362,35 +425,13 @@ void	Response::_setBoundary(void)
 
 	size_t boundaryPos;
 	if ((boundaryPos = contentType.find("---")) != std::string::npos)
-		this->_boundary = contentType.substr(boundaryPos, contentType.size() - boundaryPos);
+		this->_boundary += contentType.substr(boundaryPos, contentType.size() - boundaryPos);
 	else
-		throw std::runtime_error("boundary not found");
-	return ;
-}
-
-void	Response::_removeHeaderSpaces(std::string &header)
-{
-	size_t		endHeaderPos, i = 0;
-	std::string	tempHeader;
-
-	if ((endHeaderPos = header.find("\r\n\r\n")) != std::string::npos)
 	{
-		while (i < endHeaderPos)
-		{
-			if (header[i] != ' ')
-				tempHeader += header[i];
-			i++;
-		}
-		while (i < header.size())
-		{
-			tempHeader += header[i];
-			i++;
-		}
-		header = tempHeader;
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (boundary not found)");
 	}
-	else
-		throw std::runtime_error("invalid multipart/formdata 'endHeaderPos'");
-
 	return ;
 }
 
@@ -417,179 +458,331 @@ size_t	Response::_findSequence(std::vector<unsigned char> &vector, std::string c
 	return (i - j);
 }
 
-void	Response::_setHeaders(void)
-{
-	size_t		npos;
-	size_t		endHeader = 4;
-	std::string	headers, headerKey, headerValue;
-
-	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
-		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + npos + this->_boundary.size() + 2);
-	else
-	{
-		std::cerr << "headers error: " << std::endl << headers << std::endl;
-		std::cerr << "boundary: " << this->_boundary << std::endl;
-		throw std::runtime_error("invalid multipart/formdata '_setHeaders'");
-	}
-	npos = _findSequence(this->_vectorBody, "\r\n\r\n");
-	for (size_t i = 0; i < (npos + endHeader); i++)
-	{
-		headers += this->_vectorBody[0];
-		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
-	}
-	_removeHeaderSpaces(headers);
-	while (true)
-	{
-		if ((npos = headers.find(':')) != std::string::npos)
-		{
-			headerKey = headers.substr(0, npos);
-			headers.erase(0, headerKey.size() + 1);
-			if ((npos = headers.find("\r\n")) != std::string::npos)
-			{
-				headerValue = headers.substr(0, npos);
-				headers.erase(0, headerValue.size());
-			}
-			else
-				throw std::runtime_error("invalid multipart/formdata 'npos'");
-
-			this->_boundaryHeaders[headerKey] = headerValue;
-			if ((headers.size() >= 4) && (headers.substr(0, 4) == "\r\n\r\n"))
-			{
-				headers.erase(0, 4);
-				return ;
-			}
-			else
-				headers.erase(0, 2);
-		}
-		else
-			throw std::runtime_error("invalid multipart/formdata 'npos'");
-	}
-	return ;
-}
-
 std::string	Response::_originalFileName(std::string &contentDisposition)
 {
 	std::string	originalFileName = "_";
 	std::string	fieldFileName = "filename=\"";
 
-	size_t	fileNamePos;
-	if ((fileNamePos = contentDisposition.find(fieldFileName)) != std::string::npos)
+	size_t	npos;
+	if ((npos = contentDisposition.find(fieldFileName)) != std::string::npos)
 	{
-		int	i = fileNamePos + fieldFileName.size();
+		int	i = npos + fieldFileName.size();
 		while ((contentDisposition[i]) && (contentDisposition[i] != '\"'))
 			originalFileName += contentDisposition[i++];
 	}
 	else
-		throw std::runtime_error("invalid multipart/formdata '_fileExtension'");
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_originalFileName()/_fileExtension)");
+	}
 	return (originalFileName);
 }
 
-std::string	Response::_generateFileName(std::string const &originalFileName)
+std::string	Response::_generateFileName(std::string const &type, std::string const &originalFileName)
 {
 	static int	sequenceNumber = 0;
 	std::time_t	currentTime;
 	std::stringstream	fileName;
 
 	currentTime = std::time(0);
-	fileName << "file_" << currentTime << sequenceNumber << originalFileName;
+	fileName << type << currentTime << sequenceNumber << originalFileName;
 	sequenceNumber++;
 	return (fileName.str());
 }
 
-// std::string	Response::_handleLastSlash(std::string &Route)
-// {
-// 	std::string	alternativeRoute;
-
-// 	if (Route[Route.size() - 1] != '/')
-// 		alternativeRoute = Route + '/';
-// 	else
-// 		alternativeRoute = Route.substr(0, Route.size() - 1);
-// 	std::cout << "alternative: " << alternativeRoute << std::endl;
-// 	return (alternativeRoute);
-// }
-
-void	Response::_setBoundaryBody(void)
+void	Response::_handleMultipart(std::string &fileName)
 {
-	size_t npos;
-	size_t	boundaryStart = 2;
+	std::ofstream				file;
+	std::string					originalFileName;
+	std::string					carriageReturn = "\r\n\r\n";
+	std::string					headers;
+	std::string					boundaryEnd = this->_boundary + "--";
+	size_t						boundaryStart = 2;
+	size_t						npos;
+	size_t						count;
+	std::vector<unsigned char>	check;
 
-	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) != std::string::npos)
+	if (this->_vectorBody.size() == 0)
+		return ;
+	if ((npos = _findSequence(this->_vectorBody, this->_boundary)) == std::string::npos)
 	{
-		for (size_t i = 0; i < (npos - boundaryStart); i++)
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleMultipart/boundary not found)");
+	}
+	if ((npos = _findSequence(this->_vectorBody, carriageReturn)) == std::string::npos)
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (carriageReturn/_handleMultipart)");
+	}
+	for (size_t i = 0; i < (npos + carriageReturn.size()); i++)
+	{
+		headers += this->_vectorBody[0];
+		this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
+	}
+	// is it a file
+	if (headers.find("; filename=") != std::string::npos)
+	{
+		if ((npos = _findSequence(this->_vectorBody, this->_boundary)) == std::string::npos)
 		{
-			this->_vectorBoundaryBody.push_back(this->_vectorBody[0]);
-			this->_vectorBody.erase(this->_vectorBody.begin(), this->_vectorBody.begin() + 1);
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleMultipart/boundary not found 2)");
+		}
+
+		for (count = (npos - boundaryStart); count < this->_vectorBody.size(); count++)
+			check.push_back(this->_vectorBody[count]);
+		if ((_findSequence(check, this->_boundary + "--")) != 2)
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleMultipart/final boundary)");
+		}
+
+		fileName += _generateFileName("file_", _originalFileName(headers));
+		file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
+		file.write(reinterpret_cast<char *>(_vectorBody.data()), (npos - boundaryStart));
+		_vectorBody.clear();
+	}
+	// is not a file
+	else
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (invalid multipart/formdata (_boundary/_handleMultipart/is not a file)");
+	}
+	return ;
+}
+
+void	Response::_isNotCGI(void)
+{
+	int				err;
+	std::string		fileName;
+	std::string		originalFileName;
+	std::ofstream	file;
+	std::string		uploadPath = "./uploads/others/";
+	struct stat		st;
+
+	if (_configs.getUploadPath().size() > 0)
+	{
+		if (stat(_configs.getUploadPath().c_str(), &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (isNotCGI/ENOENT)");
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (isNotCGI/EACCES)");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+		else
+			uploadPath = _configs.getUploadPath();
+	}
+	else
+	{
+		if (stat("uploads", &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				if ((err = mkdir("uploads", 0777)) != 0)
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+					getErrorPage(ERROR_500));
+					throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+				}
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (uploads) 'isNotCGI'");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+		if (stat("uploads/others", &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				if ((err = mkdir("./uploads/others", 0777)) != 0)
+				{
+					_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+					getErrorPage(ERROR_500));
+					throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
+				}
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (others) 'isNotCGI'");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (others) 'isNotCGI'");
+			}
 		}
 	}
+
+	if (_configs.getUploadPath() == "")
+		fileName =  uploadPath;
 	else
-		throw std::runtime_error("invalid request format '_setBoundaryBody'");
-	return ;
-}
-
-void	Response::_handleImputFile(std::string &contentDisposition)
-{
-	size_t			pos;
-	std::ofstream	file;
-	std::string		originalFileName;
-	std::string		fileName = _configs.getUploadPath();
-
-	pos = _configs.getUploadPath().size() - 1;
-	if (_configs.getUploadPath().find('/', pos) == std::string::npos)
-		fileName += '/';
-	originalFileName = _generateFileName(originalFileName);
-	originalFileName += _originalFileName(contentDisposition);
-	fileName += originalFileName;
-
-	file.open(fileName.c_str(), std::ios::out);
-	if (!file.is_open())
-		throw std::runtime_error("open file error '_handleImputFile'");
-	_setBoundaryBody();
-	for (size_t i = 0; i < this->_vectorBoundaryBody.size(); i++)
-		file << this->_vectorBoundaryBody[i];
-	file.close();
-	printHeader ("200", "OK", this->_req_parsed["Version"]);
-	return ;
-}
-
-void	Response::_processBoundaryHeaders(void)
-{
-	if (this->_boundaryHeaders["Content-Disposition"].find("form-data;") != std::string::npos)
 	{
-		if (this->_boundaryHeaders["Content-Disposition"].find("filename=") != std::string::npos)
-			_handleImputFile(this->_boundaryHeaders["Content-Disposition"]);
-		else
-			throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+		fileName += _configs.getUploadPath();
+		if (_configs.getUploadPath()[_configs.getUploadPath().size() - 1] != '/')
+			fileName += '/';
+	}
+
+	if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
+	{
+		_setBoundary();
+		_handleMultipart(fileName);
 	}
 	else
-		throw std::runtime_error("invalid multipart/formdata '_processBoundaryHeaders'");
+	{
+		originalFileName = "_" + _url_path.substr(_url_path.find_last_of('/') + 1, _url_path.size());
+		fileName += _generateFileName("file_", originalFileName);
+		file.open(fileName.c_str(), std::ofstream::out | std::ofstream::trunc);
+		file.write(reinterpret_cast<char *>(_vectorBody.data()), _vectorBody.size());
+	}
+	printHeader ("200", "OK", _req_parsed["Version"]);
 	return ;
 }
 
-void	Response::_handleBoundaryPart(void)
+void	Response::_checkCgiRequest(void)
 {
-	_setHeaders();
-	_processBoundaryHeaders();
+	try
+	{
+		if (_configs.getCgi(".php") != "")
+			_phpSuffix = ".php";
+	}
+	catch(const std::out_of_range &e) {}
+
+	try
+	{
+		if (_configs.getCgi(".py") != "")
+			_pythonSuffix = ".py";
+	}
+	catch(const std::out_of_range &e) {}
+
+	if ((_phpSuffix == "") && (_pythonSuffix == ""))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_checkCgiRequest)");
+	}
+	else if (((_phpSuffix == "")
+	|| (_full_path.compare((_full_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) != 0))
+	&& ((_pythonSuffix == "")
+	|| (_full_path.compare((_full_path.size() - _pythonSuffix.size()), _pythonSuffix.size(), _pythonSuffix) != 0)))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost / suffix getCgi and url are different)");
+	}
+
+	if (_full_path.compare((_full_path.size() - _phpSuffix.size()), _phpSuffix.size(), _phpSuffix) == 0)
+		_suffix = _phpSuffix;
+	else
+		_suffix = _pythonSuffix;
+	return ;
 }
 
-void	Response::_parseMultipartFormData(void)
+void	Response::_checkUploadPath(void)
 {
-	_setBoundary();
-	_handleBoundaryPart();
+	struct stat		st;
+
+	if (_configs.getUploadPath().size() > 0)
+	{
+		if (stat(_configs.getUploadPath().c_str(), &st) != 0)
+		{
+			if (errno == ENOENT)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (_checkUploadPath/ENOENT)");
+			}
+			else if (errno == EACCES)
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+				getErrorPage(ERROR_403));
+				throw std::runtime_error("403 Forbidden (_checkUploadPath/EACCES)");
+			}
+			else
+			{
+				_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+				getErrorPage(ERROR_500));
+				throw std::runtime_error("500 Internal Server Error (uploads) 'isNotCGI'");
+			}
+		}
+	}
 	return ;
 }
 
 void	Response::_methodPost(void)
 {
-	if (this->_req_parsed["Transfer-Encoding"] == "chunked")
-		_parseChunk();
-	if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
-		_parseUrlEncodedParams();
-	else if (this->_req_parsed["Content-Type"] == "text/plain")
-		_parseTextPlain();
-	else if (this->_req_parsed["Content-Type"].find("multipart/form-data") != std::string::npos)
-		_parseMultipartFormData();
+	std::string	root = _configs.getRoot();
+	std::string	url = _req_parsed["Path"];
+	if (root.size() > 0 && root[root.size() - 1] != '/')
+		root += "/";
+	if (url.size() > 0 && url[0] == '/')
+		url.erase(0, 1);
+	_full_path = root + url;
+	if ((this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded")
+	&& (this->_req_parsed["Content-Type"] != "text/plain")
+	&& (this->_req_parsed["Content-Type"].find("multipart/form-data") == std::string::npos))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + ")");
+	}
+	else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+	&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
+	&& (this->_req_parsed["Content-Type"] != "application/x-www-form-urlencoded"))
+		_isNotCGI();
+	else if (((_full_path.rfind(".php")) != _full_path.size() - 4)
+	&& ((_full_path.rfind(".py")) != _full_path.size() - 3)
+	&& (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded"))
+	{
+		_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+		getErrorPage(ERROR_400));
+		throw std::runtime_error("400 Bad Request (_methodPost/content-type invalid whithout CGI)");
+	}
 	else
-		std::cerr << "ERROR: " << this->_req_parsed["Content-Type"] << std::endl;
+	{
+		_checkCgiRequest();
+		_checkUploadPath();
+		if (this->_req_parsed["Content-Type"] == "application/x-www-form-urlencoded")
+			_parseUrlEncodedParams();
+		else if (this->_req_parsed["Content-Type"] == "text/plain")
+			_parseTextPlain();
+		else
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_400, _configs.
+			getErrorPage(ERROR_400));
+			throw std::runtime_error("400 Bad Request (_methodPost/" + this->_req_parsed["Content-Type"] + " is not allowed with CGI)");
+		}
+	}
+
 	return ;
 }
 
@@ -700,12 +893,19 @@ void	Response::init()
 	headerCheck();
 	if (checkRequest())
 		return ;
-	if (_req_parsed["Method"] == "GET")
-		methodGet(_req_parsed);
-	if (_req_parsed["Method"] == "DELETE")
-		methodDelete(_req_parsed);
-	if (this->_req_parsed["Method"] == "POST")
-		_methodPost();
+	try
+	{
+		if (_req_parsed["Method"] == "GET")
+			methodGet(_req_parsed);
+		if (_req_parsed["Method"] == "DELETE")
+			methodDelete(_req_parsed);
+		if (this->_req_parsed["Method"] == "POST")
+			_methodPost();
+	}
+	catch (std::exception &e)
+	{
+		std::cerr << "error: " << e.what() << std::endl;
+	}
 }
 
 Response::~Response()

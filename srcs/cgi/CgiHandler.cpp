@@ -1,6 +1,9 @@
 #include "CgiHandler.hpp"
 
-CgiHandler::CgiHandler(void)
+CgiHandler::CgiHandler(std::string bodyPath, std::string &scriptPath, std::string interpreterPath,
+std::map<std::string, std::string> &envpMap, std::string &response, ServerConfig &configs):
+_configs(configs), _envpMap(envpMap), _bodyPath(bodyPath), _scriptPath(scriptPath),
+_interpreterPath(interpreterPath), _response(response)
 {
 	_envp = NULL;
     _pipeFd[0] = 0;
@@ -10,7 +13,9 @@ CgiHandler::CgiHandler(void)
 	return ;
 }
 
-CgiHandler::CgiHandler(CgiHandler const &src)
+CgiHandler::CgiHandler(CgiHandler const &src): _configs(src._configs), _envpMap(src._envpMap),
+_bodyPath(src._bodyPath), _scriptPath(src._scriptPath), _interpreterPath(src._interpreterPath),
+_response(src._response)
 {
 	*this = src;
 	return ;
@@ -46,30 +51,15 @@ void	CgiHandler::_clearEnvp(void)
 	return ;
 }
 
-void	CgiHandler::_getEnv(void)
-{
-	// aqui pegarei as variáveis de ambiente que o script cgi pode precisar
-	// talvez nem seja necessário e já venha pronto
-	// por enquanto, estou criando um map temporário
-
-	this->_tempEnv["METHOD"] = "GET";
-    this->_tempEnv["HTTP_USER_AGENT"] = "Mozilla/5.0";
-    this->_tempEnv["REMOTE_ADDR"] = "127.0.0.1";
-    this->_tempEnv["CUSTOM_VAR1"] = "value1";
-    this->_tempEnv["CUSTOM_VAR2"] = "value2";
-
-	return ;
-}
-
 void	CgiHandler::_convertEnvFormat(void)
 {
 	// aqui vou converter o map em um char** para que o execve possa usar no 3º argumento
-	int	size = this->_tempEnv.size() + 1;
+	int	size = this->_envpMap.size() + 1;
 	this->_envp = new char *[size];
 
 	int	i = 0;
 	std::map<std::string, std::string>::iterator it;
-	for (it = this->_tempEnv.begin(); it != this->_tempEnv.end(); it++)
+	for (it = this->_envpMap.begin(); it != this->_envpMap.end(); it++)
 	{
 		std::string arg = it->first + "=" + it->second;
 		size = arg.size() + 1;
@@ -86,18 +76,24 @@ void	CgiHandler::_openPipe(void)
 	if (pipe(this->_pipeFd) == -1)
 	{
 		_clearEnvp();
-		throw std::runtime_error("pipe function");
+		{
+			_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+			getErrorPage(ERROR_500));
+			throw std::runtime_error("500 Internal Server Error (_openPipe/pipe)");
+		}
 	}
 	return ;
 }
 
 void	CgiHandler::_child(void)
 {
+	int	stdoutBackup = dup(STDOUT_FILENO);
+
 	close(this->_pipeFd[0]);
 	dup2(this->_pipeFd[1], STDOUT_FILENO);
 
-	const char	*path = "/usr/bin/php";
-	const char	*scriptPath = _path.c_str();
+	const char	*path = _interpreterPath.c_str();
+	const char	*scriptPath = _scriptPath.c_str();
 	char		*execArgs[] = {
 		const_cast<char *>(path),
 		const_cast<char *>(scriptPath),
@@ -107,22 +103,31 @@ void	CgiHandler::_child(void)
 	if (access(path, X_OK) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
-		throw std::runtime_error("failed to execute interpreter");
+		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+		getErrorPage(ERROR_403));
+		throw std::runtime_error("403 Forbidden (_child/path = " + _interpreterPath + ")");
 	}
 
 	if (access(scriptPath, X_OK) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
-		throw std::runtime_error("failed to execute script CGI");
+		_response = ErrorResponse::getErrorResponse(ERROR_403, _configs.
+		getErrorPage(ERROR_403));
+		throw std::runtime_error("403 Forbidden (_child/scriptPath = " + _scriptPath + ")");
 	}
 
 	if (execve(path, execArgs, this->_envp) == -1)
 	{
 		close(this->_pipeFd[1]);
+		dup2(stdoutBackup, STDOUT_FILENO);
 		_clearEnvp();
-		throw std::runtime_error("execve function");
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_child/execve)");
 	}
 	close(this->_pipeFd[1]);
 	return ;
@@ -149,7 +154,9 @@ void	CgiHandler::_execCgi(void)
 	if (this->_pid == -1)
 	{
 		_clearEnvp();
-		throw std::runtime_error("fork function");
+		_response = ErrorResponse::getErrorResponse(ERROR_500, _configs.
+		getErrorPage(ERROR_500));
+		throw std::runtime_error("500 Internal Server Error (_execCgi/fork)");
 	}
 	else if (this->_pid == 0)
 		_child();
@@ -158,10 +165,13 @@ void	CgiHandler::_execCgi(void)
 	return ;
 }
 
-std::string	CgiHandler::cgiHandler(std::string path)
+std::string	CgiHandler::cgiHandler(void)
 {
-	_path = path;
-	_getEnv();
+	// std::map<std::string, std::string>::iterator	it;
+	// std::cout << "mapa que chega no cgi" << std::endl;
+	// for (it = _envpMap.begin(); it != _envpMap.end(); it++)
+	// 	std::cout << it->first << "====" << it->second << std::endl;
+	this->_envpMap["Body-Path"] = this->_bodyPath;
 	_convertEnvFormat();
 	_execCgi();
 	return (_cgiResult);

@@ -3,4 +3,5 @@ IMG.jpg
 *.o
 .vscode
 *.txt
-upload/
+upload*/
+temp*
