@@ -29,7 +29,6 @@ void	Response::printHeader(std::string status_code, std::string message,
 		if (_req_parsed["Query"] != "")
 		{
 			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
-			_response.append("Set-Cookie: " + _req_parsed["Query"] +"\r\n");
 		}
 		_response.append("Set-Cookie: HttpOnly=true\r\n");
 		_response.append("Set-Cookie: Secure=true\r\n");
