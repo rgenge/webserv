@@ -30,7 +30,7 @@ The configuration files have those parameters:
 - `methods`: `GET POST DELETE`: specify allowed methods on that server/location block.
 - `body_size_limit`: max size for a client request body.
 - `upload`: path where uploaded POST  files will be stored at.
-- `cgi`: p.e.: `cgi .php /usr/bin/php`, specify a CGI binary for a file extension.
+- `cgi`: `cgi .php /usr/bin/php`, specify a CGI binary for a file extension.
 
 ## How to use
 
