@@ -9,7 +9,7 @@ Baisc HTTP server following in HTTP/1.1 standard in C++98.
 It works like nginx config files, you have one in the server you can use, you can either change it to try it out. `conf/`.
 The configuration files you have those parameters:
 - `url /path `: same as nginx location block.
-- `port`: `8080`: specify the port `0.0.0.0:80`.
+- `port`: `8080`: specify the port to run your server.
 - `server_name`: optional list of names that will be used to determine the server
 - `root`: root folder of the server.
 - `index`: index file that should return when client makes a GET request to the directory
@@ -30,6 +30,9 @@ make
 ```sh
 ./webserv [CONF FILE]
 ```
-
+### Use
+```sh
+Go to your browser and type localhost:8080.
+```
 ##
 
