@@ -19,7 +19,7 @@ Poll and Sockets: It uses the poll system call for I/O multiplexing, and BSD soc
 ## Config file
 
 It works like nginx config files, you have one in the server you can use, you can either change it to try it out. `conf/`.
-The configuration files you have those parameters:
+The configuration files have those parameters:
 - `url /path `: same as nginx location block.
 - `port`: `8080`: specify the port to run your server.
 - `server_name`: optional list of names that will be used to determine the server
