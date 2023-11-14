@@ -2,7 +2,19 @@
 
 ## About
 
-Baisc HTTP server following in HTTP/1.1 standard in C++98.
+Baisc HTTP server following in HTTP/1.1 standard in C++98. 
+
+## Specs
+Poll and Sockets: It uses the poll system call for I/O multiplexing, and BSD sockets for network communications. This allows the server to handle multiple connections simultaneously.
+It handles : GET POST and DELETE methods.
+Basic CGI functionality for multiple CGI.
+Cookies Sessions using ? in address.
+Directory listing.
+Http redirection.
+Upload redirection.
+Body size limit.
+
+
 
 ## Config file
 
