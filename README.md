@@ -7,14 +7,10 @@ Baisc HTTP server following in HTTP/1.1 standard in C++98.
 ## Config file
 
 It works like nginx config files, you have one in the server you can use, you can either change it to try it out. `conf/`.
-
-- `server`: same as nginx server block.
-- `location`: same as nginx location block.
-- `listen`: `ip:port`: ip:port to listen on, you specify only the ip, or only the port, or none; defualt values are `0.0.0.0:80`.
-- `server_name`: list of names that will be used to determine the server if more than one server is listening on the same ip:port, useful for virtual hosting.
-
-A brief explanetion of server/location blocks directives:
-
+The configuration files you have those parameters:
+- `url /path `: same as nginx location block.
+- `port`: `8080`: specify the port `0.0.0.0:80`.
+- `server_name`: optional list of names that will be used to determine the server
 - `root`: root folder of the server.
 - `index`: index file that should return when client makes a GET request to the directory
 - `autoindex`: `on/off`: autoindex page to choose if you want to access the server as folders
